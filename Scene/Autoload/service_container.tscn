@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://d1q2mi7gk1icw"]
+
+[ext_resource type="Script" uid="uid://dbxb5ud3h6dbq" path="res://Scripts/AutoLoad/ServiceContainer.cs" id="1_nehgc"]
+
+[node name="ServiceContainer" type="Node" unique_id=1568350868]
+script = ExtResource("1_nehgc")

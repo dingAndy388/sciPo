@@ -1,0 +1,18 @@
+[gd_scene format=3 uid="uid://bb7m1q2702kv2"]
+
+[ext_resource type="Script" uid="uid://bsx3chr7wjut6" path="res://Scripts/Map/Presentation/MapView.cs" id="1_cra26"]
+[ext_resource type="PackedScene" uid="uid://cjv3hys75jfej" path="res://Scene/Map/map_cell.tscn" id="2_82idp"]
+
+[node name="MapView" type="Node2D" unique_id=964291670]
+script = ExtResource("1_cra26")
+cellScene = ExtResource("2_82idp")
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=593339101]
+
+[node name="MapCells" type="Node2D" parent="." unique_id=2055667108]
+
+[node name="MapUI" type="Control" parent="." unique_id=445848224]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0

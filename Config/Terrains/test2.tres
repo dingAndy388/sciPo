@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="TerrainConfigResources" format=3 uid="uid://b8v41us4fmx6k"]
+
+[ext_resource type="Script" uid="uid://txjmb7bex85a" path="res://Scripts/Map/Infrastructure/TerrainConfigResources.cs" id="1_1lvuj"]
+
+[resource]
+resource_name = "test1"
+script = ExtResource("1_1lvuj")
+Id = "test1"
+Name = "Test1"
+Weight = 2.0
