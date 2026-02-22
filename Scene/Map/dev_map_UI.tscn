@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://c2xwbr855awh3"]
 
-[ext_resource type="Script" uid="uid://6dtjy2liwmsl" path="res://Scripts/Map/Presentation/DevMapUi.cs" id="1_8blma"]
+[ext_resource type="Script" uid="uid://es16adfgha0w" path="res://Scripts/Map/Presentation/DevMapUi.cs" id="1_8blma"]
 [ext_resource type="PackedScene" uid="uid://bb7m1q2702kv2" path="res://Scene/Map/map_view.tscn" id="2_8luqn"]
 [ext_resource type="PackedScene" uid="uid://cjv3hys75jfej" path="res://Scene/Map/map_cell_view.tscn" id="3_0cnph"]
 
