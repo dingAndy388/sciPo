@@ -1,0 +1,347 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "D:\\Godot\\science-potato\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{29F1984A-85C3-494A-8B4B-13ABAFC107EC}|Science Potato.csproj|d:\\godot\\science-potato\\scripts\\map\\infrastructure\\godotmaprepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{29F1984A-85C3-494A-8B4B-13ABAFC107EC}|Science Potato.csproj|solutionrelative:scripts\\map\\infrastructure\\godotmaprepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{29F1984A-85C3-494A-8B4B-13ABAFC107EC}|Science Potato.csproj|d:\\godot\\science-potato\\scripts\\map\\domain\\map.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{29F1984A-85C3-494A-8B4B-13ABAFC107EC}|Science Potato.csproj|solutionrelative:scripts\\map\\domain\\map.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{29F1984A-85C3-494A-8B4B-13ABAFC107EC}|Science Potato.csproj|d:\\godot\\science-potato\\scripts\\map\\application\\mapqueryservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{29F1984A-85C3-494A-8B4B-13ABAFC107EC}|Science Potato.csproj|solutionrelative:scripts\\map\\application\\mapqueryservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{29F1984A-85C3-494A-8B4B-13ABAFC107EC}|Science Potato.csproj|d:\\godot\\science-potato\\scripts\\map\\presentation\\mapview.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{29F1984A-85C3-494A-8B4B-13ABAFC107EC}|Science Potato.csproj|solutionrelative:scripts\\map\\presentation\\mapview.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{29F1984A-85C3-494A-8B4B-13ABAFC107EC}|Science Potato.csproj|d:\\godot\\science-potato\\scripts\\map\\presentation\\mapcellview.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{29F1984A-85C3-494A-8B4B-13ABAFC107EC}|Science Potato.csproj|solutionrelative:scripts\\map\\presentation\\mapcellview.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{29F1984A-85C3-494A-8B4B-13ABAFC107EC}|Science Potato.csproj|d:\\godot\\science-potato\\scripts\\map\\domain\\iposition.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{29F1984A-85C3-494A-8B4B-13ABAFC107EC}|Science Potato.csproj|solutionrelative:scripts\\map\\domain\\iposition.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{29F1984A-85C3-494A-8B4B-13ABAFC107EC}|Science Potato.csproj|d:\\godot\\science-potato\\scripts\\autoload\\servicecontainer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{29F1984A-85C3-494A-8B4B-13ABAFC107EC}|Science Potato.csproj|solutionrelative:scripts\\autoload\\servicecontainer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{29F1984A-85C3-494A-8B4B-13ABAFC107EC}|Science Potato.csproj|d:\\godot\\science-potato\\scripts\\map\\presentation\\devmapui.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{29F1984A-85C3-494A-8B4B-13ABAFC107EC}|Science Potato.csproj|solutionrelative:scripts\\map\\presentation\\devmapui.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{29F1984A-85C3-494A-8B4B-13ABAFC107EC}|Science Potato.csproj|d:\\godot\\science-potato\\scripts\\common\\infrastructure\\godotconfigservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{29F1984A-85C3-494A-8B4B-13ABAFC107EC}|Science Potato.csproj|solutionrelative:scripts\\common\\infrastructure\\godotconfigservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{29F1984A-85C3-494A-8B4B-13ABAFC107EC}|Science Potato.csproj|d:\\godot\\science-potato\\scripts\\map\\domain\\imapgenerator.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{29F1984A-85C3-494A-8B4B-13ABAFC107EC}|Science Potato.csproj|solutionrelative:scripts\\map\\domain\\imapgenerator.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{29F1984A-85C3-494A-8B4B-13ABAFC107EC}|Science Potato.csproj|d:\\godot\\science-potato\\scripts\\map\\domain\\imaprepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{29F1984A-85C3-494A-8B4B-13ABAFC107EC}|Science Potato.csproj|solutionrelative:scripts\\map\\domain\\imaprepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{29F1984A-85C3-494A-8B4B-13ABAFC107EC}|Science Potato.csproj|d:\\godot\\science-potato\\scripts\\map\\application\\mapgenerationservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{29F1984A-85C3-494A-8B4B-13ABAFC107EC}|Science Potato.csproj|solutionrelative:scripts\\map\\application\\mapgenerationservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{29F1984A-85C3-494A-8B4B-13ABAFC107EC}|Science Potato.csproj|d:\\godot\\science-potato\\scripts\\map\\infrastructure\\hexcubecellsave.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{29F1984A-85C3-494A-8B4B-13ABAFC107EC}|Science Potato.csproj|solutionrelative:scripts\\map\\infrastructure\\hexcubecellsave.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{29F1984A-85C3-494A-8B4B-13ABAFC107EC}|Science Potato.csproj|d:\\godot\\science-potato\\scripts\\map\\infrastructure\\mapsave.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{29F1984A-85C3-494A-8B4B-13ABAFC107EC}|Science Potato.csproj|solutionrelative:scripts\\map\\infrastructure\\mapsave.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{29F1984A-85C3-494A-8B4B-13ABAFC107EC}|Science Potato.csproj|d:\\godot\\science-potato\\scripts\\map\\domain\\mapcell.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{29F1984A-85C3-494A-8B4B-13ABAFC107EC}|Science Potato.csproj|solutionrelative:scripts\\map\\domain\\mapcell.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{29F1984A-85C3-494A-8B4B-13ABAFC107EC}|Science Potato.csproj|d:\\godot\\science-potato\\scripts\\map\\domain\\hexcubeposition.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{29F1984A-85C3-494A-8B4B-13ABAFC107EC}|Science Potato.csproj|solutionrelative:scripts\\map\\domain\\hexcubeposition.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{29F1984A-85C3-494A-8B4B-13ABAFC107EC}|Science Potato.csproj|d:\\godot\\science-potato\\scripts\\map\\infrastructure\\randomanchormapgenerator.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{29F1984A-85C3-494A-8B4B-13ABAFC107EC}|Science Potato.csproj|solutionrelative:scripts\\map\\infrastructure\\randomanchormapgenerator.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{29F1984A-85C3-494A-8B4B-13ABAFC107EC}|Science Potato.csproj|d:\\godot\\science-potato\\scripts\\map\\application\\mapmodificationservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{29F1984A-85C3-494A-8B4B-13ABAFC107EC}|Science Potato.csproj|solutionrelative:scripts\\map\\application\\mapmodificationservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{29F1984A-85C3-494A-8B4B-13ABAFC107EC}|Science Potato.csproj|d:\\godot\\science-potato\\scripts\\map\\infrastructure\\terrainconfigresources.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{29F1984A-85C3-494A-8B4B-13ABAFC107EC}|Science Potato.csproj|solutionrelative:scripts\\map\\infrastructure\\terrainconfigresources.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 3,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{d84ee353-0bef-5a41-a649-8f89aca5d84d}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "MapView.cs",
+              "DocumentMoniker": "D:\\Godot\\science-potato\\Scripts\\Map\\Presentation\\MapView.cs",
+              "RelativeDocumentMoniker": "Scripts\\Map\\Presentation\\MapView.cs",
+              "ToolTip": "D:\\Godot\\science-potato\\Scripts\\Map\\Presentation\\MapView.cs",
+              "RelativeToolTip": "Scripts\\Map\\Presentation\\MapView.cs",
+              "ViewState": "AgIAACcAAAAAAAAAAAD4vy0AAAAhAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-16T10:27:09.352Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "MapCellView.cs",
+              "DocumentMoniker": "D:\\Godot\\science-potato\\Scripts\\Map\\Presentation\\MapCellView.cs",
+              "RelativeDocumentMoniker": "Scripts\\Map\\Presentation\\MapCellView.cs",
+              "ToolTip": "D:\\Godot\\science-potato\\Scripts\\Map\\Presentation\\MapCellView.cs",
+              "RelativeToolTip": "Scripts\\Map\\Presentation\\MapCellView.cs",
+              "ViewState": "AgIAABgAAAAAAAAAAAAAACsAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-16T10:28:39.108Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "GodotMapRepository.cs",
+              "DocumentMoniker": "D:\\Godot\\science-potato\\Scripts\\Map\\Infrastructure\\GodotMapRepository.cs",
+              "RelativeDocumentMoniker": "Scripts\\Map\\Infrastructure\\GodotMapRepository.cs",
+              "ToolTip": "D:\\Godot\\science-potato\\Scripts\\Map\\Infrastructure\\GodotMapRepository.cs",
+              "RelativeToolTip": "Scripts\\Map\\Infrastructure\\GodotMapRepository.cs",
+              "ViewState": "AgIAABgAAAAAAAAAAAAAACQAAAArAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-16T12:58:29.585Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "MapQueryService.cs",
+              "DocumentMoniker": "D:\\Godot\\science-potato\\Scripts\\Map\\Application\\MapQueryService.cs",
+              "RelativeDocumentMoniker": "Scripts\\Map\\Application\\MapQueryService.cs",
+              "ToolTip": "D:\\Godot\\science-potato\\Scripts\\Map\\Application\\MapQueryService.cs",
+              "RelativeToolTip": "Scripts\\Map\\Application\\MapQueryService.cs",
+              "ViewState": "AgIAAAUAAAAAAAAAAAAAwBYAAAAmAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-16T13:52:23.459Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "DevMapUi.cs",
+              "DocumentMoniker": "D:\\Godot\\science-potato\\Scripts\\Map\\Presentation\\DevMapUi.cs",
+              "RelativeDocumentMoniker": "Scripts\\Map\\Presentation\\DevMapUi.cs",
+              "ToolTip": "D:\\Godot\\science-potato\\Scripts\\Map\\Presentation\\DevMapUi.cs",
+              "RelativeToolTip": "Scripts\\Map\\Presentation\\DevMapUi.cs",
+              "ViewState": "AgIAABUAAAAAAAAAAAAAACQAAAAZAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-16T18:23:45.67Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "IMapGenerator.cs",
+              "DocumentMoniker": "D:\\Godot\\science-potato\\Scripts\\Map\\Domain\\IMapGenerator.cs",
+              "RelativeDocumentMoniker": "Scripts\\Map\\Domain\\IMapGenerator.cs",
+              "ToolTip": "D:\\Godot\\science-potato\\Scripts\\Map\\Domain\\IMapGenerator.cs",
+              "RelativeToolTip": "Scripts\\Map\\Domain\\IMapGenerator.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAADwvwoAAAACAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-16T13:14:25.822Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 17,
+              "Title": "MapModificationService.cs",
+              "DocumentMoniker": "D:\\Godot\\science-potato\\Scripts\\Map\\Application\\MapModificationService.cs",
+              "RelativeDocumentMoniker": "Scripts\\Map\\Application\\MapModificationService.cs",
+              "ToolTip": "D:\\Godot\\science-potato\\Scripts\\Map\\Application\\MapModificationService.cs",
+              "RelativeToolTip": "Scripts\\Map\\Application\\MapModificationService.cs",
+              "ViewState": "AgIAAA0AAAAAAAAAAAAAwBwAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-16T14:14:56.317Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 18,
+              "Title": "TerrainConfigResources.cs",
+              "DocumentMoniker": "D:\\Godot\\science-potato\\Scripts\\Map\\Infrastructure\\TerrainConfigResources.cs",
+              "RelativeDocumentMoniker": "Scripts\\Map\\Infrastructure\\TerrainConfigResources.cs",
+              "ToolTip": "D:\\Godot\\science-potato\\Scripts\\Map\\Infrastructure\\TerrainConfigResources.cs",
+              "RelativeToolTip": "Scripts\\Map\\Infrastructure\\TerrainConfigResources.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAiwBAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-16T15:15:15.336Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 13,
+              "Title": "MapSave.cs",
+              "DocumentMoniker": "D:\\Godot\\science-potato\\Scripts\\Map\\Infrastructure\\MapSave.cs",
+              "RelativeDocumentMoniker": "Scripts\\Map\\Infrastructure\\MapSave.cs",
+              "ToolTip": "D:\\Godot\\science-potato\\Scripts\\Map\\Infrastructure\\MapSave.cs",
+              "RelativeToolTip": "Scripts\\Map\\Infrastructure\\MapSave.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAoAAAAZAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-16T13:56:51.672Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 16,
+              "Title": "RandomAnchorMapGenerator.cs",
+              "DocumentMoniker": "D:\\Godot\\science-potato\\Scripts\\Map\\Infrastructure\\RandomAnchorMapGenerator.cs",
+              "RelativeDocumentMoniker": "Scripts\\Map\\Infrastructure\\RandomAnchorMapGenerator.cs",
+              "ToolTip": "D:\\Godot\\science-potato\\Scripts\\Map\\Infrastructure\\RandomAnchorMapGenerator.cs",
+              "RelativeToolTip": "Scripts\\Map\\Infrastructure\\RandomAnchorMapGenerator.cs",
+              "ViewState": "AgIAAIYAAAAAAAAAAAAAAI4AAAANAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-16T13:14:04.324Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 14,
+              "Title": "MapCell.cs",
+              "DocumentMoniker": "D:\\Godot\\science-potato\\Scripts\\Map\\Domain\\MapCell.cs",
+              "RelativeDocumentMoniker": "Scripts\\Map\\Domain\\MapCell.cs",
+              "ToolTip": "D:\\Godot\\science-potato\\Scripts\\Map\\Domain\\MapCell.cs",
+              "RelativeToolTip": "Scripts\\Map\\Domain\\MapCell.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-16T13:33:16.832Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "Map.cs",
+              "DocumentMoniker": "D:\\Godot\\science-potato\\Scripts\\Map\\Domain\\Map.cs",
+              "RelativeDocumentMoniker": "Scripts\\Map\\Domain\\Map.cs",
+              "ToolTip": "D:\\Godot\\science-potato\\Scripts\\Map\\Domain\\Map.cs",
+              "RelativeToolTip": "Scripts\\Map\\Domain\\Map.cs",
+              "ViewState": "AgIAAAMAAAAAAAAAAAD4vy8AAAAbAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-16T10:32:36.044Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 15,
+              "Title": "HexCubePosition.cs",
+              "DocumentMoniker": "D:\\Godot\\science-potato\\Scripts\\Map\\Domain\\HexCubePosition.cs",
+              "RelativeDocumentMoniker": "Scripts\\Map\\Domain\\HexCubePosition.cs",
+              "ToolTip": "D:\\Godot\\science-potato\\Scripts\\Map\\Domain\\HexCubePosition.cs",
+              "RelativeToolTip": "Scripts\\Map\\Domain\\HexCubePosition.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABEAAAAEAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-16T12:59:36.61Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "ServiceContainer.cs",
+              "DocumentMoniker": "D:\\Godot\\science-potato\\Scripts\\Autoload\\ServiceContainer.cs",
+              "RelativeDocumentMoniker": "Scripts\\Autoload\\ServiceContainer.cs",
+              "ToolTip": "D:\\Godot\\science-potato\\Scripts\\Autoload\\ServiceContainer.cs",
+              "RelativeToolTip": "Scripts\\Autoload\\ServiceContainer.cs",
+              "ViewState": "AgIAAA8AAAAAAAAAAAAAACAAAAAwAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-16T18:58:41.993Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "IPosition.cs",
+              "DocumentMoniker": "D:\\Godot\\science-potato\\Scripts\\Map\\Domain\\IPosition.cs",
+              "RelativeDocumentMoniker": "Scripts\\Map\\Domain\\IPosition.cs",
+              "ToolTip": "D:\\Godot\\science-potato\\Scripts\\Map\\Domain\\IPosition.cs",
+              "RelativeToolTip": "Scripts\\Map\\Domain\\IPosition.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAADwvw8AAAAjAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-16T17:18:32.003Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 11,
+              "Title": "MapGenerationService.cs",
+              "DocumentMoniker": "D:\\Godot\\science-potato\\Scripts\\Map\\Application\\MapGenerationService.cs",
+              "RelativeDocumentMoniker": "Scripts\\Map\\Application\\MapGenerationService.cs",
+              "ToolTip": "D:\\Godot\\science-potato\\Scripts\\Map\\Application\\MapGenerationService.cs",
+              "RelativeToolTip": "Scripts\\Map\\Application\\MapGenerationService.cs",
+              "ViewState": "AgIAAAcAAAAAAAAAAADwvx4AAAAFAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-16T18:15:29.742Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 12,
+              "Title": "HexCubeCellSave.cs",
+              "DocumentMoniker": "D:\\Godot\\science-potato\\Scripts\\Map\\Infrastructure\\HexCubeCellSave.cs",
+              "RelativeDocumentMoniker": "Scripts\\Map\\Infrastructure\\HexCubeCellSave.cs",
+              "ToolTip": "D:\\Godot\\science-potato\\Scripts\\Map\\Infrastructure\\HexCubeCellSave.cs",
+              "RelativeToolTip": "Scripts\\Map\\Infrastructure\\HexCubeCellSave.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAQAAAASAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-16T13:56:46.128Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "IMapRepository.cs",
+              "DocumentMoniker": "D:\\Godot\\science-potato\\Scripts\\Map\\Domain\\IMapRepository.cs",
+              "RelativeDocumentMoniker": "Scripts\\Map\\Domain\\IMapRepository.cs",
+              "ToolTip": "D:\\Godot\\science-potato\\Scripts\\Map\\Domain\\IMapRepository.cs",
+              "RelativeToolTip": "Scripts\\Map\\Domain\\IMapRepository.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAADwvw0AAAAlAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-16T13:01:22.284Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "GodotConfigService.cs",
+              "DocumentMoniker": "D:\\Godot\\science-potato\\Scripts\\Common\\Infrastructure\\GodotConfigService.cs",
+              "RelativeDocumentMoniker": "Scripts\\Common\\Infrastructure\\GodotConfigService.cs",
+              "ToolTip": "D:\\Godot\\science-potato\\Scripts\\Common\\Infrastructure\\GodotConfigService.cs",
+              "RelativeToolTip": "Scripts\\Common\\Infrastructure\\GodotConfigService.cs",
+              "ViewState": "AgIAAAwAAAAAAAAAAAAAABcAAAAfAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-16T13:16:58.654Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
