@@ -1,0 +1,7 @@
+[gd_resource type="Resource" format=3 uid="uid://djta1h0y1n3hk"]
+
+[ext_resource type="Script" uid="uid://cpnermam3870e" path="res://Scripts/Map/Infrastructure/GeneratorConfigResources.cs" id="1_5wr8y"]
+
+[resource]
+script = ExtResource("1_5wr8y")
+Density = 4.0

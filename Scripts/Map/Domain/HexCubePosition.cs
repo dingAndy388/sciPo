@@ -7,10 +7,11 @@ using System.Threading.Tasks;
 
 namespace SciencePotato.Scripts.Map.Domain
 {
-	public readonly struct HexCubePosition (int q, int e): IPosition
+	public struct HexCubePosition (int q, int r): IPosition
 	{
-		int q { get; } = q;
-		int r { get; } = e;
+		// Require Fix (readonly)
+		public int q { get; set; } = q;
+		public int r { get; set; } = r;
 
 		public int DistenceTo(IPosition target)
 		{
@@ -38,6 +39,15 @@ namespace SciencePotato.Scripts.Map.Domain
 		public IPosition Translate(Vector2 factor)
 		{
 			return new HexCubePosition((int)factor.X, (int)factor.Y);
+		}
+
+		public (int,int) ToCoordinate()
+		{
+			int parity = q & 1;
+			int col = q;
+			int row = r + (q-parity) / 2;
+
+			return (row, col);
 		}
 	}
 }

@@ -11,5 +11,7 @@ namespace SciencePotato.Scripts.Map.Domain
 		public void SaveMap(Map map);
 		public Map LoadMap(string path);
 		public void DeleteMap(Map map);
-	}
+		public IEnumerable<Map> ListMaps();
+
+    }
 }
