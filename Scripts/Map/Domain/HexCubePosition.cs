@@ -43,11 +43,7 @@ namespace SciencePotato.Scripts.Map.Domain
 
 		public (int,int) ToCoordinate()
 		{
-			int parity = q & 1;
-			int col = q;
-			int row = r + (q-parity) / 2;
-
-			return (row, col);
+			return (q,r);
 		}
 	}
 }

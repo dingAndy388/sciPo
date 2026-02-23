@@ -41,14 +41,22 @@ namespace SciencePotato.Scripts.Map.Presentation
 
         public void UpdateAllCells()
 		{
-            GD.Print(MapID);
-            GD.Print("Updating");
-			GD.Print(_mapQuery.GetAllCells(MapID).Count());	
-			_cells.Clear();
-
+			ClearAllCells();
 			foreach (var cell in _mapQuery.GetAllCells(MapID))
 			{
 				CreateCellView(cell.terrain, cell.position);
+			}
+		}
+
+		public void ClearAllCells()
+		{ 
+			_cells.Clear();
+			foreach (var child in GetChildren())
+			{
+				if (child.GetType() == typeof(MapCellView))
+				{
+					child.QueueFree();
+				}
 			}
 		}
 
@@ -67,15 +75,16 @@ namespace SciencePotato.Scripts.Map.Presentation
 			cell.SetPosition();
 			GD.Print(cell.Position);
 			cell.SetTerrain(terrain);
+			_cells[position] = cell;
+		}
+		public override void _Input(InputEvent @event)
+		{
+			if (@event is InputEventMouseMotion motion && Input.IsMouseButtonPressed(MouseButton.Right))
+			{
+				_camera.Position -= motion.Relative;
+			}
 		}
 
-		public override void _Input(InputEvent @event)
-        {
-            if (@event is InputEventMouseMotion motion && Input.IsMouseButtonPressed(MouseButton.Right))
-            {
-                _camera.Position -= motion.Relative;
-            }
-        }
-    }
+	}
 }
 

@@ -14,10 +14,13 @@ public partial class DevMapUi : CanvasLayer
     private MapGenerationService _generator;
 	private MapView _mapView;
 
+	private Camera2D _camera;
+
 	// Called when the node enters the scene tree for the first time.
 	public override void _Ready()
 	{
-		_mapView = GetNode<MapView>("MapView");
+		_mapView = GetParent<MapView>();
+
 		_btn = GetNode<Button>("BoxContainer/GenerateBtn");
 		_seed = GetNode<SpinBox>("BoxContainer/SeedInput");
 		_id = GetNode<LineEdit>("BoxContainer/IDInput");
@@ -36,10 +39,5 @@ public partial class DevMapUi : CanvasLayer
 		_mapView.MapID = _id.Text;
 		_mapView.UpdateAllCells();
 		GD.Print("Done");
-	}
-
-	// Called every frame. 'delta' is the elapsed time since the previous frame.
-	public override void _Process(double delta)
-	{
 	}
 }

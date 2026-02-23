@@ -50,7 +50,10 @@ namespace SciencePotato.Scripts.Map.Domain
 
 		public IEnumerable<MapCell> GetAllCells()
 		{
-			GD.Print("value:"+_cells.Values.Count);
+			foreach(IPosition cell in _cells.Keys)
+			{
+				GD.Print(cell.ToCoordinate());
+			}
 			return _cells.Values;
 		}
 

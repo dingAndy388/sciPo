@@ -155,7 +155,7 @@ namespace SciencePotato.Scripts.Map.Infrastructure
             {
                 for (int j = 0; j < height; j++)
                 {
-                    IPosition pos = new HexCubePosition(i - width / 2, j - height / 2);
+                    IPosition pos = new HexCubePosition(i, j);
                     map.SetCell(pos, new MapCell(pos));
                     map.SetTerrain(pos, _terrainConfig.First());
                 }

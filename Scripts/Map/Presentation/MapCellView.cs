@@ -11,8 +11,8 @@ public partial class MapCellView : Node2D
 
 
     // Temporary fixed constant
-    public const int height = 100;
-    public const int width = 115;
+    public const float height = 366;
+    public const float width = 423;
 
     private readonly string textureDir = "res://Texture/Terrain/";
 
@@ -36,8 +36,9 @@ public partial class MapCellView : Node2D
     public void SetPosition()
     {
         // Set to the right Position with correct seperation
-        int row = CellPosition.ToCoordinate().Item1;
-        int col = CellPosition.ToCoordinate().Item2;
-        base.Position = new Vector2(row * width*3/4, col * height+(row % 2)*height/2);
-    }
+        int q = CellPosition.ToCoordinate().Item1;
+        int r = CellPosition.ToCoordinate().Item2;
+        base.Position = new Vector2(height / 2 * r + height * q,r * width*3/4);
+		GD.Print($"{Position},{CellPosition.ToCoordinate()}");
+	}
 }
