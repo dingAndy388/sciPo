@@ -34,13 +34,13 @@ namespace SciencePotato.Scripts.Map.Infrastructure
 
             MapSave mapSave = JsonSerializer.Deserialize<MapSave>(json);
 
-            GD.Print("json:"+ mapSave.cells.Count);
+            GD.Print("Map Load json:"+ mapSave.cells.Count);
 
             Domain.Map map = new Domain.Map(mapSave.seed, mapSave.width, mapSave.height, mapSave.ID);
 
             foreach (HexCubeCellSave cellSave in mapSave.cells)
             {
-                GD.Print("Position: " + cellSave.position.q + " , " +cellSave.position.r);
+                GD.Print("Loaded Map Position: " + cellSave.position.q + " , " +cellSave.position.r);
                 MapCell cell = new MapCell(cellSave.position);
                 cell.SetTerrain(_configLoader.Load<ITerrainData>($"res://Config/Terrains/{cellSave.terrain}.tres"));
 
@@ -55,7 +55,7 @@ namespace SciencePotato.Scripts.Map.Infrastructure
             string path = $"{_mapDir}{map.ID}.json";
 
             GD.Print("saving");
-            GD.Print(map.GetAllCells().Count());
+            GD.Print($"Saved Cell Num: {map.GetAllCells().Count()}");
 
             MapSave mapSave = new MapSave();
             mapSave.ID = map.ID;

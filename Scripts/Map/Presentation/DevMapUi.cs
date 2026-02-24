@@ -32,12 +32,12 @@ public partial class DevMapUi : CanvasLayer
 
 	private void OnGenerateBtnPressed()
 	{
-		GD.Print("Pressed");
+		GD.Print("DevUI: Pressed");
 
-		GD.Print("Generating");
-		_generator.GenerateBlank((int)_seed.Value, (int)_height.Value, (int)_width.Value, _id.Text);
+		GD.Print("DevUI: Generating");
+		_generator.GenerateMap((int)_seed.Value, (int)_width.Value, (int)_height.Value, _id.Text);
 		_mapView.MapID = _id.Text;
 		_mapView.UpdateAllCells();
-		GD.Print("Done");
+		GD.Print("DevUI: Done");
 	}
 }

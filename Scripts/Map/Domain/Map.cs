@@ -38,6 +38,8 @@ namespace SciencePotato.Scripts.Map.Domain
 
 		public void SetTerrain(IPosition position, ITerrainData terrain)
 		{
+			if (!_cells.TryGetValue(position, out _))
+				return;
 			ITerrainData old = _cells[position].terrain;
 			_cells[position].SetTerrain(terrain);
 			CellTerrainChanged?.Invoke(new CellTerrainChangedEvent(position,old,terrain));
@@ -50,15 +52,13 @@ namespace SciencePotato.Scripts.Map.Domain
 
 		public IEnumerable<MapCell> GetAllCells()
 		{
-			foreach(IPosition cell in _cells.Keys)
-			{
-				GD.Print(cell.ToCoordinate());
-			}
 			return _cells.Values;
 		}
 
 		public ITerrainData GetTerrain(IPosition position)
 		{
+			if (!_cells.TryGetValue(position, out _))
+				return null;
 			return _cells[position].terrain;
 		}
 	}

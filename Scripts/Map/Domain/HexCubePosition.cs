@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Numerics;
 using System.Text;
@@ -45,5 +46,14 @@ namespace SciencePotato.Scripts.Map.Domain
 		{
 			return (q,r);
 		}
+
+		public override bool Equals(object? obj)
+		{
+			return obj is IPosition pos && pos.ToCoordinate() == ToCoordinate();
+		}
+
+		public override int GetHashCode() => HashCode.Combine(q, r);
+		public static bool operator ==(HexCubePosition left, HexCubePosition right) => left.Equals(right);
+		public static bool operator !=(HexCubePosition left, HexCubePosition right) => !left.Equals(right);
 	}
 }

@@ -30,7 +30,6 @@ public partial class MapCellView : Node2D
         // Chnage Sprite Texture
         Texture2D texture = GD.Load<Texture2D>($"{textureDir}{terrain.Id}.png");
         _sprite.Texture = texture;
-        GD.Print(_sprite.Texture);
     }
 
     public void SetPosition()
@@ -38,7 +37,6 @@ public partial class MapCellView : Node2D
         // Set to the right Position with correct seperation
         int q = CellPosition.ToCoordinate().Item1;
         int r = CellPosition.ToCoordinate().Item2;
-        base.Position = new Vector2(height / 2 * r + height * q,r * width*3/4);
-		GD.Print($"{Position},{CellPosition.ToCoordinate()}");
+        base.Position = new Vector2(height / 2 * r - height * (float)Math.Ceiling((double)r*0.5d)+ height * q,r * width*3/4);
 	}
 }

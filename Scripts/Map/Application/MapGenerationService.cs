@@ -13,18 +13,18 @@ namespace SciencePotato.Scripts.Map.Application
         private IMapGenerator _mapGenerator = generator;
         private IMapRepository _repository = repo;
 
-        public void MapGenerate(int seed, int height, int width, string Id)
+        public void GenerateMap(int seed, int width, int height, string Id)
         {
-            Domain.Map map = _mapGenerator.Generate(seed, height, width, Id);
+            Domain.Map map = _mapGenerator.Generate(width, height, seed, Id);
             
             _repository.SaveMap(map);
         }
 
-        public void GenerateBlank(int seed, int height, int width, string Id)
+        public void GenerateBlank(int seed, int width, int height, string Id)
         {
             if(_mapGenerator is RandomAnchorMapGenerator gen)
             {
-                Domain.Map map = gen.GetBlankMap(height, width, seed, Id);
+                Domain.Map map = gen.GetBlankMap(width, height, seed, Id);
                 _repository.SaveMap(map);
             }
         }

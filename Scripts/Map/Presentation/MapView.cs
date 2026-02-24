@@ -13,7 +13,6 @@ namespace SciencePotato.Scripts.Map.Presentation
 		private MapModificationService _modificationService;
 
 		private Node2D _cellContainer;
-		private Camera2D _camera;
 
 		private Dictionary<IPosition, MapCellView> _cells;
 
@@ -22,9 +21,7 @@ namespace SciencePotato.Scripts.Map.Presentation
 
 		public override void _Ready()
 		{
-			GD.Print("run");
 			_cellContainer = GetNode<Node2D>("MapCells");
-			_camera = GetNode<Camera2D>("Camera2D");
 
 			_mapQuery = ServiceContainer.Instance.MapQuery;
 			_modificationService = ServiceContainer.Instance.MapMod;
@@ -68,21 +65,13 @@ namespace SciencePotato.Scripts.Map.Presentation
 
         public void CreateCellView(ITerrainData terrain,IPosition position)
 		{
-			GD.Print("instantiated");
 			MapCellView cell = CellScene.Instantiate<MapCellView>();
 			AddChild(cell);
 			cell.CellPosition = position;
 			cell.SetPosition();
-			GD.Print(cell.Position);
+			GD.Print($"MapView: instantiated cell at {cell.Position}");
 			cell.SetTerrain(terrain);
 			_cells[position] = cell;
-		}
-		public override void _Input(InputEvent @event)
-		{
-			if (@event is InputEventMouseMotion motion && Input.IsMouseButtonPressed(MouseButton.Right))
-			{
-				_camera.Position -= motion.Relative;
-			}
 		}
 
 	}
