@@ -30,7 +30,7 @@ public partial class ServiceContainer : Node
 	{
 		Instance = this;
 		_configLoader = new GodotConfigService();
-		_mapGenerator = new RandomAnchorMapGenerator("res://Config/Terrains", "res://Config/Generator", _configLoader);
+		_mapGenerator = new VoronoiMapGenerator("res://Config/Terrains", "res://Config/Generator", _configLoader);
 		_mapRepository = new GodotMapRepository();
 
 		MapQuery = new MapQueryService(_mapRepository);

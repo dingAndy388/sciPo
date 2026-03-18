@@ -1,4 +1,3 @@
-using Godot;
 using SciencePotato.Scripts.Common.Domain;
 using SciencePotato.Scripts.Common.Infrastructure;
 using SciencePotato.Scripts.Map.Domain;
@@ -25,16 +24,14 @@ namespace SciencePotato.Scripts.Map.Infrastructure
 
 		public Domain.Map Generate(int width, int height, int seed, string Id)
 		{
-			GD.Print("Generator: Start Generate");
 			// reload config
 			_terrainConfig = _config.LoadAll<ITerrainData>(terrainConfigDir);
 			_mapGeneratorConfig = _config.Load<IMapGeneratorConfig>($"{generatorConfigPath}/Generator.tres");
 
 			// generate blank map
 			Domain.Map map = GetBlankMap(width, height, seed, Id);
-			GD.Print("Generator: BlankCreated");
+
 			// distribute terrains
-			GD.Print("Generator: Distributing");
 			map = DistributeTerrain(map, seed);
 			return map;
 		}
@@ -50,7 +47,7 @@ namespace SciencePotato.Scripts.Map.Infrastructure
 			int area = x * y;
 
 			// calculate the number of anchors
-			int nAnchor = Math.Clamp((int)_random.NextGaussian(_mapGeneratorConfig.Density / 100 * area, _mapGeneratorConfig.Density / 100 * 0.2 * area), area / 100, area / 10);
+			int nAnchor = Math.Clamp((int)_random.NextGaussian(_mapGeneratorConfig.Density / 100 * area, _mapGeneratorConfig.Density / 100 * 0.2f * area), area / 100, area / 10);
 
 			HashSet<IPosition> validCells = new(x * y);
 			for (int i = 0; i < x; i++)
@@ -67,9 +64,14 @@ namespace SciencePotato.Scripts.Map.Infrastructure
 				int rx = _random.Next(0, x);
 				int ry = _random.Next(0, y);
 				IPosition pos = new HexCubePosition(rx, ry);
+				foreach (IPosition p in anchors)
+				{
+					if (pos.DistenceTo(p) < 2)
+						continue;
+				}
 
 				// get weights
-				Dictionary<ITerrainData, double> terrainDis = _terrainConfig.ToDictionary(t => t, t => t.Weight);
+				Dictionary<ITerrainData, float> terrainDis = _terrainConfig.ToDictionary(t => t, t => t.Weight);
 
 				// pick Terrain
 				ITerrainData pickedTerrain = _random.WeightedPick<ITerrainData>(terrainDis.Keys, terrainDis.Values);
@@ -97,17 +99,12 @@ namespace SciencePotato.Scripts.Map.Infrastructure
 				}
 			}
 
-			GD.Print($"Filled: {filled}");
-
 			return map;
 		}
 
-		public Domain.Map GetBlankMap(int width, int height, int seed, string Id)
+		private Domain.Map GetBlankMap(int width, int height, int seed, string Id)
 		{
 			Domain.Map map = new Domain.Map(seed, width, height, Id);
-
-			_terrainConfig = _config.LoadAll<ITerrainData>(terrainConfigDir);
-
 
 			for (int i = 0; i < width; i++)
 			{

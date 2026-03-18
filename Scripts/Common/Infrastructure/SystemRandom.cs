@@ -23,35 +23,35 @@ namespace SciencePotato.Scripts.Common.Infrastructure
 			return random.Next();
 		}
 
-		public double NextDouble()
+		public float NextFloat()
 		{
-			return random.NextDouble();
+			return random.NextSingle();
 		}
 
-		public double NextGaussian(double mean, double std)
+		public float NextGaussian(float mean, float std)
 		{
-			double u1 = 1d - random.NextDouble();
-			double u2 = 1d - random.NextDouble();
+			float u1 = 1f - random.NextSingle();
+			float u2 = 1f - random.NextSingle();
 
-			double z = Math.Sqrt(-2 * Math.Log(u1) * Math.Cos(2 * Math.PI * u2));
+			float z = (float)Math.Sqrt(-2 * Math.Log(u1) * Math.Cos(2 * Math.PI * u2));
 
 			return mean + std * z;
 		}
 
-		public bool ProbCodition(double p)
+		public bool ProbCodition(float p)
 		{
-			return NextDouble()<p;
+			return NextFloat()<p;
 		}
 
-		public T WeightedPick<T>(IEnumerable<T> values, IEnumerable<double> weights)
+		public T WeightedPick<T>(IEnumerable<T> values, IEnumerable<float> weights)
 		{
-			double sum = 0;
-			foreach (double i in weights)
+			float sum = 0;
+			foreach (float i in weights)
 			{
 				sum += i;
 			}
-			double rd = NextDouble()*sum;
-			double c = 0;
+			float rd = NextFloat()*sum;
+			float c = 0;
 			for (int i = 0; i<weights.Count();i++)
 			{
 				c += weights.ElementAt(i);

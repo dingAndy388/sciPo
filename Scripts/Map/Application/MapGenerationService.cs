@@ -19,14 +19,5 @@ namespace SciencePotato.Scripts.Map.Application
             
             _repository.SaveMap(map);
         }
-
-        public void GenerateBlank(int seed, int width, int height, string Id)
-        {
-            if(_mapGenerator is RandomAnchorMapGenerator gen)
-            {
-                Domain.Map map = gen.GetBlankMap(width, height, seed, Id);
-                _repository.SaveMap(map);
-            }
-        }
     }
 }
