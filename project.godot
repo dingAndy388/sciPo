@@ -11,8 +11,22 @@ config_version=5
 [application]
 
 config/name="Science Potato"
+run/main_scene="uid://bb7m1q2702kv2"
 config/features=PackedStringArray("4.6", "C#", "Forward Plus")
 config/icon="res://icon.svg"
+
+[autoload]
+
+ServiceContainer="*uid://dx3s6cqq8vurd"
+
+[debug]
+
+settings/stdout/print_fps=true
+settings/stdout/verbose_stdout=true
+file_logging/enable_file_logging=true
+settings/gdscript/max_call_stack=2047
+settings/gdscript/always_track_call_stacks=true
+settings/gdscript/always_track_local_variables=true
 
 [dotnet]
 
@@ -22,6 +36,19 @@ project/assembly_name="Science Potato"
 
 version_control/plugin_name="GitPlugin"
 version_control/autoload_on_startup=true
+
+[input]
+
+zoom_in={
+"deadzone": 0.2,
+"events": [Object(InputEventMouseButton,"resource_local_to_scene":false,"resource_name":"","device":-1,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"button_mask":8,"position":Vector2(571, 39),"global_position":Vector2(585, 112),"factor":1.0,"button_index":4,"canceled":false,"pressed":true,"double_click":false,"script":null)
+]
+}
+zoom_out={
+"deadzone": 0.2,
+"events": [Object(InputEventMouseButton,"resource_local_to_scene":false,"resource_name":"","device":-1,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"button_mask":16,"position":Vector2(472, 29),"global_position":Vector2(486, 102),"factor":1.0,"button_index":5,"canceled":false,"pressed":true,"double_click":false,"script":null)
+]
+}
 
 [physics]
 

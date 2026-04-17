@@ -10,9 +10,9 @@ namespace SciencePotato.Scripts.Common.Domain
 	{
 		int Next(int max, int min);
 		int Next();
-		double NextGaussian(double mean, double std);
-		double NextDouble();
-		bool ProbCodition(double p);
-		T WeightedPick<T>(IEnumerable<T> values, IEnumerable<double> weights);
+		float NextGaussian(float mean, float std);
+		float NextFloat();
+		bool ProbCodition(float p);
+		T WeightedPick<T>(IEnumerable<T> values, IEnumerable<float> weights);
 	}
 }

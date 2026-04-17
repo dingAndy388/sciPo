@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Numerics;
 using System.Text;
@@ -7,10 +8,11 @@ using System.Threading.Tasks;
 
 namespace SciencePotato.Scripts.Map.Domain
 {
-	public readonly struct HexCubePosition (int q, int e): IPosition
+	public struct HexCubePosition (int q, int r): IPosition
 	{
-		int q { get; } = q;
-		int r { get; } = e;
+		// Require Fix (readonly)
+		public int q { get; set; } = q;
+		public int r { get; set; } = r;
 
 		public int DistenceTo(IPosition target)
 		{
@@ -39,5 +41,19 @@ namespace SciencePotato.Scripts.Map.Domain
 		{
 			return new HexCubePosition((int)factor.X, (int)factor.Y);
 		}
+
+		public (int,int) ToCoordinate()
+		{
+			return (q,r);
+		}
+
+		public override bool Equals(object? obj)
+		{
+			return obj is IPosition pos && pos.ToCoordinate() == ToCoordinate();
+		}
+
+		public override int GetHashCode() => HashCode.Combine(q, r);
+		public static bool operator ==(HexCubePosition left, HexCubePosition right) => left.Equals(right);
+		public static bool operator !=(HexCubePosition left, HexCubePosition right) => !left.Equals(right);
 	}
 }

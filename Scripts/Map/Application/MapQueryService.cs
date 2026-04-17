@@ -1,3 +1,4 @@
+using GodotPlugins.Game;
 using SciencePotato.Scripts.Map.Domain;
 using System;
 using System.Collections.Generic;
@@ -8,35 +9,18 @@ using System.Threading.Tasks;
 
 namespace SciencePotato.Scripts.Map.Application
 {
-	public class MapQueryService()
+	public class MapQueryService(IMapRepository mapRepo)
 	{
-		// TODO
-		// private IMapRepository _mapRepo;
-		// Load unimplemented
+        private IMapRepository _mapRepo = mapRepo;
 
-		public MapCell GetMapCell(Domain.Map map, IPosition position)
+		public MapCell GetMapCell(string MapID, IPosition position)
 		{
-			return map.GetCell(position);
+			return _mapRepo.LoadMap(MapID).GetCell(position);
 		}
 
-		public IEnumerable<MapCell> GetAllCells (Domain.Map map)
-		{
-			return map.GetAllCells();
-		}
-
-		public Dictionary<ResourcesType, int> GetResourcesDict(Domain.Map map,IPosition position)
-		{
-			return map.GetResourcesDict(position);
-		}
-
-		public int GetResourcesAmount(Domain.Map map, IPosition position, ResourcesType resource)
-		{
-			var dict = map.GetResourcesDict(position);
-			if (dict.TryGetValue(resource, out int value))
-			{
-				return value;
-			}
-			return 0;
+		public IEnumerable<MapCell> GetAllCells (string MapID)
+        {
+			return _mapRepo.LoadMap(MapID).GetAllCells();
 		}
 	}
 }

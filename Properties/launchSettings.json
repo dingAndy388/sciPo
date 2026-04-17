@@ -1,0 +1,14 @@
+{
+  "profiles": {
+    "Science Potato": {
+      "commandName": "Project"
+    },
+    "godot": {
+      "commandName": "Executable",
+      "executablePath": "D:\\Godot_v4.6-stable_mono_win64\\Godot_v4.6-stable_mono_win64\\Godot_v4.6-stable_mono_win64.exe",
+      "commandLineArgs": "--path",
+      "workingDirectory": ".",
+      "nativeDebugging": true
+    }
+  }
+}

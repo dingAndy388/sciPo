@@ -9,10 +9,10 @@ using System.Threading.Tasks;
 namespace SciencePotato.Scripts.Map.Infrastructure
 {
 	[GlobalClass, Tool]
-	public partial class TerrainConfigResources : Resource, ITerrainData 
+	public partial class TerrainConfigResources : Resource, ITerrainData
 	{
 		[Export] public string Id { get; set; }
 		[Export] public string Name { get; set; }
-		[Export] public double Weight { get; set; } 
+		[Export] public float Weight { get; set; }
 	}
 }

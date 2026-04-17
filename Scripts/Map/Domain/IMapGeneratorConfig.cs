@@ -8,6 +8,6 @@ namespace SciencePotato.Scripts.Map.Domain
 {
 	public interface IMapGeneratorConfig
 	{
-		double Density { get; set; }
+		float Density { get; set; }
 	}
 }

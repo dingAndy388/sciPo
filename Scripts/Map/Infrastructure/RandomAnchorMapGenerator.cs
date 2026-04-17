@@ -4,9 +4,6 @@ using SciencePotato.Scripts.Map.Domain;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SciencePotato.Scripts.Map.Infrastructure
 {
@@ -18,20 +15,22 @@ namespace SciencePotato.Scripts.Map.Infrastructure
 		private IMapGeneratorConfig _mapGeneratorConfig;
 		private string terrainConfigDir, generatorConfigPath;
 
-		public RandomAnchorMapGenerator(string terrainConfigDir, string generatorConfigPath)
+		public RandomAnchorMapGenerator(string terrainConfigDir, string generatorConfigPath, IConfigLoader config)
 		{
+			this._config = config;
 			this.terrainConfigDir = terrainConfigDir;
 			this.generatorConfigPath = generatorConfigPath;
 		}
 
-		public Domain.Map Generate(int width, int height, int seed)
+		public Domain.Map Generate(int width, int height, int seed, string Id)
 		{
 			// reload config
 			_terrainConfig = _config.LoadAll<ITerrainData>(terrainConfigDir);
-			_mapGeneratorConfig = _config.Load<IMapGeneratorConfig>(generatorConfigPath);
+			_mapGeneratorConfig = _config.Load<IMapGeneratorConfig>($"{generatorConfigPath}/Generator.tres");
 
 			// generate blank map
-			Domain.Map map = GetBlankMap(width, height, seed);
+			Domain.Map map = GetBlankMap(width, height, seed, Id);
+
 			// distribute terrains
 			map = DistributeTerrain(map, seed);
 			return map;
@@ -48,106 +47,70 @@ namespace SciencePotato.Scripts.Map.Infrastructure
 			int area = x * y;
 
 			// calculate the number of anchors
-			int nAnchor = (int)_random.NextGaussian(_mapGeneratorConfig.Density / 100 * area, _mapGeneratorConfig.Density / 100 * 0.2 * area);
+			int nAnchor = Math.Clamp((int)_random.NextGaussian(_mapGeneratorConfig.Density / 100 * area, _mapGeneratorConfig.Density / 100 * 0.2f * area), area / 100, area / 10);
 
-			List<IPosition> anchors = [];
-
-			// set anchor terrain
-			while (anchors.Count < nAnchor)
-			{
-				// pick random position
-				int rx = _random.Next(-x / 2, x / 2);
-				int ry = _random.Next(-y / 2, y / 2);
-				IPosition pos = new HexCubePosition(rx, ry);
-
-				// get weights
-				Dictionary<ITerrainData, double> terrainDis = [];
-				foreach (ITerrainData terrain in _terrainConfig)
-				{
-					terrainDis[terrain] = terrain.Weight;
-				}
-
-				// pick terrain
-				ITerrainData pickedTerrain = _random.WeightedPick<ITerrainData>(terrainDis.Keys, terrainDis.Values);
-
-				// set terrain
-				map.SetTerrain(pos, pickedTerrain);	
-
-				// add to list
-				if (!anchors.Contains(pos))
-				{
-					anchors.Add(pos);
-				}
-			}
-
-			// get mapcell dict
-			Dictionary<IPosition, ITerrainData> cellList = [];
+			HashSet<IPosition> validCells = new(x * y);
 			for (int i = 0; i < x; i++)
-			{
 				for (int j = 0; j < y; j++)
 				{
-					IPosition pos = new HexCubePosition(i - x / 2, j - y / 2);
-					cellList[pos] = map.GetTerrain(pos);
+					validCells.Add(new HexCubePosition(i, j));
 				}
-			}
 
-			// terrain spread
-			bool spreaded = false;
-			List<IPosition> spreadingcell = anchors;
-
-			while (!spreaded)
+			HashSet<IPosition> anchors = new HashSet<IPosition>(nAnchor);
+			// set anchor Terrain
+			while (anchors.Count < nAnchor)
 			{
-				foreach (IPosition cell in spreadingcell)
+				// pick random CellPosition
+				int rx = _random.Next(0, x);
+				int ry = _random.Next(0, y);
+				IPosition pos = new HexCubePosition(rx, ry);
+				foreach (IPosition p in anchors)
 				{
-					spreaded = true;
-					// check if there is a terrain
-					if (cellList[cell] != null)
-					{
-						// take all neighbor cells
-						List<IPosition> neighbor = (List<IPosition>)cell.GetNeighbor();
-						// for every neighbor cells, set terrain to the same as spreadingcell if there is no terrain yet
-						foreach (IPosition neighborCell in neighbor)
-						{
-							// check boundaries
-							if (cellList.ContainsKey(neighborCell))
-							{
-								// check if there was already a terrain
-								if (cellList[neighborCell] == null)
-								{
-									// set to the same as srpeading cell
-									cellList[neighborCell] = cellList[cell];
-									// add the spreaded cell to spreading cell for next spread
-									spreadingcell.Add(neighborCell);
-									// remove the already finished cell
-									spreadingcell.Remove(cell);
-								}
-							}
-							else
-								neighbor.Remove(neighborCell);
-						}
-					}
-					else
-						spreaded = false;
+					if (pos.DistenceTo(p) < 2)
+						continue;
 				}
+
+				// get weights
+				Dictionary<ITerrainData, float> terrainDis = _terrainConfig.ToDictionary(t => t, t => t.Weight);
+
+				// pick Terrain
+				ITerrainData pickedTerrain = _random.WeightedPick<ITerrainData>(terrainDis.Keys, terrainDis.Values);
+
+				// set Terrain
+				map.SetTerrain(pos, pickedTerrain);
+				anchors.Add(pos);
 			}
 
-			// update terrain to map
-			foreach (IPosition pos in cellList.Keys)
+			// Terrain spread
+			Queue<IPosition> queue = new Queue<IPosition>(anchors);
+			int filled = nAnchor;
+			while (queue.Count > 0)
 			{
-				map.SetTerrain(pos, cellList[pos]);
+				IPosition current = queue.Dequeue();
+				ITerrainData terrainn = map.GetTerrain(current);
+				foreach (IPosition neighbor in current.GetNeighbor())
+				{
+					if (validCells.Contains(neighbor) && map.GetTerrain(neighbor) == null)
+					{
+						map.SetTerrain(neighbor, terrainn);
+						filled++;
+						queue.Enqueue(neighbor);
+					}
+				}
 			}
 
 			return map;
 		}
-		private Domain.Map GetBlankMap(int width, int height, int seed)
+
+		private Domain.Map GetBlankMap(int width, int height, int seed, string Id)
 		{
-			Domain.Map map = new Domain.Map(seed, width, height);
+			Domain.Map map = new Domain.Map(seed, width, height, Id);
 
 			for (int i = 0; i < width; i++)
 			{
 				for (int j = 0; j < height; j++)
 				{
-					IPosition pos = new HexCubePosition(i - width / 2, j - height / 2);
+					IPosition pos = new HexCubePosition(i, j);
 					map.SetCell(pos, new MapCell(pos));
 				}
 			}

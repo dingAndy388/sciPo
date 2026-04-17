@@ -1,0 +1,42 @@
+[gd_scene format=3 uid="uid://c2xwbr855awh3"]
+
+[ext_resource type="Script" uid="uid://es16adfgha0w" path="res://Scripts/Map/Presentation/DevMapUi.cs" id="1_8blma"]
+
+[node name="DevMapUI" type="CanvasLayer" unique_id=1248238824]
+script = ExtResource("1_8blma")
+
+[node name="BoxContainer" type="BoxContainer" parent="." unique_id=670307499]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -20.0
+offset_bottom = 8.0
+grow_horizontal = 0
+vertical = true
+
+[node name="GenerateBtn" type="Button" parent="BoxContainer" unique_id=1156481996]
+layout_mode = 2
+text = "Generate"
+
+[node name="SeedInput" type="SpinBox" parent="BoxContainer" unique_id=1992416741]
+layout_mode = 2
+max_value = 2147483647.0
+
+[node name="IDInput" type="LineEdit" parent="BoxContainer" unique_id=70580756]
+layout_mode = 2
+text = "test1"
+virtual_keyboard_type = 2
+
+[node name="HeightInput" type="SpinBox" parent="BoxContainer" unique_id=524597935]
+layout_mode = 2
+max_value = 2147483647.0
+value = 5.0
+prefix = "h:"
+
+[node name="WidthInput" type="SpinBox" parent="BoxContainer" unique_id=1473016107]
+layout_mode = 2
+max_value = 2147483647.0
+value = 5.0
+prefix = "w:"
+
+[connection signal="pressed" from="BoxContainer/GenerateBtn" to="." method="OnGenerateBtnPressed"]

@@ -1,3 +1,4 @@
+using Godot;
 using SciencePotato.Scripts.Map.Domain;
 using System;
 using System.Collections.Generic;
@@ -8,29 +9,31 @@ using System.Threading.Tasks;
 
 namespace SciencePotato.Scripts.Map.Application
 {
-	public class MapModificationService()
+	public class MapModificationService(IMapRepository mapRepo)
 	{
+        public record CellTerrainChangedEvent(IPosition Position, ITerrainData OldTerr, ITerrainData NewTerr);
+        public event Action<CellTerrainChangedEvent> CellTerrainChanged;
 
-		// TODO
-		// private IMapRepository _mapRepo;
-		// Save unimplemented
+        private IMapRepository _mapRepo = mapRepo;
 
-		public void SetTerrain(Domain.Map map,IPosition position, ITerrainData terrain)
+		public void SetTerrain(string MapID,IPosition position, ITerrainData terrain)
 		{
-			map.SetTerrain(position, terrain);
+			var map = _mapRepo.LoadMap(MapID);
+			ITerrainData oldTer = map.GetTerrain(position);
+            map.SetTerrain(position, terrain);
+
+			// Forward Event
+			map.CellTerrainChanged += ForwardTerrainEvent;
+
+			_mapRepo.SaveMap(map);
 		}
 
-		public void SetResources(Domain.Map map,IPosition position, ResourcesType resources, int value)
+		private void ForwardTerrainEvent(Domain.Map.CellTerrainChangedEvent evt)
+
 		{
-			map.SetResources(position, resources, value);
+			CellTerrainChanged?.Invoke(new CellTerrainChangedEvent(evt.IPosition,evt.OldTerr,evt.NewTerr));
 		}
 
-		public void SetResourcesList(Domain.Map map,IPosition position, Dictionary<ResourcesType,int> resourcesList)
-		{
-			foreach (var resource in resourcesList)
-			{
-				map.SetResources(position,resource.Key, resource.Value);
-			}
-		}
+
 	}
 }

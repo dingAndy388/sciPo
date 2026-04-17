@@ -10,6 +10,6 @@ namespace SciencePotato.Scripts.Map.Infrastructure
 {
 	public partial class GeneratorConfigResources : Resource, IMapGeneratorConfig
 	{
-		[Export] public double Density { get; set; }
+		[Export] public float Density { get; set; }
 	}
 }
