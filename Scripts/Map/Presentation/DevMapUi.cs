@@ -1,17 +1,16 @@
 using Godot;
 using SciencePotato.Scripts.Map.Application;
 using SciencePotato.Scripts.Map.Presentation;
-using System;
 
 public partial class DevMapUi : CanvasLayer
 {
 	private Button _btn;
 	private SpinBox _seed;
-    private LineEdit _id;
+	private LineEdit _id;
 	private SpinBox _height;
 	private SpinBox _width;
 
-    private MapGenerationService _generator;
+	private MapGenerationService _generator;
 	private MapView _mapView;
 
 	private Camera2D _camera;
@@ -24,10 +23,10 @@ public partial class DevMapUi : CanvasLayer
 		_btn = GetNode<Button>("BoxContainer/GenerateBtn");
 		_seed = GetNode<SpinBox>("BoxContainer/SeedInput");
 		_id = GetNode<LineEdit>("BoxContainer/IDInput");
-        _height = GetNode<SpinBox>("BoxContainer/HeightInput");
-        _width = GetNode<SpinBox>("BoxContainer/WidthInput");
+		_height = GetNode<SpinBox>("BoxContainer/HeightInput");
+		_width = GetNode<SpinBox>("BoxContainer/WidthInput");
 
-        _generator = ServiceContainer.Instance.MapGeneration;
+		_generator = ServiceContainer.Instance.MapGeneration;
 	}
 
 	private void OnGenerateBtnPressed()

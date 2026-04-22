@@ -1,9 +1,7 @@
 using Godot;
 using SciencePotato.Scripts.Map.Application;
 using SciencePotato.Scripts.Map.Domain;
-using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace SciencePotato.Scripts.Map.Presentation
 {
@@ -28,15 +26,15 @@ namespace SciencePotato.Scripts.Map.Presentation
 
 			_modificationService.CellTerrainChanged += HandleTerrainChanged;
 
-			_cells = new(); 
+			_cells = new();
 		}
 
-        private void HandleTerrainChanged(MapModificationService.CellTerrainChangedEvent evt)
-        {
+		private void HandleTerrainChanged(MapModificationService.CellTerrainChangedEvent evt)
+		{
 			UpdateCell(evt.Position);
-        }
+		}
 
-        public void UpdateAllCells()
+		public void UpdateAllCells()
 		{
 			ClearAllCells();
 			foreach (var cell in _mapQuery.GetAllCells(MapID))
@@ -46,7 +44,7 @@ namespace SciencePotato.Scripts.Map.Presentation
 		}
 
 		public void ClearAllCells()
-		{ 
+		{
 			_cells.Clear();
 			foreach (var child in GetChildren())
 			{
@@ -60,10 +58,10 @@ namespace SciencePotato.Scripts.Map.Presentation
 		public void UpdateCell(IPosition position)
 		{
 			MapCell cell = _mapQuery.GetMapCell(MapID, position);
-            CreateCellView(cell.terrain, cell.position);
-        }
+			CreateCellView(cell.terrain, cell.position);
+		}
 
-        public void CreateCellView(ITerrainData terrain,IPosition position)
+		public void CreateCellView(ITerrainData terrain, IPosition position)
 		{
 			MapCellView cell = CellScene.Instantiate<MapCellView>();
 			AddChild(cell);

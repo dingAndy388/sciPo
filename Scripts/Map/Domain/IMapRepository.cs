@@ -1,8 +1,4 @@
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SciencePotato.Scripts.Map.Domain
 {
@@ -13,5 +9,5 @@ namespace SciencePotato.Scripts.Map.Domain
 		public void DeleteMap(Map map);
 		public IEnumerable<Map> ListMaps();
 
-    }
+	}
 }

@@ -4,7 +4,6 @@ using SciencePotato.Scripts.Common.Infrastructure;
 using SciencePotato.Scripts.Map.Application;
 using SciencePotato.Scripts.Map.Domain;
 using SciencePotato.Scripts.Map.Infrastructure;
-using System;
 
 public partial class ServiceContainer : Node
 {
@@ -35,7 +34,7 @@ public partial class ServiceContainer : Node
 
 		MapQuery = new MapQueryService(_mapRepository);
 		MapMod = new MapModificationService(_mapRepository);
-		MapGeneration = new MapGenerationService(_mapGenerator,_mapRepository);
+		MapGeneration = new MapGenerationService(_mapGenerator, _mapRepository);
 
 		ConfigLoader = new GodotConfigService();
 	}

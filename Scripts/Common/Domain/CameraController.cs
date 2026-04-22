@@ -1,5 +1,4 @@
 using Godot;
-using System;
 
 public partial class CameraController : Camera2D
 {
@@ -12,7 +11,7 @@ public partial class CameraController : Camera2D
 	{
 		if (@event.IsActionPressed("zoom_in"))
 		{
-			_zoomLevel = Mathf.Clamp(_zoomLevel*(1-ZoomIncrement), MinZoom, MaxZoom);
+			_zoomLevel = Mathf.Clamp(_zoomLevel * (1 - ZoomIncrement), MinZoom, MaxZoom);
 			Zoom = new Vector2(_zoomLevel, _zoomLevel);
 			GetViewport().SetInputAsHandled();
 		}

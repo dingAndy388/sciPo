@@ -1,17 +1,14 @@
 using SciencePotato.Scripts.Common.Domain;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SciencePotato.Scripts.Common.Infrastructure
 {
-	public class SystemRandom(int seed):IRandom
+	public class SystemRandom(int seed) : IRandom
 	{
 
-		 Random random = new(seed);
+		Random random = new(seed);
 
 		public int Next(int min, int max)
 		{
@@ -40,7 +37,7 @@ namespace SciencePotato.Scripts.Common.Infrastructure
 
 		public bool ProbCodition(float p)
 		{
-			return NextFloat()<p;
+			return NextFloat() < p;
 		}
 
 		public T WeightedPick<T>(IEnumerable<T> values, IEnumerable<float> weights)
@@ -50,12 +47,12 @@ namespace SciencePotato.Scripts.Common.Infrastructure
 			{
 				sum += i;
 			}
-			float rd = NextFloat()*sum;
+			float rd = NextFloat() * sum;
 			float c = 0;
-			for (int i = 0; i<weights.Count();i++)
+			for (int i = 0; i < weights.Count(); i++)
 			{
 				c += weights.ElementAt(i);
-				if (rd < c) return values.ElementAt(i); 
+				if (rd < c) return values.ElementAt(i);
 			}
 			return values.Last();
 		}

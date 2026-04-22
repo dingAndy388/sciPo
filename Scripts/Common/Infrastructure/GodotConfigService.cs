@@ -1,10 +1,7 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Godot;
 using SciencePotato.Scripts.Common.Domain;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace SciencePotato.Scripts.Common.Infrastructure
 {
@@ -21,11 +18,11 @@ namespace SciencePotato.Scripts.Common.Infrastructure
 			DirAccess dir = DirAccess.Open(path);
 			foreach (string filename in dir.GetFiles())
 			{
-				if(filename.EndsWith(".tres")|| filename.EndsWith(".res"))
+				if (filename.EndsWith(".tres") || filename.EndsWith(".res"))
 				{
 					string fullDir = $"{path}/{filename}";
 					T resource = ResourceLoader.Load<T>(fullDir);
-					if (resource != null )
+					if (resource != null)
 					{
 						dict.Add(filename, resource);
 					}

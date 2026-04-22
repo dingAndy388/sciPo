@@ -1,0 +1,61 @@
+@startuml
+skinparam linetype ortho
+skinparam nodesep 100
+skinparam ranksep 150
+
+
+package "World Core" {
+    component "Time System" as time
+    component "Map System" as map
+}
+
+package "Contracts" {
+    component "<<interface>>\nITickable" as ITickable
+    component "<<interface>>\nIMapOccupant" as IMapOccupant
+    component "<<interface>>\nIModifier" as IModifier
+    component "<<interface>>\nIConsumable" as icon
+    component "<<interface>>\nIRequirement" as ireq
+
+    
+    ITickable -[hidden]right- IMapOccupant
+    IMapOccupant -[hidden]right- IModifier
+}
+
+package "Player Sytem" {
+    package "Action" as action {
+        component "Construction System" as cons
+        component "Research System" as research
+        component "Unit System" as unit
+        component "Event System" as event
+        
+        cons -[hidden]right- research
+        unit -[hidden]right- event
+        cons -[hidden]down- unit    
+    }
+        
+    package "Stats" as stats {
+        component "Resources System" as res
+        component "Research Tree" as tree
+        res -[hidden]down- tree
+    }
+}
+    
+' --- RELATIONSHIPS ---
+
+time -d-> ITickable : Ticks
+map -d-> IMapOccupant : Manages
+IMapOccupant -> IModifier : Hold
+
+action ..u.|> ITickable
+cons ..up.|> IMapOccupant
+unit ..up.|> IMapOccupant
+action ..up.> IModifier : Issue
+stats -up-> IModifier : Holds
+
+res .u.|> icon
+tree .u.|> ireq
+
+action ..> icon: check
+action  ..> ireq : verify
+
+@enduml     

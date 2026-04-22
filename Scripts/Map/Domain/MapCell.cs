@@ -1,9 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 namespace SciencePotato.Scripts.Map.Domain
 {
 	public class MapCell(IPosition position)
@@ -13,7 +7,7 @@ namespace SciencePotato.Scripts.Map.Domain
 
 		public void SetTerrain(ITerrainData terrain)
 		{
-			this.terrain = terrain;	
+			this.terrain = terrain;
 		}
-	}	
+	}
 }

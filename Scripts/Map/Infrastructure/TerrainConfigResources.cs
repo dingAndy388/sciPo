@@ -1,10 +1,5 @@
-using SciencePotato.Scripts.Map.Domain;
 using Godot;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using SciencePotato.Scripts.Map.Domain;
 
 namespace SciencePotato.Scripts.Map.Infrastructure
 {
