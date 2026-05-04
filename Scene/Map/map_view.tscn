@@ -3,7 +3,7 @@
 [ext_resource type="Script" uid="uid://cb1owcle5bqk1" path="res://Scripts/Map/Presentation/MapView.cs" id="1_cra26"]
 [ext_resource type="PackedScene" uid="uid://c2xwbr855awh3" path="res://Scene/Map/dev_map_UI.tscn" id="2_82idp"]
 [ext_resource type="PackedScene" uid="uid://cjv3hys75jfej" path="res://Scene/Map/map_cell_view.tscn" id="2_yuwws"]
-[ext_resource type="Script" uid="uid://v6gi5h0axpay" path="res://Scripts/Common/Domain/CameraController.cs" id="3_rxatc"]
+[ext_resource type="Script" path="res://Scripts/Common/Domain/CameraController.cs" id="3_rxatc"]
 
 [node name="MapView" type="Node2D" unique_id=964291670]
 script = ExtResource("1_cra26")

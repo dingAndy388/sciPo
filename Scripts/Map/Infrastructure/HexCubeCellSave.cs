@@ -1,4 +1,4 @@
-using SciencePotato.Scripts.Map.Domain;
+using SciencePotato.Scripts.Common.Domain;
 
 namespace SciencePotato.Scripts.Map.Infrastructure
 {

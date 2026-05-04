@@ -10,7 +10,7 @@ public partial class DevMapUi : CanvasLayer
 	private SpinBox _height;
 	private SpinBox _width;
 
-	private MapGenerationService _generator;
+	private MapAppService _generator;
 	private MapView _mapView;
 
 	private Camera2D _camera;

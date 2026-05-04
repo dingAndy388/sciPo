@@ -55,7 +55,7 @@ namespace SciencePotato.Scripts.Map.Infrastructure
 			// calculate the n value from density
 			int n = Math.Clamp((int)_random.NextGaussian(_mapGeneratorConfig.Density * 30, _mapGeneratorConfig.Density * 30 * 0.2f), 5, 50);
 
-			//get terrain distribution from config
+			//get Terrain distribution from config
 			var terrainDis = _terrainConfig.Select(t => new { Terrain = t, Weight = t.Weight }).OrderBy(t => t.Weight).ToList();
 			float sum = 0;
 			foreach (var i in terrainDis)
@@ -67,7 +67,7 @@ namespace SciencePotato.Scripts.Map.Infrastructure
 			foreach (MapCell cell in map.GetAllCells())
 			{
 				int x, y;
-				(x, y) = cell.position.ToCoordinate();
+				(x, y) = cell.Position.ToCoordinate();
 				float noise = PerlinNoise(x, y, n);
 
 				float rd = noise * sum;
@@ -100,7 +100,7 @@ namespace SciencePotato.Scripts.Map.Infrastructure
 			{
 				for (int j = 0; j < height; j++)
 				{
-					IPosition pos = new HexCubePosition(i, j);
+					HexCubePosition pos = new HexCubePosition(i, j);
 					map.SetCell(pos, new MapCell(pos));
 				}
 			}

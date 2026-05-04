@@ -49,7 +49,7 @@ namespace SciencePotato.Scripts.Map.Infrastructure
 			// calculate the number of anchors
 			int nAnchor = Math.Clamp((int)_random.NextGaussian(_mapGeneratorConfig.Density / 100 * area, _mapGeneratorConfig.Density / 100 * 0.2f * area), area / 100, area / 10);
 
-			HashSet<IPosition> validCells = new(x * y);
+			HashSet<HexCubePosition> validCells = new(x * y);
 			for (int i = 0; i < x; i++)
 				for (int j = 0; j < y; j++)
 				{
@@ -59,7 +59,7 @@ namespace SciencePotato.Scripts.Map.Infrastructure
 			// get weights
 			Dictionary<ITerrainData, float> terrainDis = _terrainConfig.ToDictionary(t => t, t => t.Weight);
 
-			HashSet<IPosition> anchors = new HashSet<IPosition>(nAnchor);
+			HashSet<HexCubePosition> anchors = new HashSet<HexCubePosition>(nAnchor);
 			// set anchor Terrain
 			while (anchors.Count < nAnchor)
 			{
@@ -67,8 +67,8 @@ namespace SciencePotato.Scripts.Map.Infrastructure
 				// pick random CellPosition
 				int rx = _random.Next(0, x);
 				int ry = _random.Next(0, y);
-				IPosition pos = new HexCubePosition(rx, ry);
-				foreach (IPosition p in anchors)
+				HexCubePosition pos = new HexCubePosition(rx, ry);
+				foreach (HexCubePosition p in anchors)
 				{
 					if (pos.DistenceTo(p) < 2)
 						flag = true;
@@ -84,11 +84,11 @@ namespace SciencePotato.Scripts.Map.Infrastructure
 			}
 
 			// Terrain spread
-			foreach (IPosition cell in validCells)
+			foreach (HexCubePosition cell in validCells)
 			{
 				int bestDist = int.MaxValue;
 				ITerrainData bestTerrain = null;
-				foreach (IPosition p in anchors)
+				foreach (HexCubePosition p in anchors)
 				{
 					if (cell.DistenceTo(p) < bestDist)
 					{
@@ -110,7 +110,7 @@ namespace SciencePotato.Scripts.Map.Infrastructure
 			{
 				for (int j = 0; j < height; j++)
 				{
-					IPosition pos = new HexCubePosition(i, j);
+					HexCubePosition pos = new HexCubePosition(i, j);
 					map.SetCell(pos, new MapCell(pos));
 				}
 			}

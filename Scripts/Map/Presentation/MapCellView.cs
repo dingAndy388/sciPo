@@ -1,4 +1,5 @@
 using Godot;
+using SciencePotato.Scripts.Common.Domain;
 using SciencePotato.Scripts.Map.Domain;
 using System;
 
@@ -7,7 +8,7 @@ public partial class MapCellView : Node2D
 	private Sprite2D _sprite;
 
 	public ITerrainData Terrain { get; private set; }
-	public IPosition CellPosition { get; set; }
+	public HexCubePosition CellPosition { get; set; }
 
 
 	// Temporary fixed constant

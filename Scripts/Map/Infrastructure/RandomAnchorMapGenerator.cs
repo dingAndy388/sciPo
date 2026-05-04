@@ -49,22 +49,22 @@ namespace SciencePotato.Scripts.Map.Infrastructure
 			// calculate the number of anchors
 			int nAnchor = Math.Clamp((int)_random.NextGaussian(_mapGeneratorConfig.Density / 100 * area, _mapGeneratorConfig.Density / 100 * 0.2f * area), area / 100, area / 10);
 
-			HashSet<IPosition> validCells = new(x * y);
+			HashSet<HexCubePosition> validCells = new(x * y);
 			for (int i = 0; i < x; i++)
 				for (int j = 0; j < y; j++)
 				{
 					validCells.Add(new HexCubePosition(i, j));
 				}
 
-			HashSet<IPosition> anchors = new HashSet<IPosition>(nAnchor);
+			HashSet<HexCubePosition> anchors = new HashSet<HexCubePosition>(nAnchor);
 			// set anchor Terrain
 			while (anchors.Count < nAnchor)
 			{
 				// pick random CellPosition
 				int rx = _random.Next(0, x);
 				int ry = _random.Next(0, y);
-				IPosition pos = new HexCubePosition(rx, ry);
-				foreach (IPosition p in anchors)
+				HexCubePosition pos = new HexCubePosition(rx, ry);
+				foreach (HexCubePosition p in anchors)
 				{
 					if (pos.DistenceTo(p) < 2)
 						continue;
@@ -82,13 +82,13 @@ namespace SciencePotato.Scripts.Map.Infrastructure
 			}
 
 			// Terrain spread
-			Queue<IPosition> queue = new Queue<IPosition>(anchors);
+			Queue<HexCubePosition> queue = new Queue<HexCubePosition>(anchors);
 			int filled = nAnchor;
 			while (queue.Count > 0)
 			{
-				IPosition current = queue.Dequeue();
+				HexCubePosition current = queue.Dequeue();
 				ITerrainData terrainn = map.GetTerrain(current);
-				foreach (IPosition neighbor in current.GetNeighbor())
+				foreach (HexCubePosition neighbor in current.GetNeighbor())
 				{
 					if (validCells.Contains(neighbor) && map.GetTerrain(neighbor) == null)
 					{
@@ -110,7 +110,7 @@ namespace SciencePotato.Scripts.Map.Infrastructure
 			{
 				for (int j = 0; j < height; j++)
 				{
-					IPosition pos = new HexCubePosition(i, j);
+					HexCubePosition pos = new HexCubePosition(i, j);
 					map.SetCell(pos, new MapCell(pos));
 				}
 			}

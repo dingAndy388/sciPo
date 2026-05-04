@@ -21,7 +21,7 @@ package "Contracts" {
     IMapOccupant -[hidden]right- IModifier
 }
 
-package "Player Sytem" {
+package "Player System" {
     package "Action" as action {
         component "Construction System" as cons
         component "Research System" as research
@@ -32,7 +32,7 @@ package "Player Sytem" {
         unit -[hidden]right- event
         cons -[hidden]down- unit    
     }
-        
+    
     package "Stats" as stats {
         component "Resources System" as res
         component "Research Tree" as tree

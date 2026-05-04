@@ -11,9 +11,9 @@ public partial class ServiceContainer : Node
 	public static ServiceContainer Instance { get; private set; }
 
 	//Services
-	public MapQueryService MapQuery { get; private set; }
-	public MapModificationService MapMod { get; private set; }
-	public MapGenerationService MapGeneration { get; private set; }
+	public MapAppService MapQuery { get; private set; }
+	public MapAppService MapMod { get; private set; }
+	public MapAppService MapGeneration { get; private set; }
 
 	public IConfigLoader ConfigLoader { get; private set; }
 
@@ -32,9 +32,9 @@ public partial class ServiceContainer : Node
 		_mapGenerator = new VoronoiMapGenerator("res://Config/Terrains", "res://Config/Generator", _configLoader);
 		_mapRepository = new GodotMapRepository();
 
-		MapQuery = new MapQueryService(_mapRepository);
-		MapMod = new MapModificationService(_mapRepository);
-		MapGeneration = new MapGenerationService(_mapGenerator, _mapRepository);
+		MapQuery = new MapAppService(_mapRepository);
+		MapMod = new MapAppService(_mapRepository);
+		MapGeneration = new MapAppService(_mapGenerator, _mapRepository);
 
 		ConfigLoader = new GodotConfigService();
 	}

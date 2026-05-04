@@ -1,3 +1,4 @@
+using SciencePotato.Scripts.Common.Domain;
 using System;
 using System.Collections.Generic;
 
@@ -7,14 +8,14 @@ namespace SciencePotato.Scripts.Map.Domain
 	public class Map
 	{
 		// aggregate of mapcell
-		private Dictionary<IPosition, MapCell> _cells;
+		private Dictionary<HexCubePosition, MapCell> _cells;
 
 		public int seed;
 		public int width, height;
 		public readonly string ID;
 
 		// events
-		public record CellTerrainChangedEvent(IPosition IPosition, ITerrainData OldTerr, ITerrainData NewTerr);
+		public record CellTerrainChangedEvent(HexCubePosition HexCubePosition, ITerrainData OldTerr, ITerrainData NewTerr);
 		public event Action<CellTerrainChangedEvent> CellTerrainChanged;
 
 		public Map(int seed, int width, int height, string Id)
@@ -27,21 +28,21 @@ namespace SciencePotato.Scripts.Map.Domain
 			this._cells = [];
 		}
 
-		public void SetCell(IPosition pos, MapCell cell)
+		public void SetCell(HexCubePosition pos, MapCell cell)
 		{
 			_cells[pos] = cell;
 		}
 
-		public void SetTerrain(IPosition position, ITerrainData terrain)
+		public void SetTerrain(HexCubePosition position, ITerrainData terrain)
 		{
 			if (!_cells.TryGetValue(position, out _))
 				return;
-			ITerrainData old = _cells[position].terrain;
+			ITerrainData old = _cells[position].Terrain;
 			_cells[position].SetTerrain(terrain);
 			CellTerrainChanged?.Invoke(new CellTerrainChangedEvent(position, old, terrain));
 		}
 
-		public MapCell GetCell(IPosition position)
+		public MapCell GetCell(HexCubePosition position)
 		{
 			return _cells[position];
 		}
@@ -51,11 +52,33 @@ namespace SciencePotato.Scripts.Map.Domain
 			return _cells.Values;
 		}
 
-		public ITerrainData GetTerrain(IPosition position)
+		public ITerrainData GetTerrain(HexCubePosition position)
 		{
 			if (!_cells.TryGetValue(position, out _))
 				return null;
-			return _cells[position].terrain;
+			return _cells[position].Terrain;
+		}
+
+		public MapOccupantInfo? GetOccupantInfo(HexCubePosition	position)
+		{
+			if(_cells.TryGetValue(position, out _))
+				if (_cells[position].Occupant!=null)
+					return _cells[position].Occupant.GetInfo();
+			return null;
+		}
+
+		public void SetOccupant(IMapOccupant occupant,HexCubePosition position)
+		{
+			if (_cells.TryGetValue(position, out _))
+				_cells[position].SetOccupant(occupant);
+		}
+
+		internal bool VerifyTerrain(HexCubePosition position, string targetTerrain)
+		{
+			if(_cells.TryGetValue(position,out _))
+				if (_cells[position].Terrain.Id==targetTerrain)
+					return true;
+			return false;
 		}
 	}
 }

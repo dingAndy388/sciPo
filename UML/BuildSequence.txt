@@ -1,0 +1,21 @@
+@startuml
+
+UI->>App: BuildRequest(BuildingID, Coord)
+App->>App: CheckBasicValidation()
+
+App->>Domain: Build(BuildingID, Coord)
+
+Domain->>Res: IsConsumable()
+
+Domain->>Res: CheckRequirements()
+Note over Domain: Traverse IRequirement/IConsumable
+
+alt IsConsumable() AND CheckRequirements()
+    Domain->>Res: ResourcesModifier(Resource, Amount)
+    Domain->>Map: SaveNewOccupant(BuildingEntity)
+    Map ->> Repo: SaveMap()
+    Domain-->>UI: BuildSuccess(Event)
+else !IsConsumable() OR !CheckRequirements()
+    Domain-->>UI: BuildFailed(ErrorMsg)
+end
+@enduml

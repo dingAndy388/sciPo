@@ -1,4 +1,5 @@
 using Godot;
+using SciencePotato.Scripts.Common.Domain;
 using SciencePotato.Scripts.Map.Application;
 using SciencePotato.Scripts.Map.Domain;
 using System.Collections.Generic;
@@ -7,12 +8,12 @@ namespace SciencePotato.Scripts.Map.Presentation
 {
 	public partial class MapView : Node2D
 	{
-		private MapQueryService _mapQuery;
-		private MapModificationService _modificationService;
+		private MapAppService _mapQuery;
+		private MapAppService _modificationService;
 
 		private Node2D _cellContainer;
 
-		private Dictionary<IPosition, MapCellView> _cells;
+		private Dictionary<HexCubePosition, MapCellView> _cells;
 
 		[Export] public PackedScene CellScene { get; set; }
 		[Export] public string MapID;
@@ -29,7 +30,7 @@ namespace SciencePotato.Scripts.Map.Presentation
 			_cells = new();
 		}
 
-		private void HandleTerrainChanged(MapModificationService.CellTerrainChangedEvent evt)
+		private void HandleTerrainChanged(MapAppService.CellTerrainChangedEvent evt)
 		{
 			UpdateCell(evt.Position);
 		}
@@ -39,7 +40,7 @@ namespace SciencePotato.Scripts.Map.Presentation
 			ClearAllCells();
 			foreach (var cell in _mapQuery.GetAllCells(MapID))
 			{
-				CreateCellView(cell.terrain, cell.position);
+				CreateCellView(cell.Terrain, cell.Position);
 			}
 		}
 
@@ -55,13 +56,13 @@ namespace SciencePotato.Scripts.Map.Presentation
 			}
 		}
 
-		public void UpdateCell(IPosition position)
+		public void UpdateCell(HexCubePosition position)
 		{
 			MapCell cell = _mapQuery.GetMapCell(MapID, position);
-			CreateCellView(cell.terrain, cell.position);
+			CreateCellView(cell.Terrain, cell.Position);
 		}
 
-		public void CreateCellView(ITerrainData terrain, IPosition position)
+		public void CreateCellView(ITerrainData terrain, HexCubePosition position)
 		{
 			MapCellView cell = CellScene.Instantiate<MapCellView>();
 			AddChild(cell);

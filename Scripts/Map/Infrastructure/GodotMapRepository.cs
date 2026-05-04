@@ -63,8 +63,8 @@ namespace SciencePotato.Scripts.Map.Infrastructure
 			foreach (var cell in map.GetAllCells())
 			{
 				HexCubeCellSave cellSave = new HexCubeCellSave();
-				cellSave.position = (HexCubePosition)cell.position;
-				cellSave.terrain = cell.terrain.Id;
+				cellSave.position = (HexCubePosition)cell.Position;
+				cellSave.terrain = cell.Terrain.Id;
 				mapSave.cells.Add(cellSave);
 			}
 			if (!DirAccess.DirExistsAbsolute(_mapDir))
