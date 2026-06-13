@@ -20,9 +20,9 @@ namespace SciencePotato.Scripts.Map.Infrastructure
 			throw new NotImplementedException();
 		}
 
-		public Domain.Map LoadMap(string ID)
+		public Domain.Map LoadMap(string Id)
 		{
-			string path = $"{_mapDir}{ID}.json";
+			string path = $"{_mapDir}{Id}.json";
 
 			if (!FileAccess.FileExists(path))
 				return null;
@@ -34,7 +34,7 @@ namespace SciencePotato.Scripts.Map.Infrastructure
 
 			GD.Print("Map Load json:" + mapSave.cells.Count);
 
-			Domain.Map map = new Domain.Map(mapSave.seed, mapSave.width, mapSave.height, mapSave.ID);
+			Domain.Map map = new Domain.Map(mapSave.seed, mapSave.width, mapSave.height, mapSave.Id);
 
 			foreach (HexCubeCellSave cellSave in mapSave.cells)
 			{
@@ -50,13 +50,13 @@ namespace SciencePotato.Scripts.Map.Infrastructure
 
 		public void SaveMap(Domain.Map map)
 		{
-			string path = $"{_mapDir}{map.ID}.json";
+			string path = $"{_mapDir}{map.Id}.json";
 
 			GD.Print("saving");
 			GD.Print($"Saved Cell Num: {map.GetAllCells().Count()}");
 
 			MapSave mapSave = new MapSave();
-			mapSave.ID = map.ID;
+			mapSave.Id = map.Id;
 			mapSave.seed = map.seed;
 			mapSave.height = map.height;
 			mapSave.width = map.width;

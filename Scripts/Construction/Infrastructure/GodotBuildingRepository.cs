@@ -1,5 +1,6 @@
 using SciencePotato.Scripts.Construction.Domain;
 using System;
+using Godot;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -9,9 +10,9 @@ namespace SciencePotato.Scripts.Construction.Infrastructure
 {
 	public class GodotBuildingRepository:IBuildingRepository
 	{
-		public IBuildingConfig GetBuildingConfig()
+		public IBuildingConfig GetBuildingConfig(string buildingId)
 		{
-
+			throw new NotImplementedException();
 		}
 	}
 }

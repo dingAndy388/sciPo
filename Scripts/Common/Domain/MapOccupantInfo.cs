@@ -7,11 +7,11 @@ namespace SciencePotato.Scripts.Common.Domain
 		//Position
 		public readonly HexCubePosition Position = coord;
 		
-		//ID maps to specific entity (e.g. farm)
-		public readonly int ID = id;
+		//Id maps to specific entity (e.g. farm)
+		public readonly int Id = id;
 		
 		//identifier on map
-		public readonly long UID = uid;
+		public readonly long UId = uid;
 
 		//displayed name to players
 		public readonly string Name = name;

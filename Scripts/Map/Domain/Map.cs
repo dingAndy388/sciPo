@@ -12,7 +12,7 @@ namespace SciencePotato.Scripts.Map.Domain
 
 		public int seed;
 		public int width, height;
-		public readonly string ID;
+		public readonly string Id;
 
 		// events
 		public record CellTerrainChangedEvent(HexCubePosition HexCubePosition, ITerrainData OldTerr, ITerrainData NewTerr);
@@ -23,7 +23,7 @@ namespace SciencePotato.Scripts.Map.Domain
 			this.seed = seed;
 			this.width = width;
 			this.height = height;
-			this.ID = Id;
+			this.Id = Id;
 
 			this._cells = [];
 		}

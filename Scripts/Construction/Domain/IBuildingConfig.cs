@@ -8,9 +8,9 @@ namespace SciencePotato.Scripts.Construction.Domain
 {
 	public interface IBuildingConfig
 	{
-		string BuildingID { get; set; }
+		string BuildingId { get; set; }
 		Dictionary<string, float> ResourceCost { get; set; }
 		string TerrainRequirement { get; set; }
-		List<string> TechRequirement { get; set; }
+		Dictionary<string,List<string>> TechRequirements { get; set; }
 	}
 }

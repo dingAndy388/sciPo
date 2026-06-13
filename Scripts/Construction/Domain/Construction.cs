@@ -9,9 +9,9 @@ namespace SciencePotato.Scripts.Construction.Domain
 {
 	public class Construction
 	{
-		public Building Build(HexCubePosition coord,int ID, long uid, string name)
+		public Building Build(HexCubePosition coord,int Id, long uid, string name)
 		{
-			return new Building(coord,ID,uid,name);
+			return new Building(coord,Id,uid,name);
 		}
 	}
 }

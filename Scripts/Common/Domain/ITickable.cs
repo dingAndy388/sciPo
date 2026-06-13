@@ -8,6 +8,6 @@ namespace SciencePotato.Scripts.Common.Domain
 {
 	public interface ITickable
 	{
-		void OnTick(int currentTick);
+		void OnTick(float delta);
 	}
 }

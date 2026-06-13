@@ -16,7 +16,7 @@ namespace SciencePotato.Scripts.Map.Presentation
 		private Dictionary<HexCubePosition, MapCellView> _cells;
 
 		[Export] public PackedScene CellScene { get; set; }
-		[Export] public string MapID;
+		[Export] public string MapId;
 
 		public override void _Ready()
 		{
@@ -38,7 +38,7 @@ namespace SciencePotato.Scripts.Map.Presentation
 		public void UpdateAllCells()
 		{
 			ClearAllCells();
-			foreach (var cell in _mapQuery.GetAllCells(MapID))
+			foreach (var cell in _mapQuery.GetAllCells(MapId))
 			{
 				CreateCellView(cell.Terrain, cell.Position);
 			}
@@ -58,7 +58,7 @@ namespace SciencePotato.Scripts.Map.Presentation
 
 		public void UpdateCell(HexCubePosition position)
 		{
-			MapCell cell = _mapQuery.GetMapCell(MapID, position);
+			MapCell cell = _mapQuery.GetMapCell(MapId, position);
 			CreateCellView(cell.Terrain, cell.Position);
 		}
 

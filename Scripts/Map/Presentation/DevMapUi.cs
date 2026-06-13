@@ -22,7 +22,7 @@ public partial class DevMapUi : CanvasLayer
 
 		_btn = GetNode<Button>("BoxContainer/GenerateBtn");
 		_seed = GetNode<SpinBox>("BoxContainer/SeedInput");
-		_id = GetNode<LineEdit>("BoxContainer/IDInput");
+		_id = GetNode<LineEdit>("BoxContainer/IdInput");
 		_height = GetNode<SpinBox>("BoxContainer/HeightInput");
 		_width = GetNode<SpinBox>("BoxContainer/WidthInput");
 
@@ -35,7 +35,7 @@ public partial class DevMapUi : CanvasLayer
 
 		GD.Print("DevUI: Generating");
 		_generator.GenerateMap((int)_seed.Value, (int)_width.Value, (int)_height.Value, _id.Text);
-		_mapView.MapID = _id.Text;
+		_mapView.MapId = _id.Text;
 		_mapView.UpdateAllCells();
 		GD.Print("DevUI: Done");
 	}

@@ -8,6 +8,6 @@ namespace SciencePotato.Scripts.Construction.Domain
 {
 	public interface IBuildingRepository
 	{
-		IBuildingConfig GetBuildingConfig(string buildingID);
+		IBuildingConfig GetBuildingConfig(string buildingId);
 	}
 }

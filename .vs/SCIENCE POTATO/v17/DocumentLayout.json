@@ -1,146 +1,206 @@
 {
   "Version": 1,
-  "WorkspaceRootPath": "E:\\Godot\\science-potato\\",
+  "WorkspaceRootPath": "D:\\Godot\\science-potato\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|e:\\godot\\science-potato\\scripts\\map\\domain\\maprequirement.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\map\\domain\\maprequirement.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|d:\\godot\\science-potato\\scripts\\common\\infrastructure\\lineartask.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\common\\infrastructure\\lineartask.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|e:\\godot\\science-potato\\scripts\\map\\infrastructure\\terrainconfigresources.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\map\\infrastructure\\terrainconfigresources.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|d:\\godot\\science-potato\\scripts\\common\\domain\\tasksnapshot.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\common\\domain\\tasksnapshot.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|e:\\godot\\science-potato\\scripts\\map\\domain\\map.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\map\\domain\\map.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|e:\\godot\\science-potato\\scripts\\resources\\application\\resourceappservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\resources\\application\\resourceappservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|e:\\godot\\science-potato\\scripts\\resources\\domain\\iresourcesrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\resources\\domain\\iresourcesrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|e:\\godot\\science-potato\\scripts\\resources\\domain\\resourcesconsumption.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\resources\\domain\\resourcesconsumption.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|e:\\godot\\science-potato\\scripts\\resources\\domain\\resourcespool.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\resources\\domain\\resourcespool.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|e:\\godot\\science-potato\\scripts\\map\\infrastructure\\randomanchormapgenerator.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\map\\infrastructure\\randomanchormapgenerator.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|e:\\godot\\science-potato\\scripts\\construction\\domain\\buildingfactory.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\construction\\domain\\buildingfactory.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|e:\\godot\\science-potato\\scripts\\common\\domain\\irequirement.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\common\\domain\\irequirement.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|e:\\godot\\science-potato\\scripts\\map\\domain\\iterraindata.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\map\\domain\\iterraindata.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|e:\\godot\\science-potato\\scripts\\map\\domain\\mapcell.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\map\\domain\\mapcell.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|e:\\godot\\science-potato\\scripts\\map\\infrastructure\\voronoimapgenerator.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\map\\infrastructure\\voronoimapgenerator.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|e:\\godot\\science-potato\\scripts\\construction\\application\\constructionappservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|d:\\godot\\science-potato\\scripts\\construction\\application\\constructionappservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\construction\\application\\constructionappservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|e:\\godot\\science-potato\\scripts\\map\\domain\\imapgenerator.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\map\\domain\\imapgenerator.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|d:\\godot\\science-potato\\scripts\\common\\domain\\iprogresstask.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\common\\domain\\iprogresstask.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|e:\\godot\\science-potato\\scripts\\map\\application\\mapappservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\map\\application\\mapappservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|d:\\godot\\science-potato\\scripts\\common\\domain\\itickable.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\common\\domain\\itickable.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|e:\\godot\\science-potato\\scripts\\construction\\domain\\construction.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\construction\\domain\\construction.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|d:\\godot\\science-potato\\scripts\\common\\infrastructure\\godottimeservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\common\\infrastructure\\godottimeservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|e:\\godot\\science-potato\\scripts\\common\\domain\\imapoccupant.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\common\\domain\\imapoccupant.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|d:\\godot\\science-potato\\scripts\\techtree\\application\\techtreeappservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\techtree\\application\\techtreeappservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|e:\\godot\\science-potato\\scripts\\common\\domain\\consumption.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\common\\domain\\consumption.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|d:\\godot\\science-potato\\scripts\\techtree\\domain\\itechtreerepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\techtree\\domain\\itechtreerepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|e:\\godot\\science-potato\\scripts\\construction\\domain\\building.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\construction\\domain\\building.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|d:\\godot\\science-potato\\scripts\\construction\\domain\\ibuildingconfig.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\construction\\domain\\ibuildingconfig.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|e:\\godot\\science-potato\\scripts\\map\\infrastructure\\godotmaprepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\map\\infrastructure\\godotmaprepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|d:\\godot\\science-potato\\scripts\\techtree\\domain\\techrequirement.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\techtree\\domain\\techrequirement.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|e:\\godot\\science-potato\\scripts\\common\\domain\\mapoccupantinfo.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\common\\domain\\mapoccupantinfo.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|e:\\godot\\science-potato\\scripts\\map\\presentation\\mapview.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\map\\presentation\\mapview.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|e:\\godot\\science-potato\\scripts\\map\\domain\\imaprepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\map\\domain\\imaprepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|e:\\godot\\science-potato\\scripts\\common\\domain\\iconsumable.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\common\\domain\\iconsumable.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|e:\\godot\\science-potato\\scripts\\map\\infrastructure\\generatorconfigresources.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\map\\infrastructure\\generatorconfigresources.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|e:\\godot\\science-potato\\science potato.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
+      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|d:\\godot\\science-potato\\science potato.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
       "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:science potato.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|e:\\godot\\science-potato\\scripts\\common\\domain\\hexcubeposition.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\common\\domain\\hexcubeposition.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|d:\\godot\\science-potato\\scripts\\common\\domain\\itaskrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\common\\domain\\itaskrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|e:\\godot\\science-potato\\scripts\\map\\presentation\\mapcellview.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\map\\presentation\\mapcellview.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|d:\\godot\\science-potato\\scripts\\common\\domain\\imapoccupant.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\common\\domain\\imapoccupant.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|e:\\godot\\science-potato\\scripts\\common\\domain\\irandom.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\common\\domain\\irandom.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|e:\\godot\\science-potato\\scripts\\common\\domain\\occupanttype.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|d:\\godot\\science-potato\\scripts\\common\\domain\\occupanttype.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\common\\domain\\occupanttype.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|e:\\godot\\science-potato\\scripts\\autoload\\servicecontainer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\autoload\\servicecontainer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|d:\\godot\\science-potato\\scripts\\construction\\domain\\ibuildingrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\construction\\domain\\ibuildingrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|e:\\godot\\science-potato\\scripts\\map\\infrastructure\\hexcubecellsave.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|d:\\godot\\science-potato\\scripts\\common\\domain\\itimeservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\common\\domain\\itimeservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|d:\\godot\\science-potato\\scripts\\common\\domain\\irequirement.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\common\\domain\\irequirement.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|d:\\godot\\science-potato\\scripts\\construction\\domain\\buildingfactory.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\construction\\domain\\buildingfactory.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|d:\\godot\\science-potato\\scripts\\map\\domain\\terrainrequirement.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\map\\domain\\terrainrequirement.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|d:\\godot\\science-potato\\scripts\\map\\infrastructure\\terrainconfigresources.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\map\\infrastructure\\terrainconfigresources.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|d:\\godot\\science-potato\\scripts\\map\\infrastructure\\hexcubecellsave.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\map\\infrastructure\\hexcubecellsave.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|e:\\godot\\science-potato\\scripts\\common\\infrastructure\\systemrandom.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\common\\infrastructure\\systemrandom.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|d:\\godot\\science-potato\\scripts\\map\\application\\mapappservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\map\\application\\mapappservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|e:\\godot\\science-potato\\scripts\\map\\presentation\\devmapui.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|d:\\godot\\science-potato\\scripts\\map\\domain\\map.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\map\\domain\\map.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|d:\\godot\\science-potato\\scripts\\resources\\application\\resourceappservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\resources\\application\\resourceappservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|d:\\godot\\science-potato\\scripts\\resources\\domain\\resourcesconsumption.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\resources\\domain\\resourcesconsumption.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|d:\\godot\\science-potato\\scripts\\construction\\domain\\building.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\construction\\domain\\building.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|d:\\godot\\science-potato\\scripts\\construction\\domain\\construction.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\construction\\domain\\construction.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|d:\\godot\\science-potato\\scripts\\techtree\\domain\\techtree.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\techtree\\domain\\techtree.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|d:\\godot\\science-potato\\scripts\\techtree\\domain\\technode.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\techtree\\domain\\technode.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|d:\\godot\\science-potato\\scripts\\construction\\infrastructure\\godotbuildingrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\construction\\infrastructure\\godotbuildingrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|d:\\godot\\science-potato\\scripts\\map\\infrastructure\\godotmaprepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\map\\infrastructure\\godotmaprepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|d:\\godot\\science-potato\\scripts\\map\\infrastructure\\randomanchormapgenerator.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\map\\infrastructure\\randomanchormapgenerator.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|d:\\godot\\science-potato\\scripts\\map\\presentation\\devmapui.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\map\\presentation\\devmapui.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|d:\\godot\\science-potato\\scripts\\map\\presentation\\mapview.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\map\\presentation\\mapview.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|d:\\godot\\science-potato\\scripts\\map\\domain\\mapcell.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\map\\domain\\mapcell.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|d:\\godot\\science-potato\\scripts\\map\\infrastructure\\voronoimapgenerator.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\map\\infrastructure\\voronoimapgenerator.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|d:\\godot\\science-potato\\scripts\\map\\presentation\\mapcellview.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\map\\presentation\\mapcellview.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|d:\\godot\\science-potato\\scripts\\resources\\domain\\iresourcesrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\resources\\domain\\iresourcesrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|d:\\godot\\science-potato\\scripts\\resources\\domain\\resourcespool.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\resources\\domain\\resourcespool.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|d:\\godot\\science-potato\\scripts\\map\\domain\\iterraindata.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\map\\domain\\iterraindata.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|d:\\godot\\science-potato\\scripts\\map\\domain\\imapgenerator.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\map\\domain\\imapgenerator.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|d:\\godot\\science-potato\\scripts\\common\\domain\\consumption.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\common\\domain\\consumption.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|d:\\godot\\science-potato\\scripts\\common\\domain\\mapoccupantinfo.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\common\\domain\\mapoccupantinfo.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|d:\\godot\\science-potato\\scripts\\map\\domain\\imaprepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\map\\domain\\imaprepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|d:\\godot\\science-potato\\scripts\\common\\domain\\iconsumable.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\common\\domain\\iconsumable.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|d:\\godot\\science-potato\\scripts\\map\\infrastructure\\generatorconfigresources.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\map\\infrastructure\\generatorconfigresources.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|d:\\godot\\science-potato\\scripts\\common\\domain\\hexcubeposition.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\common\\domain\\hexcubeposition.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|d:\\godot\\science-potato\\scripts\\common\\domain\\irandom.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\common\\domain\\irandom.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|d:\\godot\\science-potato\\scripts\\autoload\\servicecontainer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\autoload\\servicecontainer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|d:\\godot\\science-potato\\scripts\\common\\infrastructure\\systemrandom.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0FB90420-7B2A-4C9B-A896-F964EB9E714D}|Science Potato.csproj|solutionrelative:scripts\\common\\infrastructure\\systemrandom.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -150,253 +210,416 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 0,
+          "SelectedChildIndex": 3,
           "Children": [
-            {
-              "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "MapRequirement.cs",
-              "DocumentMoniker": "E:\\Godot\\science-potato\\Scripts\\Map\\Domain\\MapRequirement.cs",
-              "RelativeDocumentMoniker": "Scripts\\Map\\Domain\\MapRequirement.cs",
-              "ToolTip": "E:\\Godot\\science-potato\\Scripts\\Map\\Domain\\MapRequirement.cs",
-              "RelativeToolTip": "Scripts\\Map\\Domain\\MapRequirement.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-05-01T11:28:47.535Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "TerrainConfigResources.cs",
-              "DocumentMoniker": "E:\\Godot\\science-potato\\Scripts\\Map\\Infrastructure\\TerrainConfigResources.cs",
-              "RelativeDocumentMoniker": "Scripts\\Map\\Infrastructure\\TerrainConfigResources.cs",
-              "ToolTip": "E:\\Godot\\science-potato\\Scripts\\Map\\Infrastructure\\TerrainConfigResources.cs",
-              "RelativeToolTip": "Scripts\\Map\\Infrastructure\\TerrainConfigResources.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAYAAABEAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-05-01T11:10:14.3Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 9,
-              "Title": "IRequirement.cs",
-              "DocumentMoniker": "E:\\Godot\\science-potato\\Scripts\\Common\\Domain\\IRequirement.cs",
-              "RelativeDocumentMoniker": "Scripts\\Common\\Domain\\IRequirement.cs",
-              "ToolTip": "E:\\Godot\\science-potato\\Scripts\\Common\\Domain\\IRequirement.cs",
-              "RelativeToolTip": "Scripts\\Common\\Domain\\IRequirement.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-05-01T10:54:37.901Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 8,
-              "Title": "BuildingFactory.cs",
-              "DocumentMoniker": "E:\\Godot\\science-potato\\Scripts\\Construction\\Domain\\BuildingFactory.cs",
-              "RelativeDocumentMoniker": "Scripts\\Construction\\Domain\\BuildingFactory.cs",
-              "ToolTip": "E:\\Godot\\science-potato\\Scripts\\Construction\\Domain\\BuildingFactory.cs",
-              "RelativeToolTip": "Scripts\\Construction\\Domain\\BuildingFactory.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABQAAAACAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-05-01T10:46:36.745Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "Map.cs",
-              "DocumentMoniker": "E:\\Godot\\science-potato\\Scripts\\Map\\Domain\\Map.cs",
-              "RelativeDocumentMoniker": "Scripts\\Map\\Domain\\Map.cs",
-              "ToolTip": "E:\\Godot\\science-potato\\Scripts\\Map\\Domain\\Map.cs",
-              "RelativeToolTip": "Scripts\\Map\\Domain\\Map.cs",
-              "ViewState": "AgIAAEMAAAAAAAAAAAAQwFAAAAAQAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-05-01T09:12:01.118Z",
-              "EditorCaption": ""
-            },
             {
               "$type": "Bookmark",
               "Name": "ST:0:0:{d84ee353-0bef-5a41-a649-8f89aca5d84d}"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 15,
-              "Title": "MapAppService.cs",
-              "DocumentMoniker": "E:\\Godot\\science-potato\\Scripts\\Map\\Application\\MapAppService.cs",
-              "RelativeDocumentMoniker": "Scripts\\Map\\Application\\MapAppService.cs",
-              "ToolTip": "E:\\Godot\\science-potato\\Scripts\\Map\\Application\\MapAppService.cs",
-              "RelativeToolTip": "Scripts\\Map\\Application\\MapAppService.cs",
-              "ViewState": "AgIAADMAAAAAAAAAAAAAAEYAAAAnAAAAAAAAAA==",
+              "DocumentIndex": 11,
+              "Title": "ITaskRepository.cs",
+              "DocumentMoniker": "D:\\Godot\\science-potato\\Scripts\\Common\\Domain\\ITaskRepository.cs",
+              "RelativeDocumentMoniker": "Scripts\\Common\\Domain\\ITaskRepository.cs",
+              "ToolTip": "D:\\Godot\\science-potato\\Scripts\\Common\\Domain\\ITaskRepository.cs",
+              "RelativeToolTip": "Scripts\\Common\\Domain\\ITaskRepository.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAADwvw0AAAArAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-05-01T09:05:20.782Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-05-07T07:00:37.274Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 14,
-              "Title": "IMapGenerator.cs",
-              "DocumentMoniker": "E:\\Godot\\science-potato\\Scripts\\Map\\Domain\\IMapGenerator.cs",
-              "RelativeDocumentMoniker": "Scripts\\Map\\Domain\\IMapGenerator.cs",
-              "ToolTip": "E:\\Godot\\science-potato\\Scripts\\Map\\Domain\\IMapGenerator.cs",
-              "RelativeToolTip": "Scripts\\Map\\Domain\\IMapGenerator.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAADwvwAAAAAAAAAAAAAAAA==",
+              "DocumentIndex": 1,
+              "Title": "TaskSnapshot.cs",
+              "DocumentMoniker": "D:\\Godot\\science-potato\\Scripts\\Common\\Domain\\TaskSnapshot.cs",
+              "RelativeDocumentMoniker": "Scripts\\Common\\Domain\\TaskSnapshot.cs",
+              "ToolTip": "D:\\Godot\\science-potato\\Scripts\\Common\\Domain\\TaskSnapshot.cs",
+              "RelativeToolTip": "Scripts\\Common\\Domain\\TaskSnapshot.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAADwvw4AAAAgAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-05-01T09:11:58.418Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-05-07T06:52:22.414Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 13,
-              "Title": "ConstructionAppService.cs",
-              "DocumentMoniker": "E:\\Godot\\science-potato\\Scripts\\Construction\\Application\\ConstructionAppService.cs",
-              "RelativeDocumentMoniker": "Scripts\\Construction\\Application\\ConstructionAppService.cs",
-              "ToolTip": "E:\\Godot\\science-potato\\Scripts\\Construction\\Application\\ConstructionAppService.cs",
-              "RelativeToolTip": "Scripts\\Construction\\Application\\ConstructionAppService.cs",
-              "ViewState": "AgIAAAoAAAAAAAAAAAAAABcAAAA/AAAAAAAAAA==",
+              "DocumentIndex": 0,
+              "Title": "LinearTask.cs",
+              "DocumentMoniker": "D:\\Godot\\science-potato\\Scripts\\Common\\Infrastructure\\LinearTask.cs",
+              "RelativeDocumentMoniker": "Scripts\\Common\\Infrastructure\\LinearTask.cs",
+              "ToolTip": "D:\\Godot\\science-potato\\Scripts\\Common\\Infrastructure\\LinearTask.cs",
+              "RelativeToolTip": "Scripts\\Common\\Infrastructure\\LinearTask.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-05-01T09:11:10.768Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 17,
-              "Title": "IMapOccupant.cs",
-              "DocumentMoniker": "E:\\Godot\\science-potato\\Scripts\\Common\\Domain\\IMapOccupant.cs",
-              "RelativeDocumentMoniker": "Scripts\\Common\\Domain\\IMapOccupant.cs",
-              "ToolTip": "E:\\Godot\\science-potato\\Scripts\\Common\\Domain\\IMapOccupant.cs",
-              "RelativeToolTip": "Scripts\\Common\\Domain\\IMapOccupant.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAADwvw0AAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-05-01T09:03:23.202Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 19,
-              "Title": "Building.cs",
-              "DocumentMoniker": "E:\\Godot\\science-potato\\Scripts\\Construction\\Domain\\Building.cs",
-              "RelativeDocumentMoniker": "Scripts\\Construction\\Domain\\Building.cs",
-              "ToolTip": "E:\\Godot\\science-potato\\Scripts\\Construction\\Domain\\Building.cs",
-              "RelativeToolTip": "Scripts\\Construction\\Domain\\Building.cs",
-              "ViewState": "AgIAAAIAAAAAAAAAAADwvw0AAAAgAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-22T13:48:04.505Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 16,
-              "Title": "Construction.cs",
-              "DocumentMoniker": "E:\\Godot\\science-potato\\Scripts\\Construction\\Domain\\Construction.cs",
-              "RelativeDocumentMoniker": "Scripts\\Construction\\Domain\\Construction.cs",
-              "ToolTip": "E:\\Godot\\science-potato\\Scripts\\Construction\\Domain\\Construction.cs",
-              "RelativeToolTip": "Scripts\\Construction\\Domain\\Construction.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAARAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-22T13:45:00.666Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 23,
-              "Title": "IMapRepository.cs",
-              "DocumentMoniker": "E:\\Godot\\science-potato\\Scripts\\Map\\Domain\\IMapRepository.cs",
-              "RelativeDocumentMoniker": "Scripts\\Map\\Domain\\IMapRepository.cs",
-              "ToolTip": "E:\\Godot\\science-potato\\Scripts\\Map\\Domain\\IMapRepository.cs",
-              "RelativeToolTip": "Scripts\\Map\\Domain\\IMapRepository.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAADwvwkAAAARAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-22T13:38:16.73Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 4,
-              "Title": "IResourcesRepository.cs",
-              "DocumentMoniker": "E:\\Godot\\science-potato\\Scripts\\Resources\\Domain\\IResourcesRepository.cs",
-              "RelativeDocumentMoniker": "Scripts\\Resources\\Domain\\IResourcesRepository.cs",
-              "ToolTip": "E:\\Godot\\science-potato\\Scripts\\Resources\\Domain\\IResourcesRepository.cs",
-              "RelativeToolTip": "Scripts\\Resources\\Domain\\IResourcesRepository.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAADwvwwAAAAvAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-22T13:37:56.761Z",
+              "WhenOpened": "2026-05-06T13:15:37.879Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 3,
-              "Title": "ResourceAppService.cs",
-              "DocumentMoniker": "E:\\Godot\\science-potato\\Scripts\\Resources\\Application\\ResourceAppService.cs",
-              "RelativeDocumentMoniker": "Scripts\\Resources\\Application\\ResourceAppService.cs",
-              "ToolTip": "E:\\Godot\\science-potato\\Scripts\\Resources\\Application\\ResourceAppService.cs",
-              "RelativeToolTip": "Scripts\\Resources\\Application\\ResourceAppService.cs",
-              "ViewState": "AgIAAAMAAAAAAAAAAAAAABIAAAACAAAAAAAAAA==",
+              "Title": "IProgressTask.cs",
+              "DocumentMoniker": "D:\\Godot\\science-potato\\Scripts\\Common\\Domain\\IProgressTask.cs",
+              "RelativeDocumentMoniker": "Scripts\\Common\\Domain\\IProgressTask.cs",
+              "ToolTip": "D:\\Godot\\science-potato\\Scripts\\Common\\Domain\\IProgressTask.cs",
+              "RelativeToolTip": "Scripts\\Common\\Domain\\IProgressTask.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAADwvwoAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-22T13:33:12.658Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-05-06T13:13:36.388Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 18,
-              "Title": "Consumption.cs",
-              "DocumentMoniker": "E:\\Godot\\science-potato\\Scripts\\Common\\Domain\\Consumption.cs",
-              "RelativeDocumentMoniker": "Scripts\\Common\\Domain\\Consumption.cs",
-              "ToolTip": "E:\\Godot\\science-potato\\Scripts\\Common\\Domain\\Consumption.cs",
-              "RelativeToolTip": "Scripts\\Common\\Domain\\Consumption.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAADwvwkAAAACAAAAAAAAAA==",
+              "DocumentIndex": 4,
+              "Title": "ITickable.cs",
+              "DocumentMoniker": "D:\\Godot\\science-potato\\Scripts\\Common\\Domain\\ITickable.cs",
+              "RelativeDocumentMoniker": "Scripts\\Common\\Domain\\ITickable.cs",
+              "ToolTip": "D:\\Godot\\science-potato\\Scripts\\Common\\Domain\\ITickable.cs",
+              "RelativeToolTip": "Scripts\\Common\\Domain\\ITickable.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAowAsAAAACAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-22T13:31:34.46Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 24,
-              "Title": "IConsumable.cs",
-              "DocumentMoniker": "E:\\Godot\\science-potato\\Scripts\\Common\\Domain\\IConsumable.cs",
-              "RelativeDocumentMoniker": "Scripts\\Common\\Domain\\IConsumable.cs",
-              "ToolTip": "E:\\Godot\\science-potato\\Scripts\\Common\\Domain\\IConsumable.cs",
-              "RelativeToolTip": "Scripts\\Common\\Domain\\IConsumable.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAADwvwoAAAAWAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-22T13:05:22.976Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-05-06T13:01:38.324Z"
             },
             {
               "$type": "Document",
               "DocumentIndex": 5,
-              "Title": "ResourcesConsumption.cs",
-              "DocumentMoniker": "E:\\Godot\\science-potato\\Scripts\\Resources\\Domain\\ResourcesConsumption.cs",
-              "RelativeDocumentMoniker": "Scripts\\Resources\\Domain\\ResourcesConsumption.cs",
-              "ToolTip": "E:\\Godot\\science-potato\\Scripts\\Resources\\Domain\\ResourcesConsumption.cs",
-              "RelativeToolTip": "Scripts\\Resources\\Domain\\ResourcesConsumption.cs",
-              "ViewState": "AgIAAAYAAAAAAAAAAAAAABIAAAAOAAAAAAAAAA==",
+              "Title": "GodotTimeService.cs",
+              "DocumentMoniker": "D:\\Godot\\science-potato\\Scripts\\Common\\Infrastructure\\GodotTimeService.cs",
+              "RelativeDocumentMoniker": "Scripts\\Common\\Infrastructure\\GodotTimeService.cs",
+              "ToolTip": "D:\\Godot\\science-potato\\Scripts\\Common\\Infrastructure\\GodotTimeService.cs",
+              "RelativeToolTip": "Scripts\\Common\\Infrastructure\\GodotTimeService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABwAAAAJAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-22T12:57:18.21Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-05-06T12:56:29.856Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 15,
+              "Title": "ITimeService.cs",
+              "DocumentMoniker": "D:\\Godot\\science-potato\\Scripts\\Common\\Domain\\ITimeService.cs",
+              "RelativeDocumentMoniker": "Scripts\\Common\\Domain\\ITimeService.cs",
+              "ToolTip": "D:\\Godot\\science-potato\\Scripts\\Common\\Domain\\ITimeService.cs",
+              "RelativeToolTip": "Scripts\\Common\\Domain\\ITimeService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAADwvwgAAAAhAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-06T12:54:54.123Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "ITechTreeRepository.cs",
+              "DocumentMoniker": "D:\\Godot\\science-potato\\Scripts\\TechTree\\Domain\\ITechTreeRepository.cs",
+              "RelativeDocumentMoniker": "Scripts\\TechTree\\Domain\\ITechTreeRepository.cs",
+              "ToolTip": "D:\\Godot\\science-potato\\Scripts\\TechTree\\Domain\\ITechTreeRepository.cs",
+              "RelativeToolTip": "Scripts\\TechTree\\Domain\\ITechTreeRepository.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAADwvw4AAAAFAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-05T13:57:52.678Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "IBuildingConfig.cs",
+              "DocumentMoniker": "D:\\Godot\\science-potato\\Scripts\\Construction\\Domain\\IBuildingConfig.cs",
+              "RelativeDocumentMoniker": "Scripts\\Construction\\Domain\\IBuildingConfig.cs",
+              "ToolTip": "D:\\Godot\\science-potato\\Scripts\\Construction\\Domain\\IBuildingConfig.cs",
+              "RelativeToolTip": "Scripts\\Construction\\Domain\\IBuildingConfig.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA0AAABAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-05T13:48:49.894Z"
             },
             {
               "$type": "Document",
               "DocumentIndex": 6,
-              "Title": "ResourcesPool.cs",
-              "DocumentMoniker": "E:\\Godot\\science-potato\\Scripts\\Resources\\Domain\\ResourcesPool.cs",
-              "RelativeDocumentMoniker": "Scripts\\Resources\\Domain\\ResourcesPool.cs",
-              "ToolTip": "E:\\Godot\\science-potato\\Scripts\\Resources\\Domain\\ResourcesPool.cs",
-              "RelativeToolTip": "Scripts\\Resources\\Domain\\ResourcesPool.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAkwCAAAAACAAAAAAAAAA==",
+              "Title": "TechTreeAppService.cs",
+              "DocumentMoniker": "D:\\Godot\\science-potato\\Scripts\\TechTree\\Application\\TechTreeAppService.cs",
+              "RelativeDocumentMoniker": "Scripts\\TechTree\\Application\\TechTreeAppService.cs",
+              "ToolTip": "D:\\Godot\\science-potato\\Scripts\\TechTree\\Application\\TechTreeAppService.cs",
+              "RelativeToolTip": "Scripts\\TechTree\\Application\\TechTreeAppService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABUAAAAJAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-22T12:58:51.599Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-05-05T13:49:52.742Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "TechRequirement.cs",
+              "DocumentMoniker": "D:\\Godot\\science-potato\\Scripts\\TechTree\\Domain\\TechRequirement.cs",
+              "RelativeDocumentMoniker": "Scripts\\TechTree\\Domain\\TechRequirement.cs",
+              "ToolTip": "D:\\Godot\\science-potato\\Scripts\\TechTree\\Domain\\TechRequirement.cs",
+              "RelativeToolTip": "Scripts\\TechTree\\Domain\\TechRequirement.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA4AAAAbAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-05T13:46:34.845Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "ConstructionAppService.cs",
+              "DocumentMoniker": "D:\\Godot\\science-potato\\Scripts\\Construction\\Application\\ConstructionAppService.cs",
+              "RelativeDocumentMoniker": "Scripts\\Construction\\Application\\ConstructionAppService.cs",
+              "ToolTip": "D:\\Godot\\science-potato\\Scripts\\Construction\\Application\\ConstructionAppService.cs",
+              "RelativeToolTip": "Scripts\\Construction\\Application\\ConstructionAppService.cs",
+              "ViewState": "AgIAACAAAAAAAAAAAAAAABYAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-01T09:11:10.768Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 14,
+              "Title": "IBuildingRepository.cs",
+              "DocumentMoniker": "D:\\Godot\\science-potato\\Scripts\\Construction\\Domain\\IBuildingRepository.cs",
+              "RelativeDocumentMoniker": "Scripts\\Construction\\Domain\\IBuildingRepository.cs",
+              "ToolTip": "D:\\Godot\\science-potato\\Scripts\\Construction\\Domain\\IBuildingRepository.cs",
+              "RelativeToolTip": "Scripts\\Construction\\Domain\\IBuildingRepository.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAAHAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-05T04:46:27.595Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 28,
+              "Title": "TechNode.cs",
+              "DocumentMoniker": "D:\\Godot\\science-potato\\Scripts\\TechTree\\Domain\\TechNode.cs",
+              "RelativeDocumentMoniker": "Scripts\\TechTree\\Domain\\TechNode.cs",
+              "ToolTip": "D:\\Godot\\science-potato\\Scripts\\TechTree\\Domain\\TechNode.cs",
+              "RelativeToolTip": "Scripts\\TechTree\\Domain\\TechNode.cs",
+              "ViewState": "AgIAAAkAAAAAAAAAAAAAABQAAAA4AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-05T04:49:58.395Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 27,
+              "Title": "TechTree.cs",
+              "DocumentMoniker": "D:\\Godot\\science-potato\\Scripts\\TechTree\\Domain\\TechTree.cs",
+              "RelativeDocumentMoniker": "Scripts\\TechTree\\Domain\\TechTree.cs",
+              "ToolTip": "D:\\Godot\\science-potato\\Scripts\\TechTree\\Domain\\TechTree.cs",
+              "RelativeToolTip": "Scripts\\TechTree\\Domain\\TechTree.cs",
+              "ViewState": "AgIAABQAAAAAAAAAAAAAABoAAAAnAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-05T04:47:34.724Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 29,
+              "Title": "GodotBuildingRepository.cs",
+              "DocumentMoniker": "D:\\Godot\\science-potato\\Scripts\\Construction\\Infrastructure\\GodotBuildingRepository.cs",
+              "RelativeDocumentMoniker": "Scripts\\Construction\\Infrastructure\\GodotBuildingRepository.cs",
+              "ToolTip": "D:\\Godot\\science-potato\\Scripts\\Construction\\Infrastructure\\GodotBuildingRepository.cs",
+              "RelativeToolTip": "Scripts\\Construction\\Infrastructure\\GodotBuildingRepository.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAAAbAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-05T04:40:54.541Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 18,
+              "Title": "TerrainRequirement.cs",
+              "DocumentMoniker": "D:\\Godot\\science-potato\\Scripts\\Map\\Domain\\TerrainRequirement.cs",
+              "RelativeDocumentMoniker": "Scripts\\Map\\Domain\\TerrainRequirement.cs",
+              "ToolTip": "D:\\Godot\\science-potato\\Scripts\\Map\\Domain\\TerrainRequirement.cs",
+              "RelativeToolTip": "Scripts\\Map\\Domain\\TerrainRequirement.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAAZAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-05T04:26:12.038Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 19,
+              "Title": "TerrainConfigResources.cs",
+              "DocumentMoniker": "D:\\Godot\\science-potato\\Scripts\\Map\\Infrastructure\\TerrainConfigResources.cs",
+              "RelativeDocumentMoniker": "Scripts\\Map\\Infrastructure\\TerrainConfigResources.cs",
+              "ToolTip": "D:\\Godot\\science-potato\\Scripts\\Map\\Infrastructure\\TerrainConfigResources.cs",
+              "RelativeToolTip": "Scripts\\Map\\Infrastructure\\TerrainConfigResources.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAApAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-01T11:10:14.3Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 16,
+              "Title": "IRequirement.cs",
+              "DocumentMoniker": "D:\\Godot\\science-potato\\Scripts\\Common\\Domain\\IRequirement.cs",
+              "RelativeDocumentMoniker": "Scripts\\Common\\Domain\\IRequirement.cs",
+              "ToolTip": "D:\\Godot\\science-potato\\Scripts\\Common\\Domain\\IRequirement.cs",
+              "RelativeToolTip": "Scripts\\Common\\Domain\\IRequirement.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-01T10:54:37.901Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 17,
+              "Title": "BuildingFactory.cs",
+              "DocumentMoniker": "D:\\Godot\\science-potato\\Scripts\\Construction\\Domain\\BuildingFactory.cs",
+              "RelativeDocumentMoniker": "Scripts\\Construction\\Domain\\BuildingFactory.cs",
+              "ToolTip": "D:\\Godot\\science-potato\\Scripts\\Construction\\Domain\\BuildingFactory.cs",
+              "RelativeToolTip": "Scripts\\Construction\\Domain\\BuildingFactory.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA0AAAAnAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-01T10:46:36.745Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 22,
+              "Title": "Map.cs",
+              "DocumentMoniker": "D:\\Godot\\science-potato\\Scripts\\Map\\Domain\\Map.cs",
+              "RelativeDocumentMoniker": "Scripts\\Map\\Domain\\Map.cs",
+              "ToolTip": "D:\\Godot\\science-potato\\Scripts\\Map\\Domain\\Map.cs",
+              "RelativeToolTip": "Scripts\\Map\\Domain\\Map.cs",
+              "ViewState": "AgIAAC8AAAAAAAAAAAAAAFMAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-01T09:12:01.118Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 21,
+              "Title": "MapAppService.cs",
+              "DocumentMoniker": "D:\\Godot\\science-potato\\Scripts\\Map\\Application\\MapAppService.cs",
+              "RelativeDocumentMoniker": "Scripts\\Map\\Application\\MapAppService.cs",
+              "ToolTip": "D:\\Godot\\science-potato\\Scripts\\Map\\Application\\MapAppService.cs",
+              "RelativeToolTip": "Scripts\\Map\\Application\\MapAppService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAACAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-01T09:05:20.782Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 40,
+              "Title": "IMapGenerator.cs",
+              "DocumentMoniker": "D:\\Godot\\science-potato\\Scripts\\Map\\Domain\\IMapGenerator.cs",
+              "RelativeDocumentMoniker": "Scripts\\Map\\Domain\\IMapGenerator.cs",
+              "ToolTip": "D:\\Godot\\science-potato\\Scripts\\Map\\Domain\\IMapGenerator.cs",
+              "RelativeToolTip": "Scripts\\Map\\Domain\\IMapGenerator.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAADwvwAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-01T09:11:58.418Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 12,
+              "Title": "IMapOccupant.cs",
+              "DocumentMoniker": "D:\\Godot\\science-potato\\Scripts\\Common\\Domain\\IMapOccupant.cs",
+              "RelativeDocumentMoniker": "Scripts\\Common\\Domain\\IMapOccupant.cs",
+              "ToolTip": "D:\\Godot\\science-potato\\Scripts\\Common\\Domain\\IMapOccupant.cs",
+              "RelativeToolTip": "Scripts\\Common\\Domain\\IMapOccupant.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAADwvw0AAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-01T09:03:23.202Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 25,
+              "Title": "Building.cs",
+              "DocumentMoniker": "D:\\Godot\\science-potato\\Scripts\\Construction\\Domain\\Building.cs",
+              "RelativeDocumentMoniker": "Scripts\\Construction\\Domain\\Building.cs",
+              "ToolTip": "D:\\Godot\\science-potato\\Scripts\\Construction\\Domain\\Building.cs",
+              "RelativeToolTip": "Scripts\\Construction\\Domain\\Building.cs",
+              "ViewState": "AgIAAAMAAAAAAAAAAAAAAA0AAAAgAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-22T13:48:04.505Z"
             },
             {
               "$type": "Document",
               "DocumentIndex": 26,
+              "Title": "Construction.cs",
+              "DocumentMoniker": "D:\\Godot\\science-potato\\Scripts\\Construction\\Domain\\Construction.cs",
+              "RelativeDocumentMoniker": "Scripts\\Construction\\Domain\\Construction.cs",
+              "ToolTip": "D:\\Godot\\science-potato\\Scripts\\Construction\\Domain\\Construction.cs",
+              "RelativeToolTip": "Scripts\\Construction\\Domain\\Construction.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAARAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-22T13:45:00.666Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 43,
+              "Title": "IMapRepository.cs",
+              "DocumentMoniker": "D:\\Godot\\science-potato\\Scripts\\Map\\Domain\\IMapRepository.cs",
+              "RelativeDocumentMoniker": "Scripts\\Map\\Domain\\IMapRepository.cs",
+              "ToolTip": "D:\\Godot\\science-potato\\Scripts\\Map\\Domain\\IMapRepository.cs",
+              "RelativeToolTip": "Scripts\\Map\\Domain\\IMapRepository.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAADwvwkAAAARAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-22T13:38:16.73Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 37,
+              "Title": "IResourcesRepository.cs",
+              "DocumentMoniker": "D:\\Godot\\science-potato\\Scripts\\Resources\\Domain\\IResourcesRepository.cs",
+              "RelativeDocumentMoniker": "Scripts\\Resources\\Domain\\IResourcesRepository.cs",
+              "ToolTip": "D:\\Godot\\science-potato\\Scripts\\Resources\\Domain\\IResourcesRepository.cs",
+              "RelativeToolTip": "Scripts\\Resources\\Domain\\IResourcesRepository.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAADwvwwAAAAvAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-22T13:37:56.761Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 23,
+              "Title": "ResourceAppService.cs",
+              "DocumentMoniker": "D:\\Godot\\science-potato\\Scripts\\Resources\\Application\\ResourceAppService.cs",
+              "RelativeDocumentMoniker": "Scripts\\Resources\\Application\\ResourceAppService.cs",
+              "ToolTip": "D:\\Godot\\science-potato\\Scripts\\Resources\\Application\\ResourceAppService.cs",
+              "RelativeToolTip": "Scripts\\Resources\\Application\\ResourceAppService.cs",
+              "ViewState": "AgIAAAMAAAAAAAAAAAAAABIAAAACAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-22T13:33:12.658Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 41,
+              "Title": "Consumption.cs",
+              "DocumentMoniker": "D:\\Godot\\science-potato\\Scripts\\Common\\Domain\\Consumption.cs",
+              "RelativeDocumentMoniker": "Scripts\\Common\\Domain\\Consumption.cs",
+              "ToolTip": "D:\\Godot\\science-potato\\Scripts\\Common\\Domain\\Consumption.cs",
+              "RelativeToolTip": "Scripts\\Common\\Domain\\Consumption.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAADwvwkAAAACAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-22T13:31:34.46Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 44,
+              "Title": "IConsumable.cs",
+              "DocumentMoniker": "D:\\Godot\\science-potato\\Scripts\\Common\\Domain\\IConsumable.cs",
+              "RelativeDocumentMoniker": "Scripts\\Common\\Domain\\IConsumable.cs",
+              "ToolTip": "D:\\Godot\\science-potato\\Scripts\\Common\\Domain\\IConsumable.cs",
+              "RelativeToolTip": "Scripts\\Common\\Domain\\IConsumable.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAADwvwoAAAAWAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-22T13:05:22.976Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 24,
+              "Title": "ResourcesConsumption.cs",
+              "DocumentMoniker": "D:\\Godot\\science-potato\\Scripts\\Resources\\Domain\\ResourcesConsumption.cs",
+              "RelativeDocumentMoniker": "Scripts\\Resources\\Domain\\ResourcesConsumption.cs",
+              "ToolTip": "D:\\Godot\\science-potato\\Scripts\\Resources\\Domain\\ResourcesConsumption.cs",
+              "RelativeToolTip": "Scripts\\Resources\\Domain\\ResourcesConsumption.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABIAAAAOAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-22T12:57:18.21Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 38,
+              "Title": "ResourcesPool.cs",
+              "DocumentMoniker": "D:\\Godot\\science-potato\\Scripts\\Resources\\Domain\\ResourcesPool.cs",
+              "RelativeDocumentMoniker": "Scripts\\Resources\\Domain\\ResourcesPool.cs",
+              "ToolTip": "D:\\Godot\\science-potato\\Scripts\\Resources\\Domain\\ResourcesPool.cs",
+              "RelativeToolTip": "Scripts\\Resources\\Domain\\ResourcesPool.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAkwCAAAAACAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-22T12:58:51.599Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
               "Title": "Science Potato.csproj",
-              "DocumentMoniker": "E:\\Godot\\science-potato\\Science Potato.csproj",
+              "DocumentMoniker": "D:\\Godot\\science-potato\\Science Potato.csproj",
               "RelativeDocumentMoniker": "Science Potato.csproj",
-              "ToolTip": "E:\\Godot\\science-potato\\Science Potato.csproj",
+              "ToolTip": "D:\\Godot\\science-potato\\Science Potato.csproj",
               "RelativeToolTip": "Science Potato.csproj",
               "ViewState": "AgIAAAAAAAAAAAAAAADwvwAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
@@ -404,37 +627,35 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 11,
+              "DocumentIndex": 34,
               "Title": "MapCell.cs",
-              "DocumentMoniker": "E:\\Godot\\science-potato\\Scripts\\Map\\Domain\\MapCell.cs",
+              "DocumentMoniker": "D:\\Godot\\science-potato\\Scripts\\Map\\Domain\\MapCell.cs",
               "RelativeDocumentMoniker": "Scripts\\Map\\Domain\\MapCell.cs",
-              "ToolTip": "E:\\Godot\\science-potato\\Scripts\\Map\\Domain\\MapCell.cs",
+              "ToolTip": "D:\\Godot\\science-potato\\Scripts\\Map\\Domain\\MapCell.cs",
               "RelativeToolTip": "Scripts\\Map\\Domain\\MapCell.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABIAAAAXAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAcAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-22T12:21:33.63Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-04-22T12:21:33.63Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 28,
+              "DocumentIndex": 36,
               "Title": "MapCellView.cs",
-              "DocumentMoniker": "E:\\Godot\\science-potato\\Scripts\\Map\\Presentation\\MapCellView.cs",
+              "DocumentMoniker": "D:\\Godot\\science-potato\\Scripts\\Map\\Presentation\\MapCellView.cs",
               "RelativeDocumentMoniker": "Scripts\\Map\\Presentation\\MapCellView.cs",
-              "ToolTip": "E:\\Godot\\science-potato\\Scripts\\Map\\Presentation\\MapCellView.cs",
+              "ToolTip": "D:\\Godot\\science-potato\\Scripts\\Map\\Presentation\\MapCellView.cs",
               "RelativeToolTip": "Scripts\\Map\\Presentation\\MapCellView.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAkAAAAXAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-22T12:14:38.005Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-04-22T12:14:38.005Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 30,
+              "DocumentIndex": 13,
               "Title": "OccupantType.cs",
-              "DocumentMoniker": "E:\\Godot\\science-potato\\Scripts\\Common\\Domain\\OccupantType.cs",
+              "DocumentMoniker": "D:\\Godot\\science-potato\\Scripts\\Common\\Domain\\OccupantType.cs",
               "RelativeDocumentMoniker": "Scripts\\Common\\Domain\\OccupantType.cs",
-              "ToolTip": "E:\\Godot\\science-potato\\Scripts\\Common\\Domain\\OccupantType.cs",
+              "ToolTip": "D:\\Godot\\science-potato\\Scripts\\Common\\Domain\\OccupantType.cs",
               "RelativeToolTip": "Scripts\\Common\\Domain\\OccupantType.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAYAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
@@ -442,102 +663,95 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 21,
+              "DocumentIndex": 42,
               "Title": "MapOccupantInfo.cs",
-              "DocumentMoniker": "E:\\Godot\\science-potato\\Scripts\\Common\\Domain\\MapOccupantInfo.cs",
+              "DocumentMoniker": "D:\\Godot\\science-potato\\Scripts\\Common\\Domain\\MapOccupantInfo.cs",
               "RelativeDocumentMoniker": "Scripts\\Common\\Domain\\MapOccupantInfo.cs",
-              "ToolTip": "E:\\Godot\\science-potato\\Scripts\\Common\\Domain\\MapOccupantInfo.cs",
+              "ToolTip": "D:\\Godot\\science-potato\\Scripts\\Common\\Domain\\MapOccupantInfo.cs",
               "RelativeToolTip": "Scripts\\Common\\Domain\\MapOccupantInfo.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAQAAAAPAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-22T11:59:16.36Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-04-22T11:59:16.36Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 12,
+              "DocumentIndex": 35,
               "Title": "VoronoiMapGenerator.cs",
-              "DocumentMoniker": "E:\\Godot\\science-potato\\Scripts\\Map\\Infrastructure\\VoronoiMapGenerator.cs",
+              "DocumentMoniker": "D:\\Godot\\science-potato\\Scripts\\Map\\Infrastructure\\VoronoiMapGenerator.cs",
               "RelativeDocumentMoniker": "Scripts\\Map\\Infrastructure\\VoronoiMapGenerator.cs",
-              "ToolTip": "E:\\Godot\\science-potato\\Scripts\\Map\\Infrastructure\\VoronoiMapGenerator.cs",
+              "ToolTip": "D:\\Godot\\science-potato\\Scripts\\Map\\Infrastructure\\VoronoiMapGenerator.cs",
               "RelativeToolTip": "Scripts\\Map\\Infrastructure\\VoronoiMapGenerator.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAGoAAAADAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-15T05:10:39.822Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-15T05:10:39.822Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 10,
+              "DocumentIndex": 39,
               "Title": "ITerrainData.cs",
-              "DocumentMoniker": "E:\\Godot\\science-potato\\Scripts\\Map\\Domain\\ITerrainData.cs",
+              "DocumentMoniker": "D:\\Godot\\science-potato\\Scripts\\Map\\Domain\\ITerrainData.cs",
               "RelativeDocumentMoniker": "Scripts\\Map\\Domain\\ITerrainData.cs",
-              "ToolTip": "E:\\Godot\\science-potato\\Scripts\\Map\\Domain\\ITerrainData.cs",
+              "ToolTip": "D:\\Godot\\science-potato\\Scripts\\Map\\Domain\\ITerrainData.cs",
               "RelativeToolTip": "Scripts\\Map\\Domain\\ITerrainData.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAkAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-14T16:55:10.654Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-14T16:55:10.654Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 27,
+              "DocumentIndex": 46,
               "Title": "HexCubePosition.cs",
-              "DocumentMoniker": "E:\\Godot\\science-potato\\Scripts\\Common\\Domain\\HexCubePosition.cs",
+              "DocumentMoniker": "D:\\Godot\\science-potato\\Scripts\\Common\\Domain\\HexCubePosition.cs",
               "RelativeDocumentMoniker": "Scripts\\Common\\Domain\\HexCubePosition.cs",
-              "ToolTip": "E:\\Godot\\science-potato\\Scripts\\Common\\Domain\\HexCubePosition.cs",
+              "ToolTip": "D:\\Godot\\science-potato\\Scripts\\Common\\Domain\\HexCubePosition.cs",
               "RelativeToolTip": "Scripts\\Common\\Domain\\HexCubePosition.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-14T16:39:50.841Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-14T16:39:50.841Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 32,
+              "DocumentIndex": 20,
               "Title": "HexCubeCellSave.cs",
-              "DocumentMoniker": "E:\\Godot\\science-potato\\Scripts\\Map\\Infrastructure\\HexCubeCellSave.cs",
+              "DocumentMoniker": "D:\\Godot\\science-potato\\Scripts\\Map\\Infrastructure\\HexCubeCellSave.cs",
               "RelativeDocumentMoniker": "Scripts\\Map\\Infrastructure\\HexCubeCellSave.cs",
-              "ToolTip": "E:\\Godot\\science-potato\\Scripts\\Map\\Infrastructure\\HexCubeCellSave.cs",
+              "ToolTip": "D:\\Godot\\science-potato\\Scripts\\Map\\Infrastructure\\HexCubeCellSave.cs",
               "RelativeToolTip": "Scripts\\Map\\Infrastructure\\HexCubeCellSave.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAADwvwAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-14T16:39:46.241Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-14T16:39:46.241Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 48,
+              "Title": "ServiceContainer.cs",
+              "DocumentMoniker": "D:\\Godot\\science-potato\\Scripts\\Autoload\\ServiceContainer.cs",
+              "RelativeDocumentMoniker": "Scripts\\Autoload\\ServiceContainer.cs",
+              "ToolTip": "D:\\Godot\\science-potato\\Scripts\\Autoload\\ServiceContainer.cs",
+              "RelativeToolTip": "Scripts\\Autoload\\ServiceContainer.cs",
+              "ViewState": "AgIAABYAAAAAAAAAAAAIwCQAAAAxAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-14T16:24:38.418Z"
             },
             {
               "$type": "Document",
               "DocumentIndex": 31,
-              "Title": "ServiceContainer.cs",
-              "DocumentMoniker": "E:\\Godot\\science-potato\\Scripts\\Autoload\\ServiceContainer.cs",
-              "RelativeDocumentMoniker": "Scripts\\Autoload\\ServiceContainer.cs",
-              "ToolTip": "E:\\Godot\\science-potato\\Scripts\\Autoload\\ServiceContainer.cs",
-              "RelativeToolTip": "Scripts\\Autoload\\ServiceContainer.cs",
-              "ViewState": "AgIAABYAAAAAAAAAAAAIwCQAAAAxAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-14T16:24:38.418Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 7,
               "Title": "RandomAnchorMapGenerator.cs",
-              "DocumentMoniker": "E:\\Godot\\science-potato\\Scripts\\Map\\Infrastructure\\RandomAnchorMapGenerator.cs",
+              "DocumentMoniker": "D:\\Godot\\science-potato\\Scripts\\Map\\Infrastructure\\RandomAnchorMapGenerator.cs",
               "RelativeDocumentMoniker": "Scripts\\Map\\Infrastructure\\RandomAnchorMapGenerator.cs",
-              "ToolTip": "E:\\Godot\\science-potato\\Scripts\\Map\\Infrastructure\\RandomAnchorMapGenerator.cs",
+              "ToolTip": "D:\\Godot\\science-potato\\Scripts\\Map\\Infrastructure\\RandomAnchorMapGenerator.cs",
               "RelativeToolTip": "Scripts\\Map\\Infrastructure\\RandomAnchorMapGenerator.cs",
               "ViewState": "AgIAAAkAAAAAAAAAAAAAAHEAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-14T15:52:49.586Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-14T15:52:49.586Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 33,
+              "DocumentIndex": 49,
               "Title": "SystemRandom.cs",
-              "DocumentMoniker": "E:\\Godot\\science-potato\\Scripts\\Common\\Infrastructure\\SystemRandom.cs",
+              "DocumentMoniker": "D:\\Godot\\science-potato\\Scripts\\Common\\Infrastructure\\SystemRandom.cs",
               "RelativeDocumentMoniker": "Scripts\\Common\\Infrastructure\\SystemRandom.cs",
-              "ToolTip": "E:\\Godot\\science-potato\\Scripts\\Common\\Infrastructure\\SystemRandom.cs",
+              "ToolTip": "D:\\Godot\\science-potato\\Scripts\\Common\\Infrastructure\\SystemRandom.cs",
               "RelativeToolTip": "Scripts\\Common\\Infrastructure\\SystemRandom.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAcAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
@@ -545,11 +759,11 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 29,
+              "DocumentIndex": 47,
               "Title": "IRandom.cs",
-              "DocumentMoniker": "E:\\Godot\\science-potato\\Scripts\\Common\\Domain\\IRandom.cs",
+              "DocumentMoniker": "D:\\Godot\\science-potato\\Scripts\\Common\\Domain\\IRandom.cs",
               "RelativeDocumentMoniker": "Scripts\\Common\\Domain\\IRandom.cs",
-              "ToolTip": "E:\\Godot\\science-potato\\Scripts\\Common\\Domain\\IRandom.cs",
+              "ToolTip": "D:\\Godot\\science-potato\\Scripts\\Common\\Domain\\IRandom.cs",
               "RelativeToolTip": "Scripts\\Common\\Domain\\IRandom.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
@@ -557,11 +771,11 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 25,
+              "DocumentIndex": 45,
               "Title": "GeneratorConfigResources.cs",
-              "DocumentMoniker": "E:\\Godot\\science-potato\\Scripts\\Map\\Infrastructure\\GeneratorConfigResources.cs",
+              "DocumentMoniker": "D:\\Godot\\science-potato\\Scripts\\Map\\Infrastructure\\GeneratorConfigResources.cs",
               "RelativeDocumentMoniker": "Scripts\\Map\\Infrastructure\\GeneratorConfigResources.cs",
-              "ToolTip": "E:\\Godot\\science-potato\\Scripts\\Map\\Infrastructure\\GeneratorConfigResources.cs",
+              "ToolTip": "D:\\Godot\\science-potato\\Scripts\\Map\\Infrastructure\\GeneratorConfigResources.cs",
               "RelativeToolTip": "Scripts\\Map\\Infrastructure\\GeneratorConfigResources.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAoAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
@@ -569,42 +783,39 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 22,
+              "DocumentIndex": 33,
               "Title": "MapView.cs",
-              "DocumentMoniker": "E:\\Godot\\science-potato\\Scripts\\Map\\Presentation\\MapView.cs",
+              "DocumentMoniker": "D:\\Godot\\science-potato\\Scripts\\Map\\Presentation\\MapView.cs",
               "RelativeDocumentMoniker": "Scripts\\Map\\Presentation\\MapView.cs",
-              "ToolTip": "E:\\Godot\\science-potato\\Scripts\\Map\\Presentation\\MapView.cs",
+              "ToolTip": "D:\\Godot\\science-potato\\Scripts\\Map\\Presentation\\MapView.cs",
               "RelativeToolTip": "Scripts\\Map\\Presentation\\MapView.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAADwAAAAcAAAAAAAAAA==",
+              "ViewState": "AgIAABwAAAAAAAAAAAAAACgAAAAzAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-26T03:56:31.804Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-02-26T03:56:31.804Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 20,
+              "DocumentIndex": 30,
               "Title": "GodotMapRepository.cs",
-              "DocumentMoniker": "E:\\Godot\\science-potato\\Scripts\\Map\\Infrastructure\\GodotMapRepository.cs",
+              "DocumentMoniker": "D:\\Godot\\science-potato\\Scripts\\Map\\Infrastructure\\GodotMapRepository.cs",
               "RelativeDocumentMoniker": "Scripts\\Map\\Infrastructure\\GodotMapRepository.cs",
-              "ToolTip": "E:\\Godot\\science-potato\\Scripts\\Map\\Infrastructure\\GodotMapRepository.cs",
+              "ToolTip": "D:\\Godot\\science-potato\\Scripts\\Map\\Infrastructure\\GodotMapRepository.cs",
               "RelativeToolTip": "Scripts\\Map\\Infrastructure\\GodotMapRepository.cs",
-              "ViewState": "AgIAABIAAAAAAAAAAAAAABgAAAAnAAAAAAAAAA==",
+              "ViewState": "AgIAABgAAAAAAAAAAAAAABgAAAAnAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-26T03:56:07.737Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-02-26T03:56:07.737Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 34,
+              "DocumentIndex": 32,
               "Title": "DevMapUi.cs",
-              "DocumentMoniker": "E:\\Godot\\science-potato\\Scripts\\Map\\Presentation\\DevMapUi.cs",
+              "DocumentMoniker": "D:\\Godot\\science-potato\\Scripts\\Map\\Presentation\\DevMapUi.cs",
               "RelativeDocumentMoniker": "Scripts\\Map\\Presentation\\DevMapUi.cs",
-              "ToolTip": "E:\\Godot\\science-potato\\Scripts\\Map\\Presentation\\DevMapUi.cs",
+              "ToolTip": "D:\\Godot\\science-potato\\Scripts\\Map\\Presentation\\DevMapUi.cs",
               "RelativeToolTip": "Scripts\\Map\\Presentation\\DevMapUi.cs",
-              "ViewState": "AgIAABYAAAAAAAAAAAAswCgAAAAKAAAAAAAAAA==",
+              "ViewState": "AgIAABYAAAAAAAAAAAAswBgAAAAvAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-26T03:55:59.869Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-02-26T03:55:59.869Z"
             }
           ]
         }

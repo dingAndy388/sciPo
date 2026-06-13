@@ -20,19 +20,19 @@ namespace SciencePotato.Scripts.Map.Application
 			_mapRepo.SaveMap(map);
 		}
 
-		public MapCell GetMapCell(string MapID, HexCubePosition position)
+		public MapCell GetMapCell(string MapId, HexCubePosition position)
 		{
-			return _mapRepo.LoadMap(MapID).GetCell(position);
+			return _mapRepo.LoadMap(MapId).GetCell(position);
 		}
 
-		public IEnumerable<MapCell> GetAllCells(string MapID)
+		public IEnumerable<MapCell> GetAllCells(string MapId)
 		{
-			return _mapRepo.LoadMap(MapID).GetAllCells();
+			return _mapRepo.LoadMap(MapId).GetAllCells();
 		}
 
-		public void SetTerrain(string MapID, HexCubePosition position, ITerrainData terrain)
+		public void SetTerrain(string MapId, HexCubePosition position, ITerrainData terrain)
 		{
-			var map = _mapRepo.LoadMap(MapID);
+			var map = _mapRepo.LoadMap(MapId);
 			ITerrainData oldTer = map.GetTerrain(position);
 			map.SetTerrain(position, terrain);
 
@@ -48,32 +48,32 @@ namespace SciencePotato.Scripts.Map.Application
 			CellTerrainChanged?.Invoke(new CellTerrainChangedEvent(evt.HexCubePosition, evt.OldTerr, evt.NewTerr));
 		}
 
-		public bool IsClear(string MapID,HexCubePosition posittion)
+		public bool IsClear(string MapId,HexCubePosition posittion)
 		{
-			var map = _mapRepo.LoadMap(MapID);
+			var map = _mapRepo.LoadMap(MapId);
 			
 			if(map.GetOccupantInfo(posittion) == null)
 				return true;
 			return false;
 		}
 
-		public MapOccupantInfo? GetOccupantInfo(string MapID, HexCubePosition position)
+		public MapOccupantInfo? GetOccupantInfo(string MapId, HexCubePosition position)
 		{
-			var map = _mapRepo.LoadMap(MapID);
+			var map = _mapRepo.LoadMap(MapId);
 
 			return map.GetOccupantInfo(position);
 		}
 
-		public void SetOccupant(string MapID, HexCubePosition position,IMapOccupant occupant)
+		public void SetOccupant(string MapId, HexCubePosition position,IMapOccupant occupant)
 		{
-			var map = _mapRepo.LoadMap(MapID);
+			var map = _mapRepo.LoadMap(MapId);
 
 			map.SetOccupant(occupant, position);
 		}
 
-		public TerrainRequirement GetTerrainRequirement(string MapID, HexCubePosition position,string targetTerrain)
+		public TerrainRequirement GetTerrainRequirement(string MapId, HexCubePosition position,string targetTerrain)
 		{
-			var map = _mapRepo.LoadMap(MapID);
+			var map = _mapRepo.LoadMap(MapId);
 			return new TerrainRequirement(map, position, targetTerrain);
 		}
 	}

@@ -9,7 +9,7 @@ namespace SciencePotato.Scripts.Construction.Domain
 {
 	public class BuildingFactory
 	{
-		public Building CreateBuilding(string buildingID)
+		public Building CreateBuilding(string buildingId)
 		{
 			throw new NotImplementedException();
 		}
