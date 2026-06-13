@@ -15,3 +15,5 @@ obj/
 *.user
 mono_crash.*.json
 data_*/
+
+.vs/
