@@ -32,5 +32,19 @@ namespace SciencePotato.Scripts.TechTree.Domain
                 _researchedId.Add(_nodes[id].Id);
             }
         }
-    }
+
+        public float GetCost(string id)
+        {
+            if (!_nodes.ContainsKey(id))
+                return 0;
+            return _nodes[id].Cost;
+		}
+
+		public float GetDuration(string nodeId)
+		{
+			if (!_nodes.ContainsKey(nodeId))
+				return 0;
+			return _nodes[nodeId].Duration;
+		}
+	}
 }

@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace SciencePotato.Scripts.TechTree.Domain
 {
-    public class TechNode(string id,List<string> prerequisites, float cost)
+    public class TechNode(string id,List<string> prerequisites, float cost,float duration)
     {
         public List<string> Prerequisites { get; set; } = prerequisites;
 
@@ -15,8 +15,7 @@ namespace SciencePotato.Scripts.TechTree.Domain
 
         public string Id { get; } = id;
         public float Cost { get; private set; } = cost;
-
-        public List<IModifier> Modifiers { get; set; }
+        public float Duration { get; private set; } = duration;
 
         public void Research(HashSet<string> unlockedId)
         {
@@ -25,6 +24,5 @@ namespace SciencePotato.Scripts.TechTree.Domain
                 Researched = true;
             }
         }
-
     }
 }
