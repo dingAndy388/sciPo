@@ -9,7 +9,7 @@ namespace SciencePotato.Scripts.Resources.Domain
 {
 	internal interface IResourcesRepository
 	{
-		void SaveResources(ResourcesPool pool);
-		ResourcesPool LoadResourcesPool(string path);
+		void SaveResources(string mapId, ResourcesPool pool);
+		ResourcesPool LoadResourcesPool(string mapId);
 	}
 }

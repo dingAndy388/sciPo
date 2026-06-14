@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace SciencePotato.Scripts.Resources.Application
 {
-	public class ResourceAppService(ResourcesPool pool)
+	public class ResourcesAppService(ResourcesPool pool)
 	{
 		private ResourcesPool _pool = pool;
 
@@ -16,5 +16,10 @@ namespace SciencePotato.Scripts.Resources.Application
 		{
 			return new ResourcesConsumption(_pool,consumption.Type,consumption.Amount);
 		}
+
+		public void AddResource(string type, float amount)
+		{
+			_pool.AddValue(type, amount);
+		}	
 	}
 }
