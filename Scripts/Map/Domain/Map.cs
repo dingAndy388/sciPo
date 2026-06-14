@@ -10,6 +10,9 @@ namespace SciencePotato.Scripts.Map.Domain
 		// aggregate of mapcell
 		private Dictionary<HexCubePosition, MapCell> _cells;
 
+		//dict of all occupants
+		private Dictionary<long, IMapOccupant> _occupants = new();
+
 		public int seed;
 		public int width, height;
 		public readonly string Id;
@@ -67,10 +70,23 @@ namespace SciencePotato.Scripts.Map.Domain
 			return null;
 		}
 
+		public IMapOccupant GetOccupant(HexCubePosition position)
+		{
+			if (_cells.TryGetValue(position, out _))
+				return _cells[position].Occupant;
+			return null;
+		}
+
+		public IMapOccupant GetOccupantByUId(long uid)
+		{
+			return _occupants[uid];
+		}	
+
 		public void SetOccupant(IMapOccupant occupant,HexCubePosition position)
 		{
 			if (_cells.TryGetValue(position, out _))
 				_cells[position].SetOccupant(occupant);
+			_occupants[occupant.GetInfo().UId] = occupant;
 		}
 
 		internal bool VerifyTerrain(HexCubePosition position, string targetTerrain)

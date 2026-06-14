@@ -8,6 +8,7 @@ namespace SciencePotato.Scripts.Common.Domain
 {
 	public interface IMapOccupant
 	{
+		bool IsReady { get; set; }
 		MapOccupantInfo GetInfo();
 	}
 }

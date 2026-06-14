@@ -64,6 +64,12 @@ namespace SciencePotato.Scripts.Map.Application
 			return map.GetOccupantInfo(position);
 		}
 
+		public IMapOccupant GetOccupantByUId(string MapId, long uid)
+		{
+			var map = _mapRepo.LoadMap(MapId);
+			return map.GetOccupantByUId(uid);
+		}
+
 		public void SetOccupant(string MapId, HexCubePosition position,IMapOccupant occupant)
 		{
 			var map = _mapRepo.LoadMap(MapId);

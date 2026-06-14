@@ -22,9 +22,6 @@ namespace SciencePotato.Scripts.Map.Presentation
 		{
 			_cellContainer = GetNode<Node2D>("MapCells");
 
-			_mapQuery = ServiceContainer.Instance.MapQuery;
-			_modificationService = ServiceContainer.Instance.MapMod;
-
 			_modificationService.CellTerrainChanged += HandleTerrainChanged;
 
 			_cells = new();

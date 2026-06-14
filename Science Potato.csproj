@@ -5,4 +5,16 @@
     <EnableDynamicLoading>true</EnableDynamicLoading>
     <RootNamespace>SciencePotato</RootNamespace>
   </PropertyGroup>
+  <ItemGroup>
+    <Compile Remove="Scripts\Uniit\**" />
+    <Compile Remove="Scripts\新文件夹\**" />
+    <EmbeddedResource Remove="Scripts\Uniit\**" />
+    <EmbeddedResource Remove="Scripts\新文件夹\**" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Scripts\Units\Infrastructure\" />
+  </ItemGroup>
 </Project>

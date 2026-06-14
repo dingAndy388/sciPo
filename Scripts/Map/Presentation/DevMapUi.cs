@@ -10,7 +10,7 @@ public partial class DevMapUi : CanvasLayer
 	private SpinBox _height;
 	private SpinBox _width;
 
-	private MapAppService _generator;
+	private MapAppService _map;
 	private MapView _mapView;
 
 	private Camera2D _camera;
@@ -26,7 +26,7 @@ public partial class DevMapUi : CanvasLayer
 		_height = GetNode<SpinBox>("BoxContainer/HeightInput");
 		_width = GetNode<SpinBox>("BoxContainer/WidthInput");
 
-		_generator = ServiceContainer.Instance.MapGeneration;
+		_map = ServiceContainer.Instance.MapService;
 	}
 
 	private void OnGenerateBtnPressed()
@@ -34,7 +34,7 @@ public partial class DevMapUi : CanvasLayer
 		GD.Print("DevUI: Pressed");
 
 		GD.Print("DevUI: Generating");
-		_generator.GenerateMap((int)_seed.Value, (int)_width.Value, (int)_height.Value, _id.Text);
+		_map.GenerateMap((int)_seed.Value, (int)_width.Value, (int)_height.Value, _id.Text);
 		_mapView.MapId = _id.Text;
 		_mapView.UpdateAllCells();
 		GD.Print("DevUI: Done");
