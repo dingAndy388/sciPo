@@ -15,10 +15,11 @@ namespace SciencePotato.Scripts.Construction.Domain
 		private readonly int _id = id;
 		private readonly long _uid = uid;
 		private readonly string _name = name;
+		public bool IsReady { get; set; } = false;
 
 		public MapOccupantInfo GetInfo()
 		{
-			info = new MapOccupantInfo(_pos, _id,_uid,_name,OccupantType.Building);
+			info = new MapOccupantInfo(_pos, _id,_uid,_name, IsReady, -1f, OccupantType.Building);
 			return info;
 		}
 	}
