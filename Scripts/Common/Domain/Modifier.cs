@@ -6,9 +6,11 @@ using System.Threading.Tasks;
 
 namespace SciencePotato.Scripts.Common.Domain
 {
-	internal interface IModifiable
+	//DTO of modifers from config
+	public struct Modifier
 	{
-		void AddModifier(IModifier modifier);
-		void RemoveModifier(IModifier modifier);
+		public string Target { get; set; }
+		public string Type { get; set; }
+		public float Value { get; set; }
 	}
 }

@@ -6,8 +6,9 @@ using System.Threading.Tasks;
 
 namespace SciencePotato.Scripts.Common.Domain
 {
-	public interface IModifierProvider
+	public enum ModifierType
 	{
-		IModifier[] GetModifiers();
+		Absolute,
+		Percentage
 	}
 }
