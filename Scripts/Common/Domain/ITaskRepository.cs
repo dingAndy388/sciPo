@@ -1,4 +1,4 @@
-﻿using Godot;
+using Godot;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,9 +9,8 @@ namespace SciencePotato.Scripts.Common.Domain
 {
     public interface ITaskRepository
     {
-        List<TaskSnapshot> GetCurrentTasks();
-        void AddTask(TaskSnapshot task);
-        void RemoveTask(TaskSnapshot task);
-        
+        List<TaskSnapshot> GetCurrentTasks(string mapId);
+        void AddTask(string mapId, TaskSnapshot task);
+        void RemoveTask(string mapId, TaskSnapshot task);
     }
 }

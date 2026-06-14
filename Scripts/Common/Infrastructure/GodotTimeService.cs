@@ -1,4 +1,5 @@
-﻿using Godot;
+using Godot;
+using SciencePotato.Scripts.Common.Application;
 using SciencePotato.Scripts.Common.Domain;
 using System;
 using System.Collections.Generic;

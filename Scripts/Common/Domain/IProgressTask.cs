@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,10 +8,14 @@ namespace SciencePotato.Scripts.Common.Domain
 {
     public interface IProgressTask : ITickable
     {
-        float Progess { get; }
+        float Progress { get; set; }
+        float Target { get; }
         string Id {  get; }
-        bool IsCompleted { get; }
+        bool IsCompleted { get; set; }
+        string Type { get; }
+        long UId { get; }
 
-        event Action OnCompleted;
+        TaskSnapshot GetSnapshot();
+		event Action OnCompleted;
     }
 }

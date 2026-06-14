@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -10,8 +10,11 @@ namespace SciencePotato.Scripts.Common.Domain
 {
     public class TaskSnapshot
     {
-        public float Progess;
+        public float Progress;
+        public float Target;
         public string Id;
-        public bool IsCompleted;
+        public string Type;
+        public long UId;
+		public bool IsCompleted;
     }
 }
