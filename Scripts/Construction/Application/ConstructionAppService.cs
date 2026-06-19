@@ -96,5 +96,16 @@ namespace SciencePotato.Scripts.Construction.Application
 			return buildTask;
 		}
 
+		public void RemoveBuildingByPosition(string mapId, HexCubePosition position)
+		{
+			var info = _map.GetBuildingInfo(mapId,position);
+			if(info.HasValue)
+			{
+				var Uid = info.Value.UId.ToString();
+                _map.RemoveBuilding(mapId, position);
+				_modifier.RemoveModifiersBySourceId(mapId,Uid);
+            }
+			return;
+        }
 	}
 }	

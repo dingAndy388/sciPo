@@ -7,12 +7,12 @@ using System.Threading.Tasks;
 
 namespace SciencePotato.Scripts.Construction.Domain
 {
-	public class Building(HexCubePosition coord, int id, long uid, string name) : IMapOccupant
+	public class Building(HexCubePosition coord, string id, long uid, string name) : IMapOccupant
 	{
 		private MapOccupantInfo info;
 
 		private readonly HexCubePosition _pos = coord;
-		private readonly int _id = id;
+		private readonly string _id = id;
 		private readonly long _uid = uid;
 		private readonly string _name = name;
 		public bool IsReady { get; set; } = false;

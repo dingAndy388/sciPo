@@ -1,6 +1,7 @@
 using SciencePotato.Scripts.Common.Domain;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace SciencePotato.Scripts.Map.Domain
 {
@@ -20,6 +21,7 @@ namespace SciencePotato.Scripts.Map.Domain
 		// events
 		public record CellTerrainChangedEvent(HexCubePosition HexCubePosition, ITerrainData OldTerr, ITerrainData NewTerr);
 		public event Action<CellTerrainChangedEvent> CellTerrainChanged;
+		public event Action<MapOccupantInfo> OccupantRemoved;
 
 		public Map(int seed, int width, int height, string Id)
 		{
@@ -62,18 +64,11 @@ namespace SciencePotato.Scripts.Map.Domain
 			return _cells[position].Terrain;
 		}
 
-		public MapOccupantInfo? GetOccupantInfo(HexCubePosition	position)
+		public IEnumerable<MapOccupantInfo> GetOccupantInfo(HexCubePosition position)
 		{
 			if(_cells.TryGetValue(position, out _))
-				if (_cells[position].Occupant!=null)
-					return _cells[position].Occupant.GetInfo();
-			return null;
-		}
-
-		public IMapOccupant GetOccupant(HexCubePosition position)
-		{
-			if (_cells.TryGetValue(position, out _))
-				return _cells[position].Occupant;
+				if (_cells[position].Occupants!=null)
+					return from occ in _cells[position].Occupants select occ.GetInfo();
 			return null;
 		}
 
@@ -82,19 +77,52 @@ namespace SciencePotato.Scripts.Map.Domain
 			return _occupants[uid];
 		}	
 
-		public void SetOccupant(IMapOccupant occupant,HexCubePosition position)
+		public void AddOccupant(IMapOccupant occupant,HexCubePosition position)
 		{
 			if (_cells.TryGetValue(position, out _))
-				_cells[position].SetOccupant(occupant);
+				_cells[position].AddOccupant(occupant);
 			_occupants[occupant.GetInfo().UId] = occupant;
 		}
 
-		internal bool VerifyTerrain(HexCubePosition position, string targetTerrain)
+		public void RemoveOccupantByPosition(HexCubePosition position, IMapOccupant occupant)
+		{
+			if (_cells.TryGetValue(position, out _))
+				if (_cells[position].Occupants.Contains(occupant))
+					_cells[position].RemoveOccupant(occupant);
+		}
+
+		public void SetBuilding(HexCubePosition position, IMapOccupant building)
+		{
+			if (_cells.TryGetValue(position, out _))
+				_cells[position].SetBuilding(building);
+		}
+
+		public void RemoveBuilding(HexCubePosition position)
+		{
+			if (_cells.TryGetValue(position, out _)) 
+			{
+				var info = _cells[position].GetBuildingInfo();
+				if(info.HasValue)
+				{
+                    _cells[position].RemoveBuilding();
+                    OccupantRemoved?.Invoke(info.Value);
+                }
+            }
+        }
+
+		public bool VerifyTerrain(HexCubePosition position, string targetTerrain)
 		{
 			if(_cells.TryGetValue(position,out _))
 				if (_cells[position].Terrain.Id==targetTerrain)
 					return true;
 			return false;
 		}
-	}
+
+        public MapOccupantInfo? GetBuildingInfo(HexCubePosition position)
+        {
+			if (_cells.TryGetValue(position, out _))
+				return _cells[position].GetBuildingInfo();
+			return null;
+        }
+    }
 }
