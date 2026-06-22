@@ -17,3 +17,5 @@ mono_crash.*.json
 data_*/
 
 .vs/
+
+.design/    
