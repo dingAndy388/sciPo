@@ -1,0 +1,5 @@
+====== Background ======
+
+  * The player starts in a primitive village with potatoes
+  * The player is the world will, leading the development of his potato civilisation
+

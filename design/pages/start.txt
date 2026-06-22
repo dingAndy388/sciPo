@@ -1,0 +1,36 @@
+====== Start ======
+
+This is the development wiki of the game **Science Potato**. You can write down your ideas here.
+
+Main pages:
+[[designs:game_mechanisms|Mechanisms]]
+
+Dev pages:
+[[dev:timeline|Timeline]]
+[[dev:log|Log]]
+
+Feedback:
+[[designs:mvp_comment_1|MVP 初稿反馈]]
+
+开发随笔: [[dev:junk|随笔]]
+
+Reply:
+[[MVP初稿反馈回复]]
+===== Guide =====
+
+You can check out the sidebar to add new pages or navigate to other pages
+
+For designers, please refer to the [[游戏设计指导手册]]
+==== Syntax ====
+
+see [[wiki:syntax]]
+
+Tags can be added to pages by:
+
+<code ->
+{{tag>[list of tags]}}
+</code>
+
+==== TODO List ====
+
+Add all pending items to the [[designs:todo_list]]

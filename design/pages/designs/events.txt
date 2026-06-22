@@ -1,0 +1,52 @@
+====== Events ======
+
+Events would happen throughout the game, which players are going to make decisions to continue the event, lastly may give bonuses or punishments regarding what they chose.
+
+The events are mostly based on real world past events, with a bit of adjustments. 事件发生时时间会暂停，直到确认后才继续。
+
+按持续事件与瞬时事件划分。
+
+<note tip>MVP只存在瞬时事件</note>
+
+====== Event template ======
+
+通用模版释义：^ Name ^ ID ^ Category ^ No. of sub-events ^ Duration ^ Rareness ^ List of choices ^ List of effects ^ Trigger condition ^
+
+  * Name：事件名称
+  * ID：开发者用的编号
+  * 描述：事件描述
+  * Effects：事件效果
+
+
+====== 瞬时events: ======
+不存在持续时间和选择。弹出弹窗时效果就已发动。
+
+^ Name ^ ID ^ 描述  ^ Rareness ^ 停滞时间 ^ Effects ^ Trigger condition ^
+| 海啸（灾难） | 1 | 先欠着 | 0.05% | 0 | 摧毁所有建筑&人口减少70%（向下取整） | 随机&海洋单元格外四格&总计～50格 |
+| 丰收 | 2_1 | 先欠着 | R | 0 | 获得总收获量的20%[[resources|食物]] | 三年未出现丰收&随机 |
+| 大丰收 | 2_2 | 先欠着 | R | 0 | 获得总收获量的35%[[resources|食物]] | 丰收事件被触发&随机 |
+| 遗失的手稿 | 3 | 先欠着 | R | 0 | 随机科技节点研究进度增加总时长的15% | 仅限文艺复兴时期之前&随机 |
+| 巧合中的研讨会 | 先欠着 | 资源 | R | 0 | 增加[[resources|灵感idea]]年产量的15% | 随机 |
+
+
+<del>====== Research events: ======
+
+>Triggered once the player researched a certain technology and fulfil other conditions
+>Triggered once the player researched a certain technology and fulfil other conditions
+
+^ Name ^ ID ^ Category ^ No. of sub-events ^ Duration ^ Rareness ^ List of choices ^ List of effects ^ Trigger condition ^
+
+====== Scientist events: ======
+
+>Triggered once the player hired a scientist and fulfil other conditions
+>Triggered once the player hired a scientist and fulfil other conditions
+
+^ Name ^ ID ^ Category ^ No. of sub-events ^ Duration ^ Rareness ^ List of choices ^ List of effects ^ Trigger condition ^
+
+====== Paradigm Shift: ======
+
+>Triggered by the player
+>Triggered by the player</del>
+
+{{tag>[mechanisms]}}
+

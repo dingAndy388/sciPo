@@ -1,0 +1,83 @@
+====== Log ======
+===== 17/4/26 =====
+Revisit architecture of map system
+  * Remove IPosition interface for better performance
+  * Encapsulate MapCell access to aggregate root Map
+===== 18/4/26 =====
+High-level disign on the systems' denpendency.
+<uml>
+@startuml
+skinparam linetype ortho
+skinparam nodesep 100
+skinparam ranksep 150
+
+
+package "World Core" {
+    component "Time System" as time
+    component "Map System" as map
+}
+
+package "Contracts" {
+    component "<<interface>>\nITickable" as ITickable
+    component "<<interface>>\nIMapOccupant" as IMapOccupant
+    component "<<interface>>\nIModifier" as IModifier
+    component "<<interface>>\nIConsumable" as icon
+    component "<<interface>>\nIRequirement" as ireq
+
+    
+    ITickable -[hidden]right- IMapOccupant
+    IMapOccupant -[hidden]right- IModifier
+}
+
+package "Player System" {
+    package "Action" as action {
+        component "Construction System" as cons
+        component "Research System" as research
+        component "Unit System" as unit
+        component "Event System" as event
+        
+        cons -[hidden]right- research
+        unit -[hidden]right- event
+        cons -[hidden]down- unit    
+    }
+    
+    package "Stats" as stats {
+        component "Resources System" as res
+        component "Research Tree" as tree
+        res -[hidden]down- tree
+    }
+}
+    
+' --- RELATIONSHIPS ---
+
+time -d-> ITickable : Ticks
+map -d-> IMapOccupant : Manages
+IMapOccupant -> IModifier : Hold
+
+action ..u.|> ITickable
+cons ..up.|> IMapOccupant
+unit ..up.|> IMapOccupant
+action ..up.> IModifier : Issue
+stats -up-> IModifier : Holds
+
+res .u.|> icon
+tree .u.|> ireq
+
+action ..> icon: check
+action  ..> ireq : verify
+
+@enduml     
+</uml>
+
+===== 22/4/26 =====
+Contracts: IModifier, IModifierProvider, IModifiable, IConsumable, IMapOccupant, ITickable, IRequirement
+DTO: Consumption, MapOccupantInfo
+Resources System: ResourcesPool, ResourcesConsumption:IConsumable, IResourcesRepository, ResourcesService(App)
+Construction: Building:IMapOccupant
+
+===== 1/5/26 =====
+Refactor of map: integrate appservice
+
+Usecase of construction: resource consumption, terrain requirement
+
+Interface of building repo and config

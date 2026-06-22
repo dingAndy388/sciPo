@@ -1,0 +1,32 @@
+===== Research Tree =====
+Discover different science theories, which is crucial to develop a civilisation.
+
+  * Branch:
+    * Research [[Math]], [[Physics]], [[Chemistry]] Theories
+
+Researching a topic would require different [[resources|resources]], including:
+
+  * [[resources|Ideas]]
+
+Each research topic requires certain amount of time to complete, the tree progresses down as topics are discovered, unlocking more available research topics.
+
+初始设定：每棵科技树同时只能进行一项研发。三个科技树互相独立（即最多可以同时进行三个研发）。后续会推出节点使得一棵树可以同时进行多个研发。
+
+<note tip>MVP只包含表格填写充实的部分。目前只有数学科技树完成了十一项节点&物理科技树完成三项</note>
+
+==== Theories ====
+内容包括：
+  *时代 ——分为“古代文明”，“古典时期”，“中世纪”（只做为描述，并非机制）
+  *名称 ——节点名称
+  *前置 ——解锁条件
+  *描述 ——节点描述
+  *效果 ——解锁后的效果
+  *消耗 ——研究所需的[[resources|idea]]
+  *所需时间 ——研究耗时
+
+
+==== Technologies ====
+
+
+{{tag>[mechanisms]}}
+

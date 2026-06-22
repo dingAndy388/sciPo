@@ -1,0 +1,114 @@
+===== Buildings 建築 =====
+
+Buildings is what the player can construct on a tile.
+
+Buildings are mainly separated to 3 types: Academic, Production, Infrastructure
+
+附属建筑需建造于区域建筑当中。区域建筑升级，附属建筑不会消失。建筑的两格范围内不会再有迷雾。
+
+所有建筑必须且只能由建造者单位建造。每个建筑同时只能由一个建造者建造。
+
+只有住房设施（营地-村落-市镇-城邦）和军事建筑具有生命值。住房设施也是游戏中决定胜负的关键，一旦住房设施生命值清零将会被夺取并成为敌方建筑。
+
+模版释义：
+
+  * 名称：建筑名称
+  * 分类：建筑类型
+  * 前置：建造所需前置建筑/解锁所需节点
+  * 描述：建筑描述
+  * 效果：建筑效果（以“，”表示）/可执行操作（以“；”表示）
+  * 晋级：可选升级路径
+  * 升级条件：升级所需达成的条件
+  * 升级消耗：升级所需资源&时间
+  * 建造消耗：建造所需资源
+  * 建造时间：建造所需时间
+
+<note tip>
+
+MVP内容只包含表格部分
+
+</note>
+
+=== 科研 ===
+
+用于研发/增加效率
+
+^ 名称 ^ 分类 ^ 前置 ^ 描述 ^ 效果 ^ 晋级 ^ 升级条件 ^ 升级消耗 ^ 建造消耗 ^ 建造时间 ^
+| School lv.I | 区域建筑 | 无 | 先欠着 | 生产250[[resources|idea]]/月 | School lv.II | 解锁[[math|毕达哥拉斯学派]]（数学） | 2000基础石材；2个月 | 1200基础石材 | 8个月 |
+| 日晷 | 附属建筑 | School（建筑） | 先欠着 | 每月增加150idea产出 | 无 | - | - | 500基础石材 | 1个月 |
+| 观星台 | 标准建筑 | [[math|圆锥曲线]]（数学） | 能观测季节变化，预测农田产量… | 使三格范围内农田产量浮动上限变为+5%，下限变为-1%。 | 无 | - | - | 400基础石材 | 6个月 |
+| 骨笛工坊 | 标准建筑 | [[physics|声学初探]]（物理） | 先欠着 | 使一格范围内的所有资源生产型建筑产出增加15% | 未知 | 未知 | 未知 | 800基础石材 | 3个月 |
+| School lv.II | 区域建筑 | [[math|毕达哥拉斯学派]]（数学） | 先欠着 | 生产1000[[resources|idea]]/月 | School lv.III | 未知 | 未知 | 未定 | 未定 |
+| Research institute |
+
+  * Research institute
+    * Creates the [[research_institutes|Research Institutes 研究院]] desisions
+    * The "Capital" of the progression of science
+    * The player can modify the general research aim of the institute
+  * Laboratory
+    * Place for the researcher to do advanced researches
+    * Can be upgraded to different types of laboratory: Increase research speed of their respective areas (More specific more buffs)
+      * Basic lab (lv.1)
+      * Physics Lab (lv.2)
+      * Chemistry Lab (lv.2)
+      * Special Labs (lv.3 or higher) (e.g. Nuclear Lab)
+  * Archive/Library
+    * Stores books, manuscripts, and research records
+    * Increases research efficiency of all nearby (5 tiles) academic buildings
+    * Upgrades (lv. 1-3): 
+      * Reading room → Manuscript archive → National depository
+  * School
+    * Train [[researchers]], Find [[specialists]]
+    * Supply Ideas
+  * Field station
+    * Remote research outpost for specific environments
+    * Types: Marine station (coastal), Mountain station (high altitude), Desert station, Forest station
+    * Enables region-specific research that cannot be done in main campuses
+
+=== 基础建设 ===
+
+可生产[[resources|自然资源]]/建造仓库等基础设施
+
+^ 名称 ^ 分类 ^ 前置 ^ 描述 ^ 效果 ^ 晋级 ^ 升级条件 ^ 升级消耗 ^ 建造消耗 ^ 建造时间 ^
+| 营地 | 区域建筑 | 无 | 先欠着 | 周遭六个地块[[population|人口]]+1/10个月（上限为9）；允许将1[[population|人口]]转化为[[unit|建造者]]（2个月） | 村落 | 范围内人口总数>40 | 先欠着 | 200基础石材 | 3个月 |
+| 仓库 lv.I | 标准建筑 | 无 | 先欠着 | 食物存储上限+2000，石料存储上限+1500 | 仓库 lv.II | 未知 | 先欠着 | 800基础石材 | 2个月 |
+| Farm lv.I | 标准建筑 | 无 | 先欠着 | 生产144[[resources|food]]/年 上下浮动3% | Farm lv.II | 无 | 1500基础石材 | 600[[resources|基础食材]] | 4个月 |
+| Mine lv.I | 标准建筑 | 无 | 先欠着 | 生产100[[resources|基础石材]]/月 | Mine lv.II | 无 | 1500基础石材 | 600[[resources|基础石材]] | 6个月 |
+
+营地生命值：1000
+  * Workshop
+
+  * Processes raw materials into refined goods
+  * Types: Smelter (metals), Sawmill (lumber), Textile workshop etc.
+  * Can produce specialised equipment for laboratories (glassware, precision tools)
+  * Chemical Plants
+  * Produce chemicals from raw materials
+
+* Road
+
+  * Connects buildings and enables transport
+  * Reduces travel time for researchers (small efficiency buff)
+  * Required for resource transportation
+  * Upgrades can be unlocked through tech research
+  * Bridge
+  * Crosses rivers or valleys to connect separated regions
+  * Enables access to otherwise unreachable resource sites or field station locations
+  * Warehouse/Storage
+  * Stores resources
+  * Larger warehouses allow stockpiling for times of shortage
+  * Power plant
+  * Provides energy for advanced laboratories and machinery
+  * Progression: Water mill → Steam engine → Coal power plant → Hydroelectric → (future techs)
+  * Location requirements: water mills need rivers, windmills need open terrain
+
+<del>=== 加工 === ^ 名称 ^ 分类 ^ 前置 ^ 描述 ^ 效果 ^ 晋级 ^ 升级条件 ^ 升级消耗 ^ 建造消耗 ^ 建造时间 ^</del>
+
+=== 军事 ===
+
+可制造防御性军事建筑/生产军事单位
+
+^ 名称 ^ 分类 ^ 前置 ^ 描述 ^ 效果 ^ 晋级 ^ 升级条件 ^ 升级消耗 ^ 建造消耗 ^ 建造时间 ^
+| 军营 lv.I | 附属建筑 | 营地 | 先欠着 | 允许将1[[population|人口]]转化为[[unit|探索者]]（1个月）/[[unit|民兵]]（3个月） | 军营 lv.II | 无 | 2333 | 400基础石材 | 2个月 |
+
+=== 奇观 ===
+

@@ -1,0 +1,2 @@
+====== Soil fertility ======
+Soil fertility determines the rate of [[resources|food]] produced by [[buildings|farms]].
