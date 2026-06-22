@@ -1,8 +1,0 @@
-===== Research Institutes 研究院 =====
-Research Institutes is a type of construction involving a group of various buildings. This tab focuses on the system within the institutes (When the player presses the building)
-
-==== Scientific Challenges ====
-Scientific challenges is an optional mission randomly given to the player in the institute tab, the target given must be achievable to the player within the target time. Solving or failing the challenge can affect the research speed or other factors. (For example, completing a challenge about extracting ores can boost the mine output for 5 years)
-
->Challenge Name: (Name)\\ Id: (Numerical ID):\\ Category: (Physics/Math/etc.)\\ Target Time: (In years)\\ Requirements to finish: (Researched [Theory ID])\\ Range of spawning: (Within a certain level of [[game_index|prosperity]])\\ Rewards: \\ Punishments: \\ 
-

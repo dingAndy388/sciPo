@@ -1,7 +1,6 @@
 using Godot;
 using SciencePotato.Scripts.Common.Application;
 using SciencePotato.Scripts.Common.Domain;
-using SciencePotato.Scripts.Construction.Application;
 using SciencePotato.Scripts.Construction.Domain;
 using SciencePotato.Scripts.Map.Application;
 using SciencePotato.Scripts.Resources.Application;
@@ -15,12 +14,11 @@ using System.Threading.Tasks;
 
 namespace SciencePotato.Scripts.Units.Application
 {
-	public class UnitsAppService(MapAppService mapApp, TechTreeAppService techTreeApp, ResourcesAppService resourcesApp, ConstructionAppService constructionApp, ITimeService timeService, IUnitsRepository repo, UnitFactory factory)
+	public class UnitsAppService(MapAppService mapApp, TechTreeAppService techTreeApp, ResourcesAppService resourcesApp, ITimeService timeService, IUnitsRepository repo, UnitFactory factory)
 	{
 		private MapAppService _map = mapApp;
 		private TechTreeAppService _tech = techTreeApp;
 		private ResourcesAppService _resources = resourcesApp;
-		private ConstructionAppService _construction = constructionApp;
 		private IUnitsRepository _repo = repo;
 		private ITimeService _time = timeService;
 		private UnitFactory _factory = factory;
@@ -85,51 +83,6 @@ namespace SciencePotato.Scripts.Units.Application
 			};
 
 			return trainingtask;
-		}
-
-		public void RemoveUnit(string mapId, long uid)
-		{
-			throw new NotImplementedException();
-		}
-
-		public void ExcuteAction(string mapId, long uid, HexCubePosition targetPosition, string targetParam, string action)
-		{
-			var occupant = _map.GetOccupantByUId(mapId, uid);
-
-			if (occupant is not Unit unit) return;
-
-			var config = _repo.GetUnitConfig(unit.GetInfo().Id);
-			if (!config.Actions.Contains(action)) return;
-
-			switch (action)
-			{
-				case "CanBuild":
-					Build(mapId, unit, targetParam, targetPosition);
-					break;
-				case "CanAttack":
-					Attack(mapId, unit, targetParam, targetPosition);
-					break;
-				case "CanMove":
-					Move(mapId, unit, targetPosition);
-					break;
-			}
-		}
-
-		private void Build(string mapId, Unit unit, string building, HexCubePosition position)
-		{
-			if (unit.Position != position || !unit.IsIdle) return;
-			_construction.StartConstruction(mapId, building, position);
-			unit.IsIdle = false;
-		}
-
-		private void Attack(string mapId, Unit unit, string targetUid, HexCubePosition position)
-		{
-			throw new NotImplementedException();
-		}
-
-		private void Move(string mapId, Unit unit, HexCubePosition position)
-		{
-			throw new NotImplementedException();
 		}
 	}
 }	

@@ -8,13 +8,10 @@ using System.Xml.Linq;
 
 namespace SciencePotato.Scripts.Units.Domain
 {
-	public class Unit(HexCubePosition coord, string id, long uid, string name, float hp, int attack, int movement, bool isIdle) : IMapOccupant
+	public class Unit(HexCubePosition coord, int id, long uid, string name, float hp, int attack, int movement) : IMapOccupant
 	{
-		//id: same as unit config id
-		private readonly string _id = id;
-		//uid: unique identifier for this unit instance
+		private readonly int _id = id;
 		private readonly long _uid = uid;
-		//name: display name for this unit
 		private readonly string _name = name;
 
 		public HexCubePosition Position { get; set; } = coord;
@@ -22,7 +19,6 @@ namespace SciencePotato.Scripts.Units.Domain
 		public float HP { get; set; } = hp;
 		public int Attack { get; set; } = attack;
 		public int Movement { get; set; } = movement;
-		public bool IsIdle { get; set; } = isIdle;
 
 		public MapOccupantInfo GetInfo()
 		{

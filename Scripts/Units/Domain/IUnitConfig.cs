@@ -20,8 +20,6 @@ namespace SciencePotato.Scripts.Units.Domain
 		float Duration { get; }
 		float HP { get; set; }
 		int Attack { get; set; }
-		int Movement { get; set; }
-
-		List<string> Actions { get; set; }
+		int Movement { get; set; }	
 	}
 }

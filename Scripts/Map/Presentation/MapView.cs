@@ -21,7 +21,15 @@ namespace SciencePotato.Scripts.Map.Presentation
 		public override void _Ready()
 		{
 			_cellContainer = GetNode<Node2D>("MapCells");
+
+			_modificationService.CellTerrainChanged += HandleTerrainChanged;
+
 			_cells = new();
+		}
+
+		private void HandleTerrainChanged(MapAppService.CellTerrainChangedEvent evt)
+		{
+			UpdateCell(evt.Position);
 		}
 
 		public void UpdateAllCells()
