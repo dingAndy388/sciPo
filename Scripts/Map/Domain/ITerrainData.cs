@@ -5,5 +5,6 @@ namespace SciencePotato.Scripts.Map.Domain
 		string Id { get; set; }
 		string Name { get; set; }
 		float Weight { get; set; }
+		float MoveCost { get; set; }
 	}
 }

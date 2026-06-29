@@ -8,9 +8,14 @@ using System.Threading.Tasks;
 
 namespace SciencePotato.Scripts.Resources.Application
 {
-	public class ResourcesAppService(ResourcesPool pool)
+	public class ResourcesAppService
 	{
-		private ResourcesPool _pool = pool;
+		private ResourcesPool _pool;
+
+        public ResourcesAppService(ResourcesPool pool)
+		{
+			_pool = pool;
+		}
 
 		public IConsumable CreateResourceConsumption(Consumption consumption)
 		{

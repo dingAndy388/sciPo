@@ -6,8 +6,10 @@ using System.Threading.Tasks;
 
 namespace SciencePotato.Scripts.Resources.Domain
 {
-	public class ResourcesPool
+	public class ResourcesPool(int owner)
 	{
+		public readonly int OwnerId = owner;
+
 		private Dictionary<string, float> _value = new Dictionary<string, float>();
 		private Dictionary<string, float> _limit = new Dictionary<string, float>();
 
@@ -32,7 +34,6 @@ namespace SciencePotato.Scripts.Resources.Domain
 		//change limit of resource
 		public void AddLimit(string key, float value)
 		{
-			_limit.Add(key, value);
 		}
 	}
 }

@@ -47,9 +47,9 @@ namespace SciencePotato.Scripts.Map.Application
 			return false;
 		}
 
-		public IEnumerable<MapOccupantInfo> GetOccupantInfo(string apId, HexCubePosition position)
+		public MapOccupantInfo? GetOccupantInfo(string mapId, HexCubePosition position)
 		{
-			var map = _mapRepo.LoadMap(apId);
+			var map = _mapRepo.LoadMap(mapId);
 
 			return map.GetOccupantInfo(position);
 		}
@@ -76,7 +76,7 @@ namespace SciencePotato.Scripts.Map.Application
         public void RemoveOccupantByPosition(string mapId, HexCubePosition position, IMapOccupant occupant)
         {
 			var map = _mapRepo.LoadMap(mapId);
-			map.RemoveOccupantByPosition(position, occupant);
+			map.RemoveOccupantByPosition(position);
         }
 
 		public void RemoveBuilding(string mapId, HexCubePosition position)
@@ -90,5 +90,7 @@ namespace SciencePotato.Scripts.Map.Application
 			var map = _mapRepo.LoadMap(mapId);
 			return map.GetBuildingInfo(position);
 		}
+
+
     }
 }

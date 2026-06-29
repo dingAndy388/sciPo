@@ -2,7 +2,7 @@ namespace SciencePotato.Scripts.Common.Domain
 {
 	//DTO of IMapOccupant
 	//Issue by IMapOccupant, Recieved by Map sys
-	public struct MapOccupantInfo(HexCubePosition coord, string id, long uid, string name, bool isReady, float hp, OccupantType type)
+	public struct MapOccupantInfo(HexCubePosition coord, string id, long uid, int owner, string name, bool isReady, float hp, OccupantType type)
 	{
 		//Position
 		public readonly HexCubePosition Position = coord;
@@ -12,6 +12,9 @@ namespace SciencePotato.Scripts.Common.Domain
 		
 		//identifier on map
 		public readonly long UId = uid;
+
+		//player id
+		public readonly int OwnerId = owner;
 
 		//displayed name to players
 		public readonly string Name = name;

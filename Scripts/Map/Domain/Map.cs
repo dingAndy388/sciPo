@@ -18,11 +18,6 @@ namespace SciencePotato.Scripts.Map.Domain
 		public int width, height;
 		public readonly string Id;
 
-		// events
-		public record CellTerrainChangedEvent(HexCubePosition HexCubePosition, ITerrainData OldTerr, ITerrainData NewTerr);
-		public event Action<CellTerrainChangedEvent> CellTerrainChanged;
-		public event Action<MapOccupantInfo> OccupantRemoved;
-
 		public Map(int seed, int width, int height, string Id)
 		{
 			this.seed = seed;
@@ -44,7 +39,6 @@ namespace SciencePotato.Scripts.Map.Domain
 				return;
 			ITerrainData old = _cells[position].Terrain;
 			_cells[position].SetTerrain(terrain);
-			CellTerrainChanged?.Invoke(new CellTerrainChangedEvent(position, old, terrain));
 		}
 
 		public MapCell GetCell(HexCubePosition position)
@@ -64,11 +58,11 @@ namespace SciencePotato.Scripts.Map.Domain
 			return _cells[position].Terrain;
 		}
 
-		public IEnumerable<MapOccupantInfo> GetOccupantInfo(HexCubePosition position)
+		public MapOccupantInfo? GetOccupantInfo(HexCubePosition position)
 		{
-			if(_cells.TryGetValue(position, out _))
-				if (_cells[position].Occupants!=null)
-					return from occ in _cells[position].Occupants select occ.GetInfo();
+			if(_cells.TryGetValue(position, out MapCell cell))
+				if (cell.Occupant!=null)
+					return cell.Occupant.GetInfo();
 			return null;
 		}
 
@@ -80,15 +74,15 @@ namespace SciencePotato.Scripts.Map.Domain
 		public void AddOccupant(IMapOccupant occupant,HexCubePosition position)
 		{
 			if (_cells.TryGetValue(position, out _))
-				_cells[position].AddOccupant(occupant);
+				_cells[position].SetOccupant(occupant);
 			_occupants[occupant.GetInfo().UId] = occupant;
 		}
 
-		public void RemoveOccupantByPosition(HexCubePosition position, IMapOccupant occupant)
+		public void RemoveOccupantByPosition(HexCubePosition position)
 		{
-			if (_cells.TryGetValue(position, out _))
-				if (_cells[position].Occupants.Contains(occupant))
-					_cells[position].RemoveOccupant(occupant);
+			if (_cells.TryGetValue(position, out MapCell cell))
+				if (cell.Occupant!=null)
+					cell.RemoveOccupant();
 		}
 
 		public void SetBuilding(HexCubePosition position, IMapOccupant building)
@@ -99,14 +93,9 @@ namespace SciencePotato.Scripts.Map.Domain
 
 		public void RemoveBuilding(HexCubePosition position)
 		{
-			if (_cells.TryGetValue(position, out _)) 
+			if (_cells.TryGetValue(position, out MapCell cell)) 
 			{
-				var info = _cells[position].GetBuildingInfo();
-				if(info.HasValue)
-				{
-                    _cells[position].RemoveBuilding();
-                    OccupantRemoved?.Invoke(info.Value);
-                }
+				cell.RemoveBuilding();
             }
         }
 
@@ -120,8 +109,8 @@ namespace SciencePotato.Scripts.Map.Domain
 
         public MapOccupantInfo? GetBuildingInfo(HexCubePosition position)
         {
-			if (_cells.TryGetValue(position, out _))
-				return _cells[position].GetBuildingInfo();
+			if (_cells.TryGetValue(position, out MapCell cell))
+				return cell.Building.GetInfo();
 			return null;
         }
     }

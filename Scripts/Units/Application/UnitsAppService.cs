@@ -122,12 +122,13 @@ namespace SciencePotato.Scripts.Units.Application
 			unit.IsIdle = false;
 		}
 
+		//TODO
 		private void Attack(string mapId, Unit unit, string targetUid, HexCubePosition position)
 		{
 			throw new NotImplementedException();
 		}
 
-		private void Move(string mapId, Unit unit, HexCubePosition position)
+		private void Move(string mapId, Unit unit, HexCubePosition dest)
 		{
 			throw new NotImplementedException();
 		}

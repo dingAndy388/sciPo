@@ -8,39 +8,44 @@ namespace SciencePotato.Scripts.Map.Domain
 	{
 		public HexCubePosition Position { get; set; } = position;
 		public ITerrainData Terrain { get; private set; }
-		public List<IMapOccupant> Occupants { get; private set; } = new List<IMapOccupant>();
+		public IMapOccupant Occupant {  get; private set; }
 		public IMapOccupant Building { get; private set; }
+
+		public int Population { get; private set; }
 
 		public void SetTerrain(ITerrainData terrain)
 		{
 			this.Terrain = terrain;
 		}
 
-		public void AddOccupant(IMapOccupant occupant)
+		public void SetOccupant(IMapOccupant occupant)
 		{
-			Occupants.Add(occupant);
+			Occupant = occupant;
 		}
 
-		public void SetBuilding(IMapOccupant building)
+		public void RemoveOccupant()
 		{
-				Building = building;
+			Occupant = null;
 		}
 
-		public void RemoveOccupant(IMapOccupant occupant)
-		{
-			if (Occupants.Contains(occupant)) { Occupants.Remove(occupant); }
-		}
+        public void SetBuilding(IMapOccupant building)
+        {
+            Building = building;
+        }
 
-		public void RemoveBuilding()
+        public void RemoveBuilding()
 		{
 			Building = null;
 		}
 
-        internal MapOccupantInfo? GetBuildingInfo()
-        {
-			if(Building!=null)
-				return Building.GetInfo();
-			return null;
-        }
+		public void AddPopulation(int growth)
+		{
+			Population += growth;
+		}
+
+		public void SetPopulation(int population)
+		{
+			Population = population;
+		}
     }
 }
