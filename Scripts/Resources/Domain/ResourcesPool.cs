@@ -1,39 +1,64 @@
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SciencePotato.Scripts.Resources.Domain
 {
-	public class ResourcesPool(int owner)
+	public class ResourcesPool
 	{
-		public readonly int OwnerId = owner;
+		[JsonProperty]
+		public int OwnerId { get; private set; }
 
-		private Dictionary<string, float> _value = new Dictionary<string, float>();
-		private Dictionary<string, float> _limit = new Dictionary<string, float>();
+		[JsonProperty]
+		private Dictionary<string, float> _value = new();
+		[JsonProperty]
+		private Dictionary<string, float> _limit = new();
 
-		//get value of resource
+		[JsonConstructor]
+		private ResourcesPool() { }
+
+		public ResourcesPool(int ownerId)
+		{
+			OwnerId = ownerId;
+		}
+
+		public void InitializeFromConfig(IResourcesPoolConfig config)
+		{
+			if (config?.Resources == null) return;
+
+			foreach (var resource in config.Resources)
+			{
+				if (!_value.ContainsKey(resource.Name))
+					_value[resource.Name] = resource.BaseValue;
+				if (!_limit.ContainsKey(resource.Name))
+					_limit[resource.Name] = resource.BaseLimit;
+			}
+		}
+
 		public float GetValue(string key)
 		{
 			return _value.GetValueOrDefault(key, 0);
 		}
 
-		//change value of resource
 		public void AddValue(string key, float value)
 		{
-			_value.Add(key, value);
+			if (_value.ContainsKey(key))
+				_value[key] = Math.Clamp(_value[key] + value, 0, GetLimit(key));
+			else
+				_value[key] = value;
 		}
 
-		//get limit of resource
 		public float GetLimit(string key)
 		{
 			return _limit.GetValueOrDefault(key, 0);
 		}
 
-		//change limit of resource
 		public void AddLimit(string key, float value)
 		{
+			if (_limit.ContainsKey(key))
+				_limit[key] += value;
+			else
+				_limit[key] = value;
 		}
 	}
 }

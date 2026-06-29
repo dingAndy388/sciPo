@@ -1,0 +1,31 @@
+{
+  "Resources": [
+    {
+      "Name": "Gold",
+      "Description": "金币，用于建造和研发",
+      "GrowInterval": 5,
+      "BaseGrowth": 1.0,
+      "BaseValue": 0,
+      "BaseLimit": 999999,
+      "DependentModifiers": ["GoldGrowth"]
+    },
+    {
+      "Name": "Wood",
+      "Description": "木材，用于建造",
+      "GrowInterval": 8,
+      "BaseGrowth": 0.5,
+      "BaseValue": 0,
+      "BaseLimit": 500,
+      "DependentModifiers": ["WoodGrowth"]
+    },
+    {
+      "Name": "Idea",
+      "Description": "科技点，用于研发",
+      "GrowInterval": 0,
+      "BaseGrowth": 0,
+      "BaseValue": 0,
+      "BaseLimit": 999999,
+      "DependentModifiers": ["IdeaGrowth"]
+    }
+  ]
+}

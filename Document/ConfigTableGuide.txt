@@ -1,0 +1,501 @@
+================================================================================
+  Science Potato - 配置填表指南 (Config Table Guide)
+  版本: 1.0 | 最后更新: 2026-06-29
+================================================================================
+
+目录:
+  一、通用结构与约定
+  二、资源池配置 (Resources)
+  三、建筑配置 (Buildings)
+  四、单位配置 (Units)
+  五、科技树配置 (TechTrees)
+  六、事件配置 (Events)
+  附录A、地形配置 (Terrains - .tres 文件)
+
+================================================================================
+  一、通用结构与约定
+================================================================================
+
+[Modifier 格式]
+  所有系统共享的 Modifier 结构，用于表示加成/减益效果。
+
+  字段:
+    Target  (string) - 效果目标名称，如 "GoldGrowth", "Attack", "Movement"
+    Type    (string) - "Percent" 或 "Absolute"
+    Value   (float)  - 效果数值
+
+  示例:
+    { "Target": "GoldGrowth", "Type": "Percent", "Value": 0.2 }
+    → GoldGrowth 提升 20%
+
+    { "Target": "Attack",     "Type": "Absolute", "Value": 5 }
+    → 攻击力 +5
+
+[TechRequirements 格式]
+  Dictionary<string, List<string>> — 键=科技树ID, 值=需要已研究的科技节点ID列表
+
+  示例: { "physics": ["friction", "field"] }
+  → 必须已研究 physics 树下的 "friction" 和 "field" 节点
+
+[ResourceCost 格式]
+  Dictionary<string, float> — 键=资源名, 值=消耗数量
+
+  示例: { "Gold": 100, "Wood": 50 }
+  → 消耗 100 金币 + 50 木材
+
+[DependentModifiers 格式]
+  List<string> — 直接填写 modifier target 名称，系统会在增长时用 ModifierManager
+  以这些 target 查找所有注册的 modifier 并加总到 BaseGrowth 上。
+
+  示例: ["GoldGrowth"]
+  → 游戏内任何来源注册了 GoldGrowth modifier 都会被累加到金币增长率
+
+================================================================================
+  二、资源池配置 (Resources)
+================================================================================
+
+  文件名建议: ResourcesConfig.json
+  根元素: { "Resources": [ ... ] }
+
+  [字段说明]
+
+  字段名             类型     必填  说明
+  ────────────────  ────────  ────  ─────────────────────────────────
+  Name              string    是    资源唯一标识，如 "Gold", "Wood", "Food"
+                                    也用作资源消耗时的 key
+  Description       string    否    资源描述文本
+  GrowInterval      int       是    自然增长间隔（秒）。系统每间隔秒数尝试
+                                    增长一次。填 0 表示不自动增长
+  BaseGrowth        float     是    每次增长的基础数值。最终增长率 =
+                                    ModifierManager(DependentModifiers, BaseGrowth)
+  BaseValue         float     是    初始资源量（新游戏开局时）
+  BaseLimit         float     是    资源上限，增长到此值后停止
+  DependentModifiers [string]  否   修饰器目标名列表。留空写 [] 即可
+
+  [完整样板 JSON]
+  ```json
+  {
+    "Resources": [
+      {
+        "Name": "Gold",
+        "Description": "金币，用于建造和研发",
+        "GrowInterval": 5,
+        "BaseGrowth": 1.0,
+        "BaseValue": 0,
+        "BaseLimit": 999999,
+        "DependentModifiers": ["GoldGrowth"]
+      },
+      {
+        "Name": "Wood",
+        "Description": "木材，用于建造",
+        "GrowInterval": 8,
+        "BaseGrowth": 0.5,
+        "BaseValue": 0,
+        "BaseLimit": 500,
+        "DependentModifiers": ["WoodGrowth"]
+      },
+      {
+        "Name": "Idea",
+        "Description": "科技点，用于研发",
+        "GrowInterval": 0,
+        "BaseGrowth": 0,
+        "BaseValue": 0,
+        "BaseLimit": 999999,
+        "DependentModifiers": ["IdeaGrowth"]
+      }
+    ]
+  }
+  ```
+
+  [注意事项]
+  - "Idea" 是科技研发消耗的资源，建议填 Interval=0 靠事件/建筑产出
+  - 资源名区分大小写，必须与建筑/单位配置中的 ResourceCost key 一致
+  - DependentModifiers 填的是 modifier 的 Target 名，不是资源名
+
+================================================================================
+  三、建筑配置 (Buildings)
+================================================================================
+
+  文件名建议: BuildingsConfig.json
+  根元素: { "Buildings": { "building_id": {...}, ... } }
+
+  [字段说明]
+
+  字段名                 类型                    必填  说明
+  ────────────────────  ──────────────────────  ────  ───────────────────────
+  BuildingId            string                   是    建筑唯一标识(与 key 同)
+  Name                  string                   是    显示名
+  ResourceCost          { string: float }        是    建造消耗资源
+  TerrainRequirements   [string]                 是    可建造地形列表(地形ID)
+  TechRequirements       { string: [string] }    否    建造所需科技前提
+  Modifiers             [Modifier]              否    建成后注册的全局效果
+  Duration              float                    是    建造耗时(秒)
+  Actions               [string]                 是    建筑可执行动作列表
+                                                      当前支持: "CanResearch"
+  VisionRadius          int                      否    开迷雾半径(格),默认填0
+  IsHousing             bool                     是    是否为住房(true/false)
+  PopulationRadius      int                      否    住房辐射人口半径(格)
+  PopulationCap         int                      否    住房提供人口上限(每格)
+  PopulationGrowthInterval int                   否    人口增长间隔(秒)
+
+  [完整样板 JSON]
+  ```json
+  {
+    "Buildings": {
+      "house": {
+        "BuildingId": "house",
+        "Name": "民居",
+        "ResourceCost": { "Wood": 20 },
+        "TerrainRequirements": ["plain"],
+        "TechRequirements": {},
+        "Modifiers": [],
+        "Duration": 10,
+        "Actions": [],
+        "VisionRadius": 1,
+        "IsHousing": true,
+        "PopulationRadius": 3,
+        "PopulationCap": 5,
+        "PopulationGrowthInterval": 15
+      },
+      "library": {
+        "BuildingId": "library",
+        "Name": "图书馆",
+        "ResourceCost": { "Gold": 100, "Wood": 50 },
+        "TerrainRequirements": ["plain"],
+        "TechRequirements": { "science": ["writing"] },
+        "Modifiers": [
+          { "Target": "IdeaGrowth", "Type": "Absolute", "Value": 0.5 }
+        ],
+        "Duration": 30,
+        "Actions": ["CanResearch"],
+        "VisionRadius": 3,
+        "IsHousing": false,
+        "PopulationRadius": 0,
+        "PopulationCap": 0,
+        "PopulationGrowthInterval": 0
+      },
+      "barracks": {
+        "BuildingId": "barracks",
+        "Name": "兵营",
+        "ResourceCost": { "Gold": 80, "Wood": 40 },
+        "TerrainRequirements": ["plain"],
+        "TechRequirements": {},
+        "Modifiers": [],
+        "Duration": 20,
+        "Actions": [],
+        "VisionRadius": 3,
+        "IsHousing": false,
+        "PopulationRadius": 0,
+        "PopulationCap": 0,
+        "PopulationGrowthInterval": 0
+      }
+    }
+  }
+  ```
+
+  [注意事项]
+  - 非住房建筑: IsHousing=false, PopulationRadius=0, PopulationCap=0,
+    PopulationGrowthInterval=0
+  - Actions 当前只支持 "CanResearch"，留空写 []
+  - TechRequirements 格式: { "科技树ID": ["节点ID1", "节点ID2"] }
+  - VisionRadius=0 表示建筑不提供视野
+
+================================================================================
+  四、单位配置 (Units)
+================================================================================
+
+  文件名建议: UnitsConfig.json
+  根元素: { "Units": { "unit_id": {...}, ... } }
+
+  [字段说明]
+
+  字段名                 类型                    必填  说明
+  ────────────────────  ──────────────────────  ────  ───────────────────────
+  UnitId                string                   是    单位唯一标识(与key同)
+  ResourceCost          { string: float }        是    训练消耗资源
+  TerrainRequirements   [string]                 是    可训练地形列表
+  TechRequirements       { string: [string] }    否    训练所需科技前提
+  Duration              float                    是    训练耗时(秒)
+  HP                    float                    是    生命值
+  Attack                int                      否    攻击力(废弃,用下面)
+  Movement              int                      否    移动力(废弃)
+  Actions               [string]                 是    可执行动作:
+                                                      "CanBuild"/"CanMove"/"CanAttack"
+  VisionRadius          int                      否    视野半径(格),默认3
+  MoveRechargePerTick   float                    是    每10秒恢复的MP(移动点)
+  AttackRadius          int                      是    攻击半径(格),0=近战
+  AttackDamage          float                    是    每次攻击造成的伤害(每秒)
+  PopulationCost        int                      是    训练消耗的人口
+
+  [完整样板 JSON]
+  ```json
+  {
+    "Units": {
+      "worker": {
+        "UnitId": "worker",
+        "ResourceCost": { "Gold": 20 },
+        "TerrainRequirements": ["plain"],
+        "TechRequirements": {},
+        "Duration": 8,
+        "HP": 50,
+        "Attack": 0,
+        "Movement": 5,
+        "Actions": ["CanBuild", "CanMove"],
+        "VisionRadius": 3,
+        "MoveRechargePerTick": 3,
+        "AttackRadius": 0,
+        "AttackDamage": 0,
+        "PopulationCost": 1
+      },
+      "swordsman": {
+        "UnitId": "swordsman",
+        "ResourceCost": { "Gold": 50, "Wood": 20 },
+        "TerrainRequirements": ["plain"],
+        "TechRequirements": {},
+        "Duration": 12,
+        "HP": 100,
+        "Attack": 8,
+        "Movement": 4,
+        "Actions": ["CanMove", "CanAttack"],
+        "VisionRadius": 4,
+        "MoveRechargePerTick": 2,
+        "AttackRadius": 0,
+        "AttackDamage": 8,
+        "PopulationCost": 1
+      },
+      "archer": {
+        "UnitId": "archer",
+        "ResourceCost": { "Gold": 60, "Wood": 30 },
+        "TerrainRequirements": ["plain"],
+        "TechRequirements": {},
+        "Duration": 15,
+        "HP": 60,
+        "Attack": 6,
+        "Movement": 3,
+        "Actions": ["CanMove", "CanAttack"],
+        "VisionRadius": 5,
+        "MoveRechargePerTick": 1.5,
+        "AttackRadius": 3,
+        "AttackDamage": 6,
+        "PopulationCost": 1
+      }
+    }
+  }
+  ```
+
+  [注意事项]
+  - AttackRadius=0 表示近战单位，必须移动到目标同一格才能攻击
+  - AttackRadius>0 表示远程单位，可以隔格攻击
+  - MoveRechargePerTick 是每 10 秒(游戏中10天)恢复的 MP，移动一格消耗
+    地形MoveCost
+  - AttackDamage 是每秒(游戏中1天)造成的伤害
+  - 单位需要先拥有 "CanBuild" action 才能调用建造动作建造建筑
+  - 单位训练完毕后会自动注册 Move engine (IntervalTask)
+
+================================================================================
+  五、科技树配置 (TechTrees)
+================================================================================
+
+  文件名建议: TechTreesConfig.json
+  根元素: { "TechTrees": { "tree_id": {...}, ... } }
+
+  [字段说明]
+
+  字段名             类型                    必填  说明
+  ────────────────  ──────────────────────  ────  ───────────────────────
+  (树根 key)        string                   是    科技树ID, 如 "military"
+  ────── 每个科技树节点下 ──────
+  Techs             { string: {...} }        是    该树所有科技节点
+    ──── 每个科技节点 ────
+    Id              string                   是    节点ID(与key同)
+    Prerequisites   [string]                 否    前置科技节点ID列表
+    Cost            float                    是    研发消耗的"Idea"资源量
+    Duration        float                    是    研发耗时(秒)
+    Modifiers       [Modifier]              否    研发完成后注册的效果
+
+  [完整样板 JSON]
+  ```json
+  {
+    "TechTrees": {
+      "military": {
+        "Techs": {
+          "melee_weapons": {
+            "Id": "melee_weapons",
+            "Prerequisites": [],
+            "Cost": 50,
+            "Duration": 20,
+            "Modifiers": [
+              { "Target": "swordsmanAttack", "Type": "Percent", "Value": 0.1 }
+            ]
+          },
+          "advanced_armor": {
+            "Id": "advanced_armor",
+            "Prerequisites": ["melee_weapons"],
+            "Cost": 100,
+            "Duration": 40,
+            "Modifiers": [
+              { "Target": "swordsmanHP", "Type": "Absolute", "Value": 20 }
+            ]
+          },
+          "siege_tech": {
+            "Id": "siege_tech",
+            "Prerequisites": ["melee_weapons"],
+            "Cost": 150,
+            "Duration": 60,
+            "Modifiers": [
+              { "Target": "Attack", "Type": "Absolute", "Value": 5 }
+            ]
+          }
+        }
+      },
+      "science": {
+        "Techs": {
+          "writing": {
+            "Id": "writing",
+            "Prerequisites": [],
+            "Cost": 30,
+            "Duration": 15,
+            "Modifiers": []
+          },
+          "mathematics": {
+            "Id": "mathematics",
+            "Prerequisites": ["writing"],
+            "Cost": 80,
+            "Duration": 30,
+            "Modifiers": [
+              { "Target": "IdeaGrowth", "Type": "Percent", "Value": 0.3 }
+            ]
+          }
+        }
+      }
+    }
+  }
+  ```
+
+  [注意事项]
+  - Prerequisites 为空列表 [] 表示无前置，为根节点
+  - Cost 消耗的资源固定为 "Idea"
+  - Modifiers 中的 Target 会传给 ModifierManager，可与建筑/事件的效果叠加
+  - 研发完成后 sourceId=节点ID，方便以后撤销
+
+================================================================================
+  六、事件配置 (Events)
+================================================================================
+
+  文件名建议: EventsConfig.json
+  根元素: { "Events": [ ... ] }
+
+  [字段说明]
+
+  字段名                 类型                    必填  说明
+  ────────────────────  ──────────────────────  ────  ───────────────────────
+  EventId               string                   是    事件唯一标识
+  Name                  string                   是    事件名称
+  Description           string                   否    事件描述文本
+  TriggerChance         float                    是    触发概率(0~1), 每天一次
+                                                      0.001=0.1%概率/天
+  Duration              int                      是    效果持续天数, 0=永久
+  Modifiers             [Modifier]              否    触发时注册的效果列表
+  ResourcePrerequisites { string: float }        否    触发所需资源(不消耗则不写)
+  TechPrerequisites     { string: [string] }     否    触发所需科技前提
+
+  [完整样板 JSON]
+  ```json
+  {
+    "Events": [
+      {
+        "EventId": "gold_rush",
+        "Name": "淘金热",
+        "Description": "金矿发现！金币产量短期飙升",
+        "TriggerChance": 0.002,
+        "Duration": 30,
+        "Modifiers": [
+          { "Target": "GoldGrowth", "Type": "Percent", "Value": 1.0 }
+        ],
+        "ResourcePrerequisites": { "Gold": 200 },
+        "TechPrerequisites": {}
+      },
+      {
+        "EventId": "plague",
+        "Name": "瘟疫",
+        "Description": "可怕的瘟疫席卷了你的领地",
+        "TriggerChance": 0.001,
+        "Duration": 20,
+        "Modifiers": [
+          { "Target": "GoldGrowth", "Type": "Percent", "Value": -0.3 },
+          { "Target": "WoodGrowth", "Type": "Percent", "Value": -0.2 }
+        ],
+        "ResourcePrerequisites": {},
+        "TechPrerequisites": {}
+      },
+      {
+        "EventId": "enlightenment",
+        "Name": "启蒙时代",
+        "Description": "思想解放，科研速度永久提升",
+        "TriggerChance": 0.0005,
+        "Duration": 0,
+        "Modifiers": [
+          { "Target": "IdeaGrowth", "Type": "Percent", "Value": 0.5 }
+        ],
+        "ResourcePrerequisites": { "Gold": 500, "Idea": 100 },
+        "TechPrerequisites": { "science": ["mathematics"] }
+      }
+    ]
+  }
+  ```
+
+  [注意事项]
+  - TriggerChance 每天独立判定，互不影响
+  - Duration=0 表示永久效果，不会被撤销（除非手动调用 RemoveModifiers）
+  - Duration>0 时到期自动撤销该事件的所有 Modifier
+  - 事件触发消耗资源（ResourcePrerequisites 中的资源会被扣除）
+  - 事件 Modifiers 的 sourceId 是 EventId，撤销时按 EventId 删除
+
+================================================================================
+  附录A、地形配置 (Terrains)
+================================================================================
+
+  地形使用 Godot 的 .tres 资源文件，存放于 Config/Terrains/ 目录。
+  不使用 JSON。每个地形一个 .tres 文件。
+
+  [字段说明]
+
+  字段名             类型     说明
+  ────────────────  ────────  ─────────────────────────────────
+  Id                string    地形ID, 供建筑/单位 TerrainRequirements 引用
+                              (也是文件名, 如 "plain", "forest", "mountain")
+  Name              string    显示名
+  Weight            float     生成权重(越大越常见)
+  MoveCost          float     移动消耗MP, 0=不可通行, >0=消耗
+
+  [创建方法]
+  1. Godot 编辑器中右键 → New Resource → TerrainConfigResources
+  2. 填写 Id, Name, Weight, MoveCost
+  3. 保存为 Config/Terrains/{Id}.tres (如 Config/Terrains/plain.tres)
+
+  [典型地形示例]
+
+  | Id       | Name | Weight | MoveCost | 说明 |
+  |----------|------|--------|----------|------|
+  | plain    | 平原 | 0.5    | 1.0      | 默认地形 |
+  | forest   | 森林 | 0.2    | 2.0      | 移动慢 |
+  | mountain | 山崖 | 0.05   | 0        | 不可通行 |
+  | water    | 水域 | 0.15   | 0        | 不可通行(除非将来做船) |
+  | desert   | 沙漠 | 0.1    | 1.5      | 移动稍慢 |
+
+================================================================================
+  附录B、Modifier 常用 Target 名参考
+================================================================================
+
+  | Target 名        | 影响内容       | 举例 |
+  |-----------------|---------------|------|
+  | GoldGrowth      | 金币增长率     | Percent 0.5 = +50% |
+  | WoodGrowth      | 木材增长率     | Absolute 2 = +2/次 |
+  | IdeaGrowth      | 科技点增长率   | Percent 0.3 = +30% |
+  | Attack          | 攻击力         | Absolute 5 = +5 |
+  | 单位ID+Attack    | 特定单位攻击力 | swordsmanAttack |
+  | 单位ID+HP        | 特定单位生命   | swordsmanHP |
+
+================================================================================
+  END OF DOCUMENT
+================================================================================

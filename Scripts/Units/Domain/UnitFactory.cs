@@ -1,16 +1,20 @@
+using SciencePotato.Scripts.Common.Domain;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SciencePotato.Scripts.Units.Domain
 {
-	public class UnitFactory
+	public class UnitFactory(IUnitsRepository repo)
 	{
-		public Unit CreateUnit(string unitId)
+		private readonly IUnitsRepository _repo = repo;
+
+		public Unit CreateUnit(string unitId, HexCubePosition position, int ownerId)
 		{
-			throw new NotImplementedException();
+			var config = _repo.GetUnitConfig(unitId);
+			if (config == null) return null;
+
+			return new Unit(position, config.UnitId, Guid.NewGuid().ToString(), ownerId, config.UnitId,
+				config.HP, config.Movement, config.Attack, config.Movement, true,
+				config.MoveRechargePerTick, config.AttackRadius, config.AttackDamage);
 		}
 	}
 }

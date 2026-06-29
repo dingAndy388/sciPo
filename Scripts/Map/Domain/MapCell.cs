@@ -11,6 +11,7 @@ namespace SciencePotato.Scripts.Map.Domain
 		public IMapOccupant Occupant {  get; private set; }
 		public IMapOccupant Building { get; private set; }
 
+		public IMapOccupant Invader { get; private set; }
 		public int Population { get; private set; }
 
 		public void SetTerrain(ITerrainData terrain)
@@ -47,5 +48,8 @@ namespace SciencePotato.Scripts.Map.Domain
 		{
 			Population = population;
 		}
-    }
+
+		public void SetInvader(IMapOccupant invader) => Invader = invader;
+		public void RemoveInvader() => Invader = null;
+	}
 }

@@ -34,7 +34,7 @@ public partial class DevMapUi : CanvasLayer
 		GD.Print("DevUI: Pressed");
 
 		GD.Print("DevUI: Generating");
-		;Label"ffffffffff;l;"		_map.GenerateMap((int)_seed.Value, (int)_width.Value, (int)_height.Value, _id.Text);
+		_map.GenerateMap((int)_seed.Value, (int)_width.Value, (int)_height.Value, _id.Text);
 		_mapView.MapId = _id.Text;
 		_mapView.UpdateAllCells();
 		GD.Print("DevUI: Done");

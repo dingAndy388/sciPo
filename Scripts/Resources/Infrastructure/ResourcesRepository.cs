@@ -1,33 +1,38 @@
 using SciencePotato.Scripts.Common.Infrastructure;
 using SciencePotato.Scripts.Resources.Domain;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SciencePotato.Scripts.Resources.Infrastructure
 {
 	public class ResourcesRepository : GenericJsonRepository<ResourcesPool>, IResourcesRepository
 	{
-		private string _filePath;
-
-		private const string id = "pool";
+		private readonly string _filePath;
 
 		public ResourcesRepository(string filePath)
 		{
-			this._filePath = filePath;
+			_filePath = filePath;
 		}
 
-		public ResourcesPool LoadResourcesPool(string mapId)
+		private string BuildKey(int ownerId)
 		{
-			base.Load(_filePath+mapId);
-			return base.GetById(id);
+			return $"{ownerId}_pool";
 		}
 
-		public void SaveResources(string mapId, ResourcesPool pool)
+		private string BuildFilePath(string mapId, int ownerId)
 		{
-			base.AddOrUpdate(id, pool, _filePath+mapId);
+			return _filePath + mapId + "_" + ownerId;
+		}
+
+		public ResourcesPool LoadResourcesPool(string mapId, int ownerId)
+		{
+			var filePath = BuildFilePath(mapId, ownerId);
+			base.Load(filePath);
+			return base.GetById(BuildKey(ownerId));
+		}
+
+		public void SaveResources(string mapId, int ownerId, ResourcesPool pool)
+		{
+			var filePath = BuildFilePath(mapId, ownerId);
+			base.AddOrUpdate(BuildKey(ownerId), pool, filePath);
 		}
 	}
 }

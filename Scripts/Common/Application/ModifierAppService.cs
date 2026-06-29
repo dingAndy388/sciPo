@@ -1,43 +1,48 @@
 using SciencePotato.Scripts.Common.Domain;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SciencePotato.Scripts.Common.Application
 {
-	public class ModifierAppService(IModifierRepository repo)
+	public class ModifierAppService
 	{
-		private IModifierRepository _repo = repo;
+		private readonly IModifierRepository _repo;
 
-		public void AddModifier(string mapId, string sourceId, Modifier modifier)
+		public ModifierAppService(IModifierRepository repo)
 		{
-			ModifierManager manager = new(_repo.LoadModifiers(mapId));
+			_repo = repo;
+		}
 
-			ModifierValue value = new(modifier.Type == "Percent" ? ModifierType.Percentage : ModifierType.Absolute, modifier.Value, sourceId);
+		public void AddModifier(string mapId, int ownerId, string sourceId, Modifier modifier)
+		{
+			var manager = new ModifierManager(_repo.LoadModifiers(mapId, ownerId));
+
+			var value = new ModifierValue(
+				modifier.Type == "Percent" ? ModifierType.Percentage : ModifierType.Absolute,
+				modifier.Value, sourceId);
 
 			manager.AddModifier(modifier.Target, value);
 
-			_repo.SaveModifier(mapId, manager.GetAllModifiers());
+			_repo.SaveModifier(mapId, ownerId, manager.GetAllModifiers());
 		}
 
-		public void AddModifiers(string mapId, string sourceId, List<Modifier> modifiers)
+		public void AddModifiers(string mapId, int ownerId, string sourceId, List<Modifier> modifiers)
 		{
-			ModifierManager manager = new(_repo.LoadModifiers(mapId));
+			var manager = new ModifierManager(_repo.LoadModifiers(mapId, ownerId));
 			foreach (var modifier in modifiers)
 			{
-				ModifierValue value = new(modifier.Type == "Percent" ? ModifierType.Percentage : ModifierType.Absolute, modifier.Value, sourceId);
+				var value = new ModifierValue(
+					modifier.Type == "Percent" ? ModifierType.Percentage : ModifierType.Absolute,
+					modifier.Value, sourceId);
 				manager.AddModifier(modifier.Target, value);
 			}
-			_repo.SaveModifier(mapId, manager.GetAllModifiers());
+			_repo.SaveModifier(mapId, ownerId, manager.GetAllModifiers());
 		}
 
-		public void RemoveModifiersBySourceId(string mapId, string sourceId)
+		public void RemoveModifiersBySourceId(string mapId, int ownerId, string sourceId)
 		{
-			ModifierManager manager = new(_repo.LoadModifiers(mapId));
+			var manager = new ModifierManager(_repo.LoadModifiers(mapId, ownerId));
 			manager.RemoveModifiersBySourceId(sourceId);
-			_repo.SaveModifier(mapId, manager.GetAllModifiers());
+			_repo.SaveModifier(mapId, ownerId, manager.GetAllModifiers());
 		}
 	}
 }

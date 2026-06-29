@@ -1,31 +1,56 @@
 using SciencePotato.Scripts.Common.Domain;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml.Linq;
 
 namespace SciencePotato.Scripts.Units.Domain
 {
-	public class Unit(HexCubePosition coord, string id, long uid, int ownerId, string name, float hp,float mp, int attack, int movement, bool isIdle) : IMapOccupant
+	public class Unit : IMapOccupant
 	{
-		private readonly string _id = id;
-		private readonly long _uid = uid;
-		private readonly int _ownerId = ownerId;
-		private readonly string _name = name;
+		private readonly string _id;
+		private readonly string _uid;
+		private readonly int _ownerId;
+		private readonly string _name;
 
-		public HexCubePosition Position { get; set; } = coord;
-		public bool IsReady { get; set; } = false;
-		public float HP { get; set; } = hp;
-		public float MovementPoint { get; set; } = mp;
-		public int Attack { get; set; } = attack;
-		public int Movement { get; set; } = movement;
-		public bool IsIdle { get; set; } = isIdle;
+		public HexCubePosition Position { get; set; }
+		public bool IsReady { get; set; }
+		public float HP { get; set; }
+		public float MovementPoint { get; set; }
+		public int Attack { get; set; }
+		public int Movement { get; set; }
+		public bool IsIdle { get; set; }
+
+		// Move/Attack engine fields
+		public float CurrentMP { get; set; }
+		public float MoveRechargePerTick { get; set; }
+		public int AttackRadius { get; set; }
+		public float AttackDamage { get; set; }
+		public HexCubePosition? MoveTarget { get; set; }
+		public List<HexCubePosition> MovePath { get; set; } = new();
+		public string AttackTargetUid { get; set; }
+
+		public Unit(HexCubePosition coord, string id, string uid, int ownerId, string name,
+			float hp, float mp, int attack, int movement, bool isIdle,
+			float moveRechargePerTick, int attackRadius, float attackDamage)
+		{
+			Position = coord;
+			_id = id;
+			_uid = uid;
+			_ownerId = ownerId;
+			_name = name;
+			HP = hp;
+			MovementPoint = mp;
+			Attack = attack;
+			Movement = movement;
+			IsIdle = isIdle;
+
+			MoveRechargePerTick = moveRechargePerTick;
+			AttackRadius = attackRadius;
+			AttackDamage = attackDamage;
+			CurrentMP = 0;
+		}
 
 		public MapOccupantInfo GetInfo()
 		{
-			return new MapOccupantInfo(Position,_id,_uid,_ownerId,_name,IsReady, HP,OccupantType.Unit);
+			return new MapOccupantInfo(Position, _id, _uid, _ownerId, _name, IsReady, HP, OccupantType.Unit);
 		}
 	}
 }

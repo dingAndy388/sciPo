@@ -12,7 +12,7 @@ namespace SciencePotato.Scripts.Map.Domain
 		private Dictionary<HexCubePosition, MapCell> _cells;
 
 		//dict of all occupants
-		private Dictionary<long, IMapOccupant> _occupants = new();
+		private Dictionary<string, IMapOccupant> _occupants = new();
 
 		public int seed;
 		public int width, height;
@@ -51,6 +51,11 @@ namespace SciencePotato.Scripts.Map.Domain
 			return _cells.Values;
 		}
 
+		public bool TryGetCell(HexCubePosition position, out MapCell cell)
+		{
+			return _cells.TryGetValue(position, out cell);
+		}
+
 		public ITerrainData GetTerrain(HexCubePosition position)
 		{
 			if (!_cells.TryGetValue(position, out _))
@@ -66,7 +71,7 @@ namespace SciencePotato.Scripts.Map.Domain
 			return null;
 		}
 
-		public IMapOccupant GetOccupantByUId(long uid)
+		public IMapOccupant GetOccupantByUId(string uid)
 		{
 			return _occupants[uid];
 		}	
@@ -113,5 +118,17 @@ namespace SciencePotato.Scripts.Map.Domain
 				return cell.Building.GetInfo();
 			return null;
         }
+
+		public void SetInvader(HexCubePosition position, IMapOccupant invader)
+		{
+			if (_cells.TryGetValue(position, out MapCell cell))
+				cell.SetInvader(invader);
+		}
+
+		public void RemoveInvader(HexCubePosition position)
+		{
+			if (_cells.TryGetValue(position, out MapCell cell))
+				cell.RemoveInvader();
+		}
     }
 }

@@ -1,32 +1,59 @@
 using Godot;
 using SciencePotato.Scripts.Common.Application;
 using SciencePotato.Scripts.Common.Domain;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SciencePotato.Scripts.Common.Infrastructure
 {
-    public partial class GodotTimeService : Node, ITimeService
-    {
-        public float Scale { get; set; } = 1f;
+	public partial class GodotTimeService : Node, ITimeService
+	{
+		public float Scale { get; set; } = 1f;
 
-        private List<ITickable> _subscribers = new();
+		private ITaskRepository _taskRepo;
+		private List<ITickable> _subscribers = new();
 
-        public void Register(ITickable tickable) => _subscribers.Add(tickable);
+		public void SetTaskRepository(ITaskRepository taskRepo)
+		{
+			_taskRepo = taskRepo;
+		}
 
-        public void Unregister(ITickable tickable) => _subscribers.Remove(tickable);
+		public void Register(ITickable tickable)
+		{
+			_subscribers.Add(tickable);
 
-        public override void _Process(double delta)
-        {
-            float scaledDelta = (float)delta * Scale;
+			if (tickable is IProgressTask p && _taskRepo != null)
+			{
+				var snapshot = p.GetSnapshot();
+				_taskRepo.AddTask(snapshot.MapId, snapshot);
+			}
+		}
 
-            for (int i = 0; i < _subscribers.Count; i++)
-            {
-                _subscribers[i].OnTick(scaledDelta);
-            }
-        }
-    }
+		public void Unregister(ITickable tickable)
+		{
+			_subscribers.Remove(tickable);
+
+			if (tickable is IProgressTask p && _taskRepo != null)
+			{
+				var snapshot = p.GetSnapshot();
+				_taskRepo.RemoveTask(snapshot.MapId, snapshot);
+			}
+		}
+
+		public override void _Process(double delta)
+		{
+			float scaledDelta = (float)delta * Scale;
+
+			for (int i = _subscribers.Count - 1; i >= 0; i--)
+			{
+				var sub = _subscribers[i];
+				sub.OnTick(scaledDelta);
+
+				if (sub is IProgressTask p && _taskRepo != null)
+				{
+					var snapshot = p.GetSnapshot();
+					_taskRepo.AddTask(snapshot.MapId, snapshot);
+				}
+			}
+		}
+	}
 }

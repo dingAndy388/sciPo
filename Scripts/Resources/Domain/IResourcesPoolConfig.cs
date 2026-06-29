@@ -8,6 +8,6 @@ namespace SciencePotato.Scripts.Resources.Domain
 {
     public interface IResourcesPoolConfig
     {
-        List<IResourceConfig> Resources { get; set; }
+        List<IResourceConfig> Resources { get;}
     }
 }

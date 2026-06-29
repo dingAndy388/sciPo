@@ -1,0 +1,52 @@
+{
+  "Units": {
+    "worker": {
+      "UnitId": "worker",
+      "ResourceCost": { "Gold": 20 },
+      "TerrainRequirements": ["plain"],
+      "TechRequirements": {},
+      "Duration": 8,
+      "HP": 50,
+      "Attack": 0,
+      "Movement": 5,
+      "Actions": ["CanBuild", "CanMove"],
+      "VisionRadius": 3,
+      "MoveRechargePerTick": 3,
+      "AttackRadius": 0,
+      "AttackDamage": 0,
+      "PopulationCost": 1
+    },
+    "swordsman": {
+      "UnitId": "swordsman",
+      "ResourceCost": { "Gold": 50, "Wood": 20 },
+      "TerrainRequirements": ["plain"],
+      "TechRequirements": {},
+      "Duration": 12,
+      "HP": 100,
+      "Attack": 8,
+      "Movement": 4,
+      "Actions": ["CanMove", "CanAttack"],
+      "VisionRadius": 4,
+      "MoveRechargePerTick": 2,
+      "AttackRadius": 0,
+      "AttackDamage": 8,
+      "PopulationCost": 1
+    },
+    "archer": {
+      "UnitId": "archer",
+      "ResourceCost": { "Gold": 60, "Wood": 30 },
+      "TerrainRequirements": ["plain"],
+      "TechRequirements": {},
+      "Duration": 15,
+      "HP": 60,
+      "Attack": 6,
+      "Movement": 3,
+      "Actions": ["CanMove", "CanAttack"],
+      "VisionRadius": 5,
+      "MoveRechargePerTick": 1.5,
+      "AttackRadius": 3,
+      "AttackDamage": 6,
+      "PopulationCost": 1
+    }
+  }
+}

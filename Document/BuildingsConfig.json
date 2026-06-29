@@ -1,0 +1,51 @@
+{
+  "Buildings": {
+    "house": {
+      "BuildingId": "house",
+      "Name": "民居",
+      "ResourceCost": { "Wood": 20 },
+      "TerrainRequirements": ["plain"],
+      "TechRequirements": {},
+      "Modifiers": [],
+      "Duration": 10,
+      "Actions": [],
+      "VisionRadius": 1,
+      "IsHousing": true,
+      "PopulationRadius": 3,
+      "PopulationCap": 5,
+      "PopulationGrowthInterval": 15
+    },
+    "library": {
+      "BuildingId": "library",
+      "Name": "图书馆",
+      "ResourceCost": { "Gold": 100, "Wood": 50 },
+      "TerrainRequirements": ["plain"],
+      "TechRequirements": { "science": ["writing"] },
+      "Modifiers": [
+        { "Target": "IdeaGrowth", "Type": "Absolute", "Value": 0.5 }
+      ],
+      "Duration": 30,
+      "Actions": ["CanResearch"],
+      "VisionRadius": 3,
+      "IsHousing": false,
+      "PopulationRadius": 0,
+      "PopulationCap": 0,
+      "PopulationGrowthInterval": 0
+    },
+    "barracks": {
+      "BuildingId": "barracks",
+      "Name": "兵营",
+      "ResourceCost": { "Gold": 80, "Wood": 40 },
+      "TerrainRequirements": ["plain"],
+      "TechRequirements": {},
+      "Modifiers": [],
+      "Duration": 20,
+      "Actions": [],
+      "VisionRadius": 3,
+      "IsHousing": false,
+      "PopulationRadius": 0,
+      "PopulationCap": 0,
+      "PopulationGrowthInterval": 0
+    }
+  }
+}

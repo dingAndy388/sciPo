@@ -1,0 +1,55 @@
+{
+  "TechTrees": {
+    "military": {
+      "Techs": {
+        "melee_weapons": {
+          "Id": "melee_weapons",
+          "Prerequisites": [],
+          "Cost": 50,
+          "Duration": 20,
+          "Modifiers": [
+            { "Target": "swordsmanAttack", "Type": "Percent", "Value": 0.1 }
+          ]
+        },
+        "advanced_armor": {
+          "Id": "advanced_armor",
+          "Prerequisites": ["melee_weapons"],
+          "Cost": 100,
+          "Duration": 40,
+          "Modifiers": [
+            { "Target": "swordsmanHP", "Type": "Absolute", "Value": 20 }
+          ]
+        },
+        "siege_tech": {
+          "Id": "siege_tech",
+          "Prerequisites": ["melee_weapons"],
+          "Cost": 150,
+          "Duration": 60,
+          "Modifiers": [
+            { "Target": "Attack", "Type": "Absolute", "Value": 5 }
+          ]
+        }
+      }
+    },
+    "science": {
+      "Techs": {
+        "writing": {
+          "Id": "writing",
+          "Prerequisites": [],
+          "Cost": 30,
+          "Duration": 15,
+          "Modifiers": []
+        },
+        "mathematics": {
+          "Id": "mathematics",
+          "Prerequisites": ["writing"],
+          "Cost": 80,
+          "Duration": 30,
+          "Modifiers": [
+            { "Target": "IdeaGrowth", "Type": "Percent", "Value": 0.3 }
+          ]
+        }
+      }
+    }
+  }
+}

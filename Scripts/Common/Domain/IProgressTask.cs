@@ -13,7 +13,7 @@ namespace SciencePotato.Scripts.Common.Domain
         string Id {  get; }
         bool IsCompleted { get; set; }
         string Type { get; }
-        long UId { get; }
+        string UId { get; }
 
         TaskSnapshot GetSnapshot();
 		event Action OnCompleted;

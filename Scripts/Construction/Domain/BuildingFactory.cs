@@ -7,11 +7,15 @@ using System.Threading.Tasks;
 
 namespace SciencePotato.Scripts.Construction.Domain
 {
-	public class BuildingFactory
+	public class BuildingFactory(IBuildingConfigRepository repo)
 	{
-		public Building CreateBuilding(string buildingId)
+		private IBuildingConfigRepository _repo = repo;
+
+		public Building CreateBuilding(string buildingId, HexCubePosition position, int ownerId)
 		{
-			throw new NotImplementedException();
+			var config = _repo.GetBuildingConfig(buildingId);
+
+			return new Building(position,config.BuildingId, Guid.NewGuid().ToString(), ownerId, config.Name);
 		}
 	}
 }

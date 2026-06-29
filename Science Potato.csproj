@@ -7,13 +7,11 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Remove="Scripts\Uniit\**" />
+    <Compile Remove="Scripts\Units\Events\**" />
     <EmbeddedResource Remove="Scripts\Uniit\**" />
+    <EmbeddedResource Remove="Scripts\Units\Events\**" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Scripts\Units\Infrastructure\" />
-    <Folder Include="Scripts\Units\Events\" />
   </ItemGroup>
 </Project>
