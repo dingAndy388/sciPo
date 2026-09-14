@@ -1149,6 +1149,7 @@
 | **v0.4.0** | 2026-09-14 | 🏁 **M0-2（单玩家可玩）达成**：批次 2 的 **10 个 WP 全部完成**（WP-2.1 跨树前置 → 2.2 任务体系 → 2.3 人口 → 2.4 建造者 → 2.5 训练队列 → 2.6 建筑升级 → 2.7 建筑产出 → 2.8 事件按日 → 2.9 科技并发 → 2.10 领域事件总线），5 条里程碑验收项 **①~⑤ 全部通过**，无头验收 **103/103 通过、退出码 0**（M0-1 组 43 + M0-2 组 60）。交付总结与批次 3 交接见 §18.5 |
 | **v0.3.15** | 2026-09-14 | **WP-3.2 实体持久化（`B10`、`MAP-02`，M0-3 ①）**：新增 `SaveMapper` + `MapSave.SaveVersion`（v2）+ `BuildingSaveDto`/`UnitSaveDto`/`TrainingOrderSave`/`CellSaveDto`（地形 + **人口 + 占据物**）；`GodotMapRepository` 与内存仓库共用同一套映射（读档用 `SaveRebuilder` 按 **uid 原样重建**建筑/单位，含 HP/MP/忙闲/攻击目标/训练队列/建造者绑定）；新增 `WorldSaveService`（存档点 + 读档编排：时钟 → 地图实体 → 建筑附加状态 → 迷雾 → 按类型重建周期任务 → 事件引擎）与 `IClockRepository`（游戏日）；`ITimeService.Reset()`（读档前作废旧订阅者，否则任务翻倍）；`BuildingFactory`/`UnitFactory` 支持显式 uid；**M0-3 ① 通过**：同一固定种子跑两个世界（其一在第 34 日存档→读档），第 360 日**建筑/单位/人口/任务/迷雾/时间逐项等价**。无头验收 **107/107 通过、退出码 0**。新增决策 D46~D48 |
 | **v0.3.16** | 2026-09-14 | **WP-3.4 地块占用权威一致（`MAP-03`、`MAP-04`、`UNIT-05`）**：`Map` 新增**进入/离开的唯一入口** —— `PlaceOccupant`/`PlaceBuilding`（同格冲突拒绝，且建筑同时写 `cell.Building` 与占据物槽位）/`RemoveOccupant`/`RemoveBuildingAt`（格子 + 建筑槽位 + `_occupants` 索引三处一起清）；旧方法（`AddOccupant`/`RemoveOccupantByPosition`/`SetBuilding`/`RemoveBuilding`）全部改为委托；建造落位改走 `PlaceBuilding` → **拆除真正生效**（`MAP-04` 的 `cell.Building` 恒空已修）；单位阵亡后不再留**僵尸索引**（`MAP-03`/`UNIT-05`）。无头验收 **111/111 通过、退出码 0**；`WP-2.3`/`WP-2.4` 的"domain 预置权威"用例已回到真实路径 |
+| **v0.3.17** | 2026-09-14 | **WP-3.5 单位移动模型 R1~R7（`UNIT-10`、`D23`、`E5~E8`，M0-3 ②）**：新增 `UnitMovementService`（R1 `Movement` = 每 10 游戏日回复的 MP；R2 离散回复；R3 静止上限 = M；R4 移动中无上限；R5 够一格即时位移、可连跳；R6 到达清零；R7 目的地可改）—— 旧实现把 MP 上限压成单次回复量（3/2/1.5 < 最小地形消耗 5）**单位 100% 不可移动**；填表 `Movement` = 设计值（工人 10 / 民兵 25 / 弓箭手 25），删除语义重叠的 `MoveRechargePerTick`；通行判定只看 `Passable`（去掉"未探索放行"的迷雾例外）；`FindPath` 加**搜索步数上限**（病态 A* 会冻结日边界）。无头验收 **117/117 通过、退出码 0**，**M0-3 ② 通过**（工人跨平原 10 日 2 格、跨山地 30 日） |
 
 
 ---
@@ -1515,6 +1516,7 @@
 - **关联**：`B1/B2/E8`、`WP-0.4`
 
 #### `UNIT-10` 移动力离散累积模型未实现 —— 【P0｜逻辑层缺口】
+> ✅ **已修复（v0.3.17 / WP-3.5）**：`UnitMovementService` 按 R1~R7 重写（M = 每 10 日回复量、静止上限 M、移动中无上限、够一格瞬时位移、到达清零）；`Movement` 已按设计稿填成 10/25/25，`MoveRechargePerTick` 删除。用例覆盖 M0-3 ② 的两条示例。
 > ⚠️ **v0.3.5 显式缺陷标注（`D23`）**：本条**不只是"数值偏差"，而是"单位完全不可移动"** —— `MoveTick` 把 MP 上限写成了单次恢复量（`UnitsAppService.cs:158`），而单位表的 `MoveRechargePerTick` = 3 / 2 / 1.5 **全部小于最小地形消耗 5**（平原），因此三支部队今天**一格都走不了**。M0-1/M0-2 的验收项不涉及移动，本轮**按计划不改行为**（修复归 `WP-3.5`），但 M1 手测前必须知道这一点，避免把"单位不动"误判成手感问题或新引入的 bug。回归条件见 §18.4。
 > ⚠️ **v0.3 降级（P0 → P1）**：**M0-3 ②** 才验收移动模型；M0-2 ④ 只要求"单位出现"。级别收敛依据见 §17.3。
 - **现象**：实现把 MP 上限压成"单次恢复量"（`CurrentMP = min(CurrentMP + recharge, recharge)`），与设计口径 R1~R7（静默上限 = M、移动中无上限、够则瞬时连格位移、到达清零）完全不同；移动节拍为 10 秒而非 10 游戏日。
@@ -1681,7 +1683,7 @@
 | WP-3.2 | **实体持久化**：建筑/单位/人口/任务/迷雾/时间完整存档 | `B10`、`MAP-02` | 存档层 + Mapper | `BuildingSaveDto`、`UnitSaveDto`、`CellSaveDto`、`SaveMapper` | 大 | 代码 | → **✅ 完成（v0.3.15）** |
 | WP-3.3 | **统一存档单元**（单序列化器、原子写、`saveVersion` 迁移钩子） | `I3`、`DEP-06`、`TIME-08` | 5 个 `*Repository` 收敛 | `ISaveStore` | 中 | 代码 |
 | WP-3.4 | **地块占用权威一致**（统一进入/离开 API、修僵尸索引） | `B3`、`MAP-03/04`、`UNIT-05` | `Map`、`MapCell`、`UnitsAppService` | — | 中 | 代码 | → **✅ 完成（v0.3.16）** |
-| WP-3.5 | **单位移动模型重写**（R1~R7）+ 地形消耗与通行权限 | `E5/E6/E7/E8`、`UNIT-10`、`B1/B2`（部分） | 新增 `UnitMovementService` | — | 中 | 代码+填表 |
+| WP-3.5 | **单位移动模型重写**（R1~R7）+ 地形消耗与通行权限 | `E5/E6/E7/E8`、`UNIT-10`、`B1/B2`（部分） | 新增 `UnitMovementService` | — | 中 | 代码+填表 | → **✅ 完成（v0.3.17）** |
 | WP-3.6 | **同格战斗**（进入敌格即交战、一格一对）+ 按日结算 + 建筑衰减 50% + 建筑作为目标 | `E9/E10/E11/E12/E18`、`UNIT-12` | 新增 `UnitCombatService`、`Unit`（`MaxHP`） | 交战状态模型 | 大 | 代码 |
 | WP-3.7 | 单位死亡：移除 / 不返还 / 掉落入池 / 清理驻扎 | `E20/E21` | `UnitCombatService` | `Loot` 配置字段 | 中 | 代码 |
 | WP-3.8 | **敌方单位**：生成后按地形概率放置 + 地块封锁（不可进入/建造/采集） | `B7/B8/E19`、`UNIT-14` | 新增 `IMapPostProcessor`/`EnemySpawner`、`NoHostileRequirement` | 2 个类型 + `SpawnTable` | 中 | 代码+填表 |
@@ -2078,6 +2080,7 @@ WP-0.4 ─→ WP-3.5 / WP-3.8 / WP-5.3
 | :--- | :--- | :--- | :--- |
 | 2026-09-14 | WP-3.2 **实体持久化**（`B10`、`MAP-02`） | ✅ 完成 | ① **DTO 与映射**：`MapSave`（+`SaveVersion`=2）+ `HexCubeCellSave`（地形 + 人口 + `Building`/`Unit` 两个具名槽位）+ `BuildingSaveDto`（uid/Id/Owner/IsReady/建造者 uid/训练队列）+ `UnitSaveDto`（+HP/MP/忙闲/攻击目标）+ `SaveMapper`（`ToSave`/`RebuildBuilding`/`RebuildUnit`）；具名槽位而非多态（System.Text.Json 不带派生类型元数据，且把"一格一个占据物"写进存档）；② **读档重建**：`SaveRebuilder` 由组合根用建筑/单位工厂构造（Map 模块只认 `IMapOccupant`），**uid 原样保留**；`GodotMapRepository` 与内存替身共用同一套映射（替身不再只存地形）；更高版本存档**拒绝加载**；③ **读档编排**：新增 `Scripts/Core/Save/WorldSaveService`（存档点 = 时钟 + 脏地图 + 迷雾；读档 = 时钟 → 驱逐重读地图 → 建筑附加状态 → 迷雾 → 按类型重建任务 → 事件引擎幂等启动）与 `IClockRepository`；④ **任务恢复接线**（此前 `Resume*` 无调用方）：`ResumeConstruction`/新 `ResumeUpgrade`/`ResumeTraining` + `RestoreGrowthTasks`/`RestoreHousingTasks`/`RestoreUnitTasks`（**按实体重建 + 回填进度**）；⑤ **配套修正**：`ITimeService.Reset()`（读档前作废旧订阅者，否则任务翻倍）、`FogAppService` 存档点显式写盘、远程攻击也记目标；⑥ **验收（M0-3 ①）**：同一固定种子两个世界（其一第 34 日存档→读档），第 360 日六类状态**逐项等价**。检查 **+4 项**（总计 **107/107**、退出码 0） |
 | 2026-09-14 | WP-3.4 **地块占用权威一致**（`MAP-03`、`MAP-04`、`UNIT-05`） | ✅ 完成 | ① **唯一入口**：`Map.PlaceOccupant`（占据物：写格子 + 索引，已被占用则**拒绝**）、`Map.PlaceBuilding`（建筑：`cell.Building` 与占据物槽位**同时**写 → 修 `MAP-04`）、`Map.RemoveOccupant`/`Map.RemoveBuildingAt`（格子 + 建筑槽位 + `_occupants` 索引**三处一起清** → 修 `MAP-03` 僵尸索引）；旧的 `AddOccupant`/`RemoveOccupantByPosition`/`SetBuilding`/`RemoveBuilding` 全部改为委托，**所有既有调用点自动获得一致语义**；② **接线**：`MapAppService.PlaceBuilding` 新增；`ConstructionAppService.StartConstruction` 落位改走它；两个地图仓库读档时建筑也用 `PlaceBuilding`（落盘/读回一致）；③ **效果**：拆除对**自建建筑**真正生效（地块清空、修正器回收、任务按 uid 注销），单位阵亡后按 uid 查不到尸体（任务/战斗回调不再对着尸体干活）；④ **用例回正**：`WP-2.7` 的"缺陷仍在"固定断言翻成"拆除生效"，`WP-2.3`/`WP-2.4` 的"domain 层预置权威"回到真实拆除路径；新增 4 条占用用例。检查 **+4 项**（总计 **111/111**、退出码 0） |
+| 2026-09-14 | WP-3.5 **单位移动模型 R1~R7 + 地形通行**（`UNIT-10`、`D23`、`E5~E8`） | ✅ 完成 | ① **新服务**：`Scripts/Units/Application/UnitMovementService`（`RegisterMoveLoop`/`SetDestination`/`Tick`/`TerrainCost`/`CanEnter`），`UnitsAppService` 的移动相关代码全部委托过去（旧 `MoveTick` 的 80 行硬编码删除）；② **口径**（design/unit.md R1~R7）：`Movement` = **每 10 游戏日回复的 MP 总量**（工人 10 / 民兵 25 / 弓箭手 25，按设计稿填表；删除语义重叠的 `MoveRechargePerTick`）、静止时 MP 上限 = M、移动中无上限可跨周期累积、`MP ≥ 下一格 MoveCost` 即**瞬时连跳**（不消耗游戏时间）、到达最终目的地 MP 清零、目的地可随时改；③ **修 `D23`**：旧实现 `CurrentMP = Min(CurrentMP + 恢复量, 恢复量)` 且恢复量（3/2/1.5）**小于最小地形消耗 5** → 单位永远走不动；④ **通行**（`E8`）：只看地形 `Passable`（去掉"未探索放行"的迷雾例外 —— 那会让单位走进看不见的水域），`CanEnter` 由移动服务统一提供；⑤ **顺带修**：`MapAppService.FindPath` 增加**搜索步数上限**（格子数 × 16）—— 目标不可达时病态 A* 会**无限循环**，而它跑在日边界上（会让整局卡死；用例当场复现）。检查 **+6 项**（总计 **117/117**、退出码 0），**M0-3 ② 通过**（工人 M=10 跨平原 10 日走 2 格；跨山地 25 需 30 日；另覆盖 R3/R4/R5/R6/R7 与水域阻断） |
 
 ### 18.1.1 里程碑验收对照
 
@@ -2089,7 +2092,7 @@ WP-0.4 ─→ WP-3.5 / WP-3.8 / WP-5.3
 | M0-2 | ④ 工坊训练工人 30 日后单位出现且人口 −1 | ✅ `WP-2.5` |
 | M0-2 | ⑤ 固定种子下 3 年事件触发次数落在期望区间 | ✅ `WP-2.8`（检查 103/103） |
 | M0-3 | ① 存档 → 读档 → 推进 360 日后逐项等价 | ✅ `WP-3.2`（检查 107/107） |
-| M0-3 | ② 工人跨平原 10 日走 2 格 / 跨山地需 30 日 | ⏳ `WP-3.5` |
+| M0-3 | ② 工人跨平原 10 日走 2 格 / 跨山地需 30 日 | ✅ `WP-3.5`（检查 117/117） |
 | M0-3 | ③ 同格交战 N 日后 HP 归零、单位移除、掉落进池 | ⏳ `WP-3.6` / `WP-3.7` |
 | M0-3 | ④ 敌方单位封锁格不可建造 | ⏳ `WP-3.8` |
 
@@ -2106,7 +2109,7 @@ dotnet build 'Science Potato.csproj'
 dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessChecks.csproj'
 ```
 
-当前验收结果（2026-09-14，**111/111 通过、退出码 0**）：M0-1 组 43 项 + M0-2 组 60 项 + M0-3 组 8 项。
+当前验收结果（2026-09-14，**117/117 通过、退出码 0**）：M0-1 组 43 项 + M0-2 组 60 项 + M0-3 组 14 项。
 
 | 分组 | 数量 | 覆盖 |
 | :--- | :--- | :--- |
@@ -2127,6 +2130,7 @@ dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessC
 | 领域事件（WP-2.10） | 7 | 总线：快照派发 / 异常隔离（`Failures` 记录且不打断发布方）/ 重复订阅幂等 / 可退订 / 无订阅者不抛异常 / 建造完成事件（uid·Id·owner·位置）/ 升级完成事件（from→to，且不重复推送「建成」）/ 训练完成事件（uid 与落位单位一致）/ **单位阵亡事件**（`UNIT-08`：含阵亡方 owner 与凶手 uid）/ 研究完成事件（树+节点）/ 事件触发推送（`EVT-04`） |
 | 实体持久化（WP-3.2） | 4 | **M0-3 ①**：固定种子两个世界（其一第 34 日存档→读档），第 360 日**日期/人口/资源/建筑与单位/任务/迷雾逐项等价** / 单位运行时状态（HP/MP/忙闲/攻击目标）跨档保留且读档后战斗继续到击杀 / 施工中建筑（未完工 + 建造者忙 + 队列）跨档保留且完工时释放重建的建造者 / 更高 `SaveVersion` 的存档被拒绝加载 |
 | 地块占用（WP-3.4） | 4 | 建筑落位后 `cell.Building` 与占据物槽位指向同一对象且 `GetBuildingInfo` 可见（修 `MAP-04`）/ 拆除清空地块 + 索引 + 建筑槽位（修正器与任务一并回收）/ 单位阵亡后按 uid 查不到（修 `MAP-03`/`UNIT-05` 僵尸索引）且格子变空地 / 同格重复建造不覆盖原有建筑 |
+| 单位移动（WP-3.5） | 6 | **M0-3 ②** 工人 M=10 跨平原：10 日走 2 格且到达清零（R1/R2/R5/R6）/ 跨山地 25：3 个回复周期（30 日）才移动一格（R4）/ 静止 MP 上限 = M、移动中无上限（R3/R4）/ MP 充足时同一时刻连跳多格（R5）/ 水域 `Passable=false` 阻断（`E8`，且寻路不会把单位送进水里）/ 目的地可随时更改并按新路径到达（R7） |
 
 
 
@@ -2157,6 +2161,7 @@ dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessC
 | D21 | `ResourcesAppService.StartGrowthTasks` 的跳过条件由 `GrowInterval <= 0 || BaseGrowth <= 0` 改为**只看 `GrowInterval`** | 原条件让 `BaseGrowth=0` 的资源永不建结算任务 —— 而 Idea 的正确形态正是"基础产出 0 + 全靠建筑/科技 Modifier"（`GrowInterval=30`）。不改这一行，M0-2 ② 的"School 250 idea/月"永远无法到账（Modifier 无处结算），且 `GrowInterval=0` 仍保持"不自动结算"的旧语义 |
 | D22 | 任务快照落盘口径：由"每帧每任务写 JSON"改为**游戏日边界**同步（写盘频率 ≈ 1/60），完整"统一存档点"仍留给 `WP-3.3` | `A8`/`TIME-08` 的中间形态：本批次先把口径与派发打通，不动存档架构（避免与 `WP-3.2/3.3` 的实体存档 DTO 冲突）。`GameTimeService` 的 `ITaskRepository` 参数是可选的（无头测试传 null），`WP-3.3` 接入时无需再改调用方 |
 | D23 | **`UNIT-10` 记作"显式缺陷"而非"数值偏差"**：`MoveTick` 把 MP 上限写成了单次恢复量（`Scripts/Units/Application/UnitsAppService.cs:158`：`CurrentMP = Math.Min(CurrentMP + MoveRechargePerTick, MoveRechargePerTick)`），而单位表的 `MoveRechargePerTick` = 3 / 2 / 1.5 **全部小于最小地形消耗 5** → 三支部队**当前完全无法移动**（不是"走得慢"） | M0-1/M0-2 的验收项都不涉及移动（M0-2 ④ 只要求"单位出现"），故本轮**不改行为**，只在日志里显式标注缺陷等级：避免 M1 手测时把"单位不动"误判成手感问题或新引入的 bug。修复归 `WP-3.5`（R1~R7 重写 + 地形消耗/通行权限），字段收敛（删 `Attack`/`Movement`、`MovementPoint` → `MP`）见 §15。回归条件见 §18.4 |
+> ✅ **已修复（v0.3.17 / WP-3.5）**：`UnitMovementService` 按 R1~R7 重写（M = 每 10 日回复量、静止上限 M、移动中无上限、够一格瞬时位移、到达清零）；`Movement` 已按设计稿填成 10/25/25，`MoveRechargePerTick` 删除。用例覆盖 M0-3 ② 的两条示例。
 | D24 | 跨树前置的**三层口径**：① 领域层 `TechTree` 只认 `TechPrerequisite{TreeId,NodeId}`，跨树解析靠注入的 `AttachResearchLookup`，**未注入 = fail closed**（跨树前置判未满足，宁可暂时不可研究也不错误放行）；② 应用层 `TechTreesAppService` 用 `_repo.GetTreeById` **只读**载入兄弟树（不用 `GetOrCreateTechTree`，以免"查询能否研究"变成"建档 + 写盘"）；③ 校验层升级：科技树自身的**前置闭合**（含跨树缺树 / 缺节点 / 跨树成环）判 error，而建筑/单位/事件表对科技树的 `TechRequirements` 仍保持 warning | `D13` 的升级点按计划兑现：跨树前置的树 Id 或节点 Id 任一不存在，都等于"该科技永久不可解锁"（正是 `TECH-07` 的成因），因此不能再降级放行；而"别的表引用科技树"不属于科技树内部闭合，维持既有降级口径。只读查询每次都会重载该 owner 的树文件（`GenericJsonRepository.Load` 的语义），因此"研究完成即 `SaveTree`"是正确性前提（既有行为）；树集合的缓存优化留给 `WP-2.9` |
 | D25 | **待办缺陷（本轮发现，未修）**：`ResourcesConsumption.Consume()` 只改内存池、**没有回写**（`Scripts/Resources/Application/ResourcesAppService.cs:46-50` + `Scripts/Resources/Domain/ResourcesConsumption.cs:29-32`）→ 研发/建造扣掉的资源会在下次 `LoadResourcesPool` 时"复活"（无头验收里 `Research` 扣 2000 Idea 后重读池仍是原值） | 不阻断 M0-2 ①（验收只看"科技是否研究完成"），但它会让 M1 里"资源花掉了"看起来生效、实际回滚。归属 `WP-3.2`（实体持久化）/`WP-3.3`（统一存档点）；最小修法是 `Consume()` 后立即 `SaveResources`（届时顺带把 `_repo` 注入消耗契约）。已挂账于 §18.4 |
 | D26 | **`Map.GetBuildingInfo` 空格子 NRE（验收时发现，已修）**：`Map.cs:115-121`（修复后）原来 `if (_cells.TryGetValue(...)) return cell.Building.GetInfo();` —— `cell.Building` 为 null 时直接抛 NRE（与同族的 `GetOccupantInfo` 不一致）。无头用例第一次调用它查"学院是否落位"就崩了 | 修复与 `GetOccupantInfo` 对齐：`&& cell.Building != null`，空格子返回 null。这是 `MAP-03` 家族（"宽容 API / 严格 API 混用"）的又一实例：任何"查询任意格"的调用方（UI 高亮、建造合法性、测试）都会踩到。仅补 null 保护，不改 `MAP-03` 的整体收口（仍由 `WP-3.4` 统一安全 API） |
@@ -2183,6 +2188,8 @@ dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessC
 | D47 | **读档前必须 `ITimeService.Reset()`**（作废旧订阅者） | 订阅者持有的是读档前的旧实体副本；不清空则"恢复的新任务"与"旧任务"同时跑 —— 月结翻倍、人口翻倍（用例当场抓到：第 360 日人口差 32）。这条也说明"存档点 = 世界状态快照"必须包含"任务注册表"这一隐式状态 |
 | D48 | **占据物在存档里用两个具名槽位**（`Building` / `Unit`），不用多态基类 | System.Text.Json 不带派生类型元数据（多态要么失效要么引入 `$type` 黑魔法）；具名槽位还把"当前一格一个占据物"写进格式 —— `WP-3.4` 扩展占用模型时会显式改成集合（迁移点清晰，不靠猜） |
 | D49 | **占用权威 = 「一处索引 + 一格一占据物」**：`Map._occupants`（按 uid）与 `cell.Occupant`（按位置）必须由**唯一入口**同步维护；建筑额外有 `cell.Building` 槽位，也归同一个入口 | `MAP-03`/`MAP-04`/`UNIT-05` 三条缺陷同源：多处入口各写一半 → 索引与格子不一致（僵尸索引 / `cell.Building` 恒空）。彻底方案（`WP-4.9` 的「格内多占据物集合 + 区域建筑」）会改结构，本轮先把入口收窄到 4 个方法，并把「冲突拒绝」作为语义（而非静默覆盖） |
+| D50 | **移动是"离散累积 + 瞬时位移"**（R1~R7），不是"每 tick 走一步" | 设计稿明确：MP 每 10 游戏日恢复一次、够一格才位移且**不消耗游戏时间**、移动中可跨周期累积。因此 `MovePath[0]` 的约定必须是"**下一格**"（首版保留了起点 → 第一格变成"给脚下付通行费"：MP 被扣但位置不变，用例当场抓到）。R7 的"已通过格不可撤"在该模型下自动成立 |
+| D51 | **`FindPath` 必须有搜索上限**（格子数 × 16） | 在"目标不可达 + 8 邻域图"的组合下，A* 会反复入队同一节点（启发式不一致），而寻路跑在**日边界**上 → 一次病态搜索就冻结整局（用例里表现为测试挂死）。返回空路径（= 无路可走）是安全失败；真正的修法是换成六边形正确的 6 邻域 + 一致启发式，归 `WP-3.5` 后续/生成器重做 |
 
 
 
@@ -2205,7 +2212,7 @@ dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessC
 | `TIME-14` 月结未成体系 | `GrowInterval=30` 逐日派发已通过断言，差的只是"结算器汇总 → 需求 → 扣减" | M0-3 ① 月度经济结算器（`WP-3.9`） | WP-3.9 | 未修 |
 | `CON-09` 没有建筑升级 | M0-2 ②③④ 只用 lv.I 建筑（School lv.I / 营地 / 工坊 lv.I） | 科技树里 16 条"解锁 XX 升级"要落地时 | WP-2.6 | 未修 |
 | `MAP-16` 建筑 HP 与易主 | 城市攻防属批次 4，M0-1/2/3 验收均不涉及 | 需要"摧毁/夺取建筑"作为胜负条件时 | WP-4.8 | 未修 |
-| `UNIT-10` 移动力离散累积模型 | M0-3 ② 才验收移动；**当前单位 100% 不可移动（见 `D23`）** | **`WP-3.5` 开工即修**（M0-3 ② 之前） | WP-3.5 | 未修（显式缺陷） |
+| `UNIT-10` 移动力离散累积模型（**已修复**） | ✅ **已修（v0.3.17 / WP-3.5）**：R1~R7 全量实现（`UnitMovementService`），M0-3 ② 通过 | — | WP-3.5 | ✅ 已修 |
 | `MAP-17` 地形消耗量级（**已验收**） | Terrains 转 JSON 且量级对齐（平原 5 / 山地 25 / 水域 50） | 移动模型重写（`WP-3.5`）若发现量级不适配 | WP-3.5 | ✅ 已验收（量级可能在 WP-3.5 微调） |
 
 ### 18.4.2 新增显式待办（v0.3.5）
@@ -2286,3 +2293,4 @@ dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessC
 | 事件状态与触发计数仍不落盘（v0.3.15） | `EventAppService` 的 `_active`/`_triggerCounts` 是内存字段；读档后"生效中的事件"消失（修正器还在盘上，因此会留下"无期限的加成"） | 读档后事件计数归零、持续期丢失 → 数值解释不通 | `WP-3.3`（统一存档单元）—— 与"事件历史"一并落盘 |
 | `WorldSaveService` 仍是编排层而非存档单元（v0.3.15） | 存档点 = 时钟 + 脏地图 + 迷雾显式写；资源/修正器/科技/任务在各自写入点落盘（多文件、无原子性、无版本迁移） | 断电/崩溃可能得到半写状态；跨版本迁移只能逐个仓库处理 | `WP-3.3`：单一序列化器 + 原子写 + `saveVersion` 迁移钩子 |
 | 僵尸索引与「一格一占据物」的**弱约束**（v0.3.16） | `PlaceOccupant` 在格子已占用时**拒绝**（不再静默覆盖），但"拒绝"只在应用层被检查（`IsClear`/`TryEnqueue` 路径）；`MapCell` 仍只有单占据物槽位，区域建筑/格内多占据物（`WP-4.9`）需要改结构 | 直接调用 domain API（脚本/调试）时仍可能"放置失败但调用方没看返回值" | `WP-4.9`（区域建筑 + 附属建筑嵌套）/ 后续把返回值纳入调用契约 |
+| `FindPath` 的 8 邻域图（v0.3.17） | 寻路器用 `HexCubePosition.GetNeighbor()`，它给出 **8 个方向**（含对角线）而不是六边形的 6 个；叠加"目标不可达"时会病态循环（已加步数上限兜底） | 路径形状与设计稿的六边形距离不一致（斜穿的代价被低估）；`DistenceTo` 是立方距离、邻域却是 8 向 —— 两者不自洽 | `WP-3.5` 后续 / 生成器重做（换 6 邻域 + 一致启发式） |

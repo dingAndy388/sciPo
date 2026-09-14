@@ -303,11 +303,10 @@
   Duration              float                    是    训练耗时(**游戏日**)
   HP                    float                    是    生命值
   Attack                int                      否    攻击力(废弃,用下面)
-  Movement              int                      否    移动力(废弃)
+  Movement              int                      否    移动力 M = **每 10 游戏日回复的 MP 总量**(R1; 工人10/民兵25/弓箭手25)
   Actions               [string]                 是    可执行动作:
                                                       "CanBuild"/"CanMove"/"CanAttack"
   VisionRadius          int                      否    视野半径(格),默认3
-  MoveRechargePerTick   float                    是    每 10 **游戏日**恢复的MP(移动点)
   AttackRadius          int                      是    攻击半径(格),0=近战
   AttackDamage          float                    是    每次攻击结算造成的伤害(每 1 **游戏日**结算一次)
   PopulationCost        int                      是    训练消耗的人口
@@ -324,10 +323,9 @@
         "Duration": 30,
         "HP": 50,
         "Attack": 0,
-        "Movement": 5,
+        "Movement": 10,
         "Actions": ["CanBuild", "CanMove"],
         "VisionRadius": 3,
-        "MoveRechargePerTick": 3,
         "AttackRadius": 0,
         "AttackDamage": 0,
         "PopulationCost": 1
@@ -340,10 +338,9 @@
         "Duration": 35,
         "HP": 100,
         "Attack": 8,
-        "Movement": 4,
+        "Movement": 25,
         "Actions": ["CanMove", "CanAttack"],
         "VisionRadius": 4,
-        "MoveRechargePerTick": 2,
         "AttackRadius": 0,
         "AttackDamage": 8,
         "PopulationCost": 1
@@ -356,10 +353,9 @@
         "Duration": 50,
         "HP": 60,
         "Attack": 6,
-        "Movement": 3,
+        "Movement": 25,
         "Actions": ["CanMove", "CanAttack"],
         "VisionRadius": 5,
-        "MoveRechargePerTick": 1.5,
         "AttackRadius": 3,
         "AttackDamage": 6,
         "PopulationCost": 1
@@ -371,9 +367,10 @@
   [注意事项]
   - AttackRadius=0 表示近战单位，必须移动到目标同一格才能攻击
   - AttackRadius>0 表示远程单位，可以隔格攻击
-  - MoveRechargePerTick 是每 10 游戏日恢复的 MP，移动一格消耗
-    地形MoveCost（设计示例：移动力 10 的单位跨消耗 5 的平原有余，
-    跨消耗 25 的山地需等 30 日）
+  - 移动力口径(v0.3.17 / WP-3.5，design/unit.md R1~R7)：`Movement` 即 M = 每 10 游戏日回复的 MP；
+    跨一格消耗该格地形的 `MoveCost`(平原5/山地25)；静止时 MP 上限 = M，移动中可跨周期累积，
+    到达目的地时 MP 清零。设计示例：M=10 的单位跨消耗 5 的平原 10 日走 2 格，跨消耗 25 的山地需等 30 日。
+    原 MoveRechargePerTick 已删除(与 M 语义重叠)。
   - AttackDamage 按游戏日结算：每 1 日造成一次伤害（持续战斗）
   - Duration 单位是游戏日（设计示例：工人 30 日 / 民兵 35 日 / 弓箭手 50 日）
   - 单位需要先拥有 "CanBuild" action 才能调用建造动作建造建筑
@@ -666,7 +663,6 @@
   - Modifier.Target 不在登记表内
     （登记表 = 固定名 ∪ 资源派生 {资源名}Growth ∪ 单位派生 {单位ID}Attack / {单位ID}HP）
   - Modifier.Value=0、Name 为空、TerrainRequirements 为空、ResourceCost 为空（免费）
-  - Duration=0（瞬间完成）、MoveRechargePerTick=0、PopulationCost=0
   - 住房字段与 IsHousing 不一致（IsHousing=true 但 Cap/Radius<=0；非住房却填了人口字段）
   - Terrains 的 Weight 总和不等于 1；Generator.Density>50
 

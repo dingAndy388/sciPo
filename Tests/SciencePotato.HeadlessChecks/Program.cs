@@ -27,6 +27,7 @@ namespace SciencePotato.HeadlessChecks
 			DomainEventChecks.RunAll();
 			WorldPersistenceChecks.RunAll();
 			OccupancyChecks.RunAll();
+			MovementChecks.RunAll();
 
 			return Check.Summary();
 		}

@@ -188,7 +188,13 @@ namespace SciencePotato.Scripts.Map.Application
 			gScore[start] = 0f;
 			openSet.Enqueue(start, start.DistenceTo(end));
 
-			while (openSet.Count > 0)
+			// v0.3 / WP-3.5：**搜索步数上限**（格子数 × 16）。A* 在"目标不可达 + 8 邻域图"这类组合下
+			// 可能反复入队同一节点（启发式不一致时），而在日边界上挂死会直接冻结整个模拟 —— 
+			// 宁可返回"没有路径"，也不能让一次寻路吃掉无限时间。
+			int steps = 0;
+			int maxSteps = System.Linq.Enumerable.Count(map.GetAllCells()) * 16 + 64;
+
+			while (openSet.Count > 0 && steps++ < maxSteps)
 			{
 				var current = openSet.Dequeue();
 				if (current == end)

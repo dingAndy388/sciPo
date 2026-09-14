@@ -28,6 +28,7 @@ namespace SciencePotato.Scripts.Units.Application
 
 		/// <summary>（v0.3 / WP-2.10）领域事件总线（可空 = 无人订阅）。</summary>
 		private readonly IDomainEventBus _events;
+		private readonly UnitMovementService _movement;
 
 		public UnitsAppService(
 			MapAppService mapApp,
@@ -51,6 +52,8 @@ namespace SciencePotato.Scripts.Units.Application
 			_fog = fogAppService;
 			_buildingRepo = buildingRepo;
 			_events = eventBus;
+		// v0.3 / WP-3.5：移动模型（R1~R7）独立成服务，避免继续堆在应用服务里
+		_movement = new UnitMovementService(mapApp, fogAppService, repo, timeService);
 		}
 
 		/// <summary>
@@ -357,135 +360,18 @@ namespace SciencePotato.Scripts.Units.Application
 
 		private void Move(string mapId, Unit unit, HexCubePosition dest)
 		{
-			unit.MoveTarget = dest;
-			unit.IsIdle = false;
+			// v0.3 / WP-3.5：改为走 UnitMovementService（R7：可随时改目的地，路径重算）
+			_movement.SetDestination(mapId, unit.GetInfo().UId, dest);
 		}
 
 		private void RegisterMoveTask(string mapId, string uid, float initialProgress = 0f)
 		{
-			// 口径（v0.3 / WP-1.5）：每 10 游戏日补一次 MP（design/unit.md「每 10 秒恢复」→ M0-3 ② 的 10 日）
-			var task = new IntervalTask(initialProgress, TimeConstants.UnitMoveDays, uid, "UnitMove", "none", mapId, 0);
-			task.OnCompleted += () => MoveTick(mapId, uid);
-			_time.Register(task);
+			// v0.3 / WP-3.5：每 10 游戏日一次移动结算（R2）——实现见 UnitMovementService
+			_movement.RegisterMoveLoop(mapId, uid, initialProgress);
 		}
 
-		private void MoveTick(string mapId, string uid)
-		{
-			// v0.3 / WP-2.2：宿主消失时用空安全查询（任务可能比实体多活一帧，见 UnregisterByUId）
-			var occupant = _map.FindOccupantByUId(mapId, uid);
-			if (occupant is not Unit unit) return;
+		private void MoveTick(string mapId, string uid) => _movement.Tick(mapId, uid); // v0.3 / WP-3.5：保留入口给既有调用点
 
-			// Recharge MP (capped at MoveRechargePerTick when idle)
-			unit.CurrentMP = Math.Min(unit.CurrentMP + unit.MoveRechargePerTick, unit.MoveRechargePerTick);
-
-			if (unit.MoveTarget == null) return;
-
-			// Recalculate path if needed
-			if (unit.MovePath == null || unit.MovePath.Count == 0 || unit.MovePath[0] != unit.Position)
-			{
-				unit.MovePath = _map.FindPath(mapId, unit.Position, unit.MoveTarget.Value, _fog);
-				if (unit.MovePath.Count <= 1) { unit.MoveTarget = null; unit.IsIdle = true; return; }
-				unit.MovePath.RemoveAt(0); // remove current position
-			}
-
-			var nextCell = unit.MovePath[0];
-
-			// Stop if enemy in vision radius
-			if (HasEnemyInRadius(mapId, unit))
-			{
-				unit.MoveTarget = null;
-				unit.IsIdle = true;
-				return;
-			}
-
-			// Check if next cell has a friendly unit → skip over
-			var friendlySkipCost = 0f;
-			int skipIndex = 0;
-			while (skipIndex < unit.MovePath.Count)
-			{
-				var checkCell = unit.MovePath[skipIndex];
-				var occInfo = _map.GetOccupantInfo(mapId, checkCell);
-				if (occInfo != null && occInfo.Value.OwnerId == unit.GetInfo().OwnerId)
-				{
-					friendlySkipCost += GetCellMoveCost(mapId, checkCell);
-					skipIndex++;
-				}
-				else break;
-			}
-
-			if (skipIndex > 0 && unit.CurrentMP >= friendlySkipCost)
-			{
-				unit.CurrentMP -= friendlySkipCost;
-				for (int i = 0; i < skipIndex; i++)
-				{
-					HexCubePosition oldPos = unit.Position;
-					unit.Position = unit.MovePath[0];
-					unit.MovePath.RemoveAt(0);
-					_fog.ResetArea(oldPos, _repo.GetUnitConfig(unit.GetInfo().Id)?.VisionRadius ?? 0);
-					_fog.RevealArea(unit.Position, _repo.GetUnitConfig(unit.GetInfo().Id)?.VisionRadius ?? 0);
-				}
-			}
-
-			if (unit.MovePath.Count == 0) { unit.MoveTarget = null; unit.IsIdle = true; return; }
-
-			nextCell = unit.MovePath[0];
-
-			// Check if the next cell's terrain can't be passed
-			if (!CanEnterCell(mapId, nextCell, _fog))
-			{
-				unit.MoveTarget = null;
-				unit.IsIdle = true;
-				return;
-			}
-
-			float moveCost = GetCellMoveCost(mapId, nextCell);
-			if (unit.CurrentMP >= moveCost)
-			{
-				unit.CurrentMP -= moveCost;
-				HexCubePosition oldPos = unit.Position;
-				unit.Position = nextCell;
-				unit.MovePath.RemoveAt(0);
-				_fog.ResetArea(oldPos, _repo.GetUnitConfig(unit.GetInfo().Id)?.VisionRadius ?? 0);
-				_fog.RevealArea(unit.Position, _repo.GetUnitConfig(unit.GetInfo().Id)?.VisionRadius ?? 0);
-
-				if (unit.MovePath.Count == 0)
-				{
-					unit.MoveTarget = null;
-					unit.IsIdle = true;
-				}
-			}
-		}
-
-		private bool HasEnemyInRadius(string mapId, Unit unit)
-		{
-			var map = _map.GetAllCells(mapId);
-			int ownerId = unit.GetInfo().OwnerId;
-			int visionRadius = _repo.GetUnitConfig(unit.GetInfo().Id)?.VisionRadius ?? 3;
-
-			foreach (var cell in map)
-			{
-				if (cell.Occupant != null && cell.Occupant is Unit otherUnit
-					&& otherUnit.GetInfo().OwnerId != ownerId
-					&& unit.Position.DistenceTo(cell.Position) <= visionRadius)
-					return true;
-			}
-			return false;
-		}
-
-		private bool CanEnterCell(string mapId, HexCubePosition pos, FogAppService fog)
-		{
-			var mapCell = _map.GetMapCell(mapId, pos);
-			if (mapCell == null) return true;
-			byte vis = fog.GetVisibility(pos);
-			if (vis == FogAppService.Unexplored) return true;
-			return mapCell.Terrain != null && mapCell.Terrain.Passable;
-		}
-
-		private float GetCellMoveCost(string mapId, HexCubePosition pos)
-		{
-			var mapCell = _map.GetMapCell(mapId, pos);
-			return mapCell?.Terrain?.MoveCost ?? 1f;
-		}
 
 		// ==================== ATTACK ENGINE ====================
 
@@ -509,7 +395,7 @@ namespace SciencePotato.Scripts.Units.Application
 			}
 
 			// Melee or out of range → move adjacent
-			var neighbor = targetUnit.Position.GetNeighbor().FirstOrDefault(n => CanEnterCell(mapId, n, _fog));
+			var neighbor = targetUnit.Position.GetNeighbor().FirstOrDefault(n => _movement.CanEnter(mapId, n));
 			if (neighbor == default) return;
 
 			unit.MoveTarget = neighbor;

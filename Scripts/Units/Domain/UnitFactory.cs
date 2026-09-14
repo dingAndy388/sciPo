@@ -19,7 +19,7 @@ namespace SciencePotato.Scripts.Units.Domain
 
 			return new Unit(position, config.UnitId, string.IsNullOrWhiteSpace(uid) ? Guid.NewGuid().ToString() : uid, ownerId, config.UnitId,
 				config.HP, config.Movement, config.Attack, config.Movement, true,
-				config.MoveRechargePerTick, config.AttackRadius, config.AttackDamage);
+				config.AttackRadius, config.AttackDamage);
 		}
 	}
 }

@@ -287,8 +287,6 @@ namespace SciencePotato.Scripts.Core.Config
 				if (unit.Movement < 0) report.Error("Units", key, $"Movement={unit.Movement} 不能为负");
 				else if (unit.Movement == 0) report.Warn("Units", key, "Movement=0：单位无法移动");
 				if (unit.VisionRadius < 0) report.Error("Units", key, $"VisionRadius={unit.VisionRadius} 不能为负");
-				if (unit.MoveRechargePerTick < 0f) report.Error("Units", key, $"MoveRechargePerTick={unit.MoveRechargePerTick} 不能为负");
-				else if (unit.MoveRechargePerTick == 0f) report.Warn("Units", key, "MoveRechargePerTick=0：移动力不会自然恢复");
 				if (unit.AttackDamage > 0f && unit.Attack <= 0)
 					report.Warn("Units", key, "AttackDamage>0 但 Attack<=0：两套攻击口径混用，请确认哪个被使用");
 				if (unit.PopulationCost < 0) report.Error("Units", key, $"PopulationCost={unit.PopulationCost} 不能为负");

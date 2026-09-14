@@ -20,7 +20,6 @@ namespace SciencePotato.Scripts.Units.Domain
 
 		// Move/Attack engine fields
 		public float CurrentMP { get; set; }
-		public float MoveRechargePerTick { get; set; }
 		public int AttackRadius { get; set; }
 		public float AttackDamage { get; set; }
 		public HexCubePosition? MoveTarget { get; set; }
@@ -29,7 +28,7 @@ namespace SciencePotato.Scripts.Units.Domain
 
 		public Unit(HexCubePosition coord, string id, string uid, int ownerId, string name,
 			float hp, float mp, int attack, int movement, bool isIdle,
-			float moveRechargePerTick, int attackRadius, float attackDamage)
+			int attackRadius, float attackDamage)
 		{
 			Position = coord;
 			_id = id;
@@ -42,7 +41,6 @@ namespace SciencePotato.Scripts.Units.Domain
 			Movement = movement;
 			IsIdle = isIdle;
 
-			MoveRechargePerTick = moveRechargePerTick;
 			AttackRadius = attackRadius;
 			AttackDamage = attackDamage;
 			CurrentMP = 0;

@@ -15,7 +15,8 @@ namespace SciencePotato.Scripts.Units.Domain
 		int Movement { get; }
 		List<string> Actions { get; }
 		int VisionRadius { get; }
-		float MoveRechargePerTick { get; }
+
+
 		int AttackRadius { get; }
 		float AttackDamage { get; }
 		int PopulationCost { get; }
