@@ -1,10 +1,12 @@
 ================================================================================
   Science Potato - 配置填表指南 (Config Table Guide)
-  版本: 1.2 | 最后更新: 2026-09-14
+  版本: 1.3 | 最后更新: 2026-09-14
   v1.1 变更（v0.3 / WP-1.5）：全部时长字段的单位由「秒」重标定为「游戏日」；
   新增「时间口径」约定与附录C 的单位自检规则。
   v1.2 变更（v0.3 / WP-2.1）：`Prerequisites` 支持**跨树前置**（`"tree:node"` 或结构体），
   旧写法 `["nodeId"]` 继续有效；新增对应的填表示例与附录C 的 error 规则。
+  v1.3 变更（v0.3 / WP-2.7）：建筑 Id 改为设计稿口径（camp / workshop / school /
+  military_camp），数值取自设计稿"建造时间 / 效果"列；产出走 Modifiers（月结叠加）。
 ================================================================================
 
 目录:
@@ -168,9 +170,9 @@
   ```json
   {
     "Buildings": {
-      "house": {
-        "BuildingId": "house",
-        "Name": "民居",
+      "camp": {
+        "BuildingId": "camp",
+        "Name": "营地",
         "ResourceCost": { "Wood": 20 },
         "TerrainRequirements": ["plain"],
         "TechRequirements": {},
@@ -179,20 +181,35 @@
         "Actions": [],
         "VisionRadius": 1,
         "IsHousing": true,
-        "PopulationRadius": 3,
-        "PopulationCap": 5,
+        "PopulationRadius": 1,
+        "PopulationCap": 9,
         "PopulationGrowthInterval": 300
       },
-      "library": {
-        "BuildingId": "library",
-        "Name": "图书馆",
+      "workshop": {
+        "BuildingId": "workshop",
+        "Name": "工坊",
+        "ResourceCost": { "Wood": 30 },
+        "TerrainRequirements": ["plain"],
+        "TechRequirements": {},
+        "Modifiers": [],
+        "Duration": 90,
+        "Actions": [],
+        "VisionRadius": 2,
+        "IsHousing": false,
+        "PopulationRadius": 0,
+        "PopulationCap": 0,
+        "PopulationGrowthInterval": 0
+      },
+      "school": {
+        "BuildingId": "school",
+        "Name": "学院",
         "ResourceCost": { "Gold": 100, "Wood": 50 },
         "TerrainRequirements": ["plain"],
-        "TechRequirements": { "science": ["writing"] },
+        "TechRequirements": {},
         "Modifiers": [
           { "Target": "IdeaGrowth", "Type": "Absolute", "Value": 250 }
         ],
-        "Duration": 120,
+        "Duration": 240,
         "Actions": ["CanResearch"],
         "VisionRadius": 3,
         "IsHousing": false,
@@ -200,9 +217,9 @@
         "PopulationCap": 0,
         "PopulationGrowthInterval": 0
       },
-      "barracks": {
-        "BuildingId": "barracks",
-        "Name": "兵营",
+      "military_camp": {
+        "BuildingId": "military_camp",
+        "Name": "军营",
         "ResourceCost": { "Gold": 80, "Wood": 40 },
         "TerrainRequirements": ["plain"],
         "TechRequirements": {},
@@ -222,8 +239,13 @@
   [注意事项]
   - 非住房建筑: IsHousing=false, PopulationRadius=0, PopulationCap=0,
     PopulationGrowthInterval=0
+  - 建筑 Id 采用设计稿口径（v0.3 / WP-2.7）：营地 camp / 工坊 workshop /
+    学院 school / 军营 military_camp（旧原型 house、library、barracks 已废弃）
   - Duration 单位是游戏日；设计稿 A4 给的建造区间是 30~300 日
-    （示例：住房 90 / 图书馆 120 / 兵营 60）
+    （示例：营地 90 / 工坊 90 / 学院 240 / 军营 60，均取自设计稿"建造时间"列）
+  - 住房人口三件套取自设计稿"效果"列（营地：上限 9、半径 1 格、增长间隔 300 秒 → 300 日）
+  - 产出用 Modifiers: { "Target": "IdeaGrowth", "Type": "Absolute", "Value": 250 }
+    → 每次月结（Resources.GrowInterval=30）把 250 计入 Idea 的产出基数
   - Actions 当前只支持 "CanResearch"，留空写 []
   - TechRequirements 格式: { "科技树ID": ["节点ID1", "节点ID2"] }
   - VisionRadius=0 表示建筑不提供视野

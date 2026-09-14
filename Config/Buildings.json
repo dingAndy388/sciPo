@@ -1,8 +1,8 @@
 {
   "Buildings": {
-    "house": {
-      "BuildingId": "house",
-      "Name": "民居",
+    "camp": {
+      "BuildingId": "camp",
+      "Name": "营地",
       "ResourceCost": { "Wood": 20 },
       "TerrainRequirements": ["plain"],
       "TechRequirements": {},
@@ -11,20 +11,35 @@
       "Actions": [],
       "VisionRadius": 1,
       "IsHousing": true,
-      "PopulationRadius": 3,
-      "PopulationCap": 5,
+      "PopulationRadius": 1,
+      "PopulationCap": 9,
       "PopulationGrowthInterval": 300
     },
-    "library": {
-      "BuildingId": "library",
-      "Name": "图书馆",
+    "workshop": {
+      "BuildingId": "workshop",
+      "Name": "工坊",
+      "ResourceCost": { "Wood": 30 },
+      "TerrainRequirements": ["plain"],
+      "TechRequirements": {},
+      "Modifiers": [],
+      "Duration": 90,
+      "Actions": [],
+      "VisionRadius": 2,
+      "IsHousing": false,
+      "PopulationRadius": 0,
+      "PopulationCap": 0,
+      "PopulationGrowthInterval": 0
+    },
+    "school": {
+      "BuildingId": "school",
+      "Name": "学院",
       "ResourceCost": { "Gold": 100, "Wood": 50 },
       "TerrainRequirements": ["plain"],
-      "TechRequirements": { "science": ["writing"] },
+      "TechRequirements": {},
       "Modifiers": [
         { "Target": "IdeaGrowth", "Type": "Absolute", "Value": 250 }
       ],
-      "Duration": 120,
+      "Duration": 240,
       "Actions": ["CanResearch"],
       "VisionRadius": 3,
       "IsHousing": false,
@@ -32,9 +47,9 @@
       "PopulationCap": 0,
       "PopulationGrowthInterval": 0
     },
-    "barracks": {
-      "BuildingId": "barracks",
-      "Name": "兵营",
+    "military_camp": {
+      "BuildingId": "military_camp",
+      "Name": "军营",
       "ResourceCost": { "Gold": 80, "Wood": 40 },
       "TerrainRequirements": ["plain"],
       "TechRequirements": {},

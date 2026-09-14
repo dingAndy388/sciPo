@@ -114,7 +114,9 @@ namespace SciencePotato.Scripts.Map.Domain
 
         public MapOccupantInfo? GetBuildingInfo(HexCubePosition position)
         {
-			if (_cells.TryGetValue(position, out MapCell cell))
+			// （v0.3 / WP-2.7 验收时发现）与 GetOccupantInfo 对齐：格子上没有建筑时返回 null，
+			// 而不是对着 null 调 GetInfo() 抛 NRE —— 任何"查询任意格"的调用方（UI / 建造校验 / 测试）都会踩到。
+			if (_cells.TryGetValue(position, out MapCell cell) && cell.Building != null)
 				return cell.Building.GetInfo();
 			return null;
         }

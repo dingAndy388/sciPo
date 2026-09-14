@@ -225,14 +225,14 @@ namespace SciencePotato.HeadlessChecks
 
 			Check.AssertEqual(5, tables.AllTerrains().Count(), "Terrains 条目数");
 			Check.AssertEqual(3, tables.AllResources().Count(), "Resources 条目数");
-			Check.AssertEqual(3, tables.AllBuildings().Count(), "Buildings 条目数");
+			Check.AssertEqual(4, tables.AllBuildings().Count(), "Buildings 条目数（WP-2.7：营地/工坊/学院/军营）");
 			Check.AssertEqual(3, tables.AllUnits().Count(), "Units 条目数");
 			Check.AssertEqual(3, tables.TreeIds().Count(), "TechTrees 树数量（WP-2.1 起含最小 physics 样例）");
 			Check.AssertEqual(3, tables.AllEvents().Count(), "Events 条目数");
 			Check.AssertEqual(4f, tables.Generator.Density, "Generator.Density（来自 Config/Generator.json）");
 
 			// 按 Id 检索仍然可用：新增的全表视图没有破坏原有单条查询
-			Check.AssertEqual("民居", tables.Buildings.GetBuildingConfig("house").Name, "house 名称");
+			Check.AssertEqual("营地", tables.Buildings.GetBuildingConfig("camp").Name, "camp 名称");
 			Check.AssertEqual(60f, tables.Units.GetUnitConfig("archer").HP, "archer HP");
 			Check.AssertEqual("buoyancy", tables.Terrains.GetById("water").UnlockTech, "water 的解锁科技");
 			Check.Assert(tables.TechTrees.GetTechNodeConfig("science", "mathematics") != null, "science/mathematics 节点应可检索");

@@ -232,9 +232,11 @@
 - **现象**：`Map` 同时提供 `AddOccupant`（写 `cell.Occupant` + `_occupants` 索引）、`SetBuilding`（写 `cell.Building`）、`SetInvader`（写 `cell.Invader`）；`AddOccupant` 里的 `if (_cells.TryGetValue(position, out _))` 判断**没有任何效果**（后续照样写 `_occupants`）。
 - **证据**：`Scripts/Map/Domain/Map.cs:79-84`（AddOccupant）、`:93-97`（SetBuilding）、`:122-126`（SetInvader）；`MapCell.cs:22-40`；实际建造只调用 `SetOccupant`：`ConstructionAppService.cs:79`、`UnitsAppService.cs:81`
 - **根因**：数据结构先于业务设计（槽位是"以后可能要"的预留），业务实现时选择了最省事的一个入口，其余入口就被遗弃。
-- **影响**：① `MapCell.Building` 永远是 null，但 `Map.GetBuildingInfo`（`Map.cs:115-120`）与 `RemoveBuilding`（`Map.cs:99-105`）在读/写它 → 建筑移除逻辑实际不生效（`ConstructionAppService.cs:110-121` 依赖它）；② `_occupants` 索引只在 `AddOccupant` 维护，`RemoveOccupantByPosition` 不清理索引 → **单位/建筑被删除后仍能按 uid 查到**（僵尸引用），与 `MAP-03` 组合就是崩溃源。
+- **影响**：① `MapCell.Building` 永远是 null，但 `Map.GetBuildingInfo`（`Map.cs:115-121`；v0.3.6 / WP-2.7 起补 null 保护，空格子返回 null 而不是 NRE）与 `RemoveBuilding`（`Map.cs:99-105`）在读/写它 → 建筑移除逻辑实际不生效（`ConstructionAppService.cs:110-121` 依赖它）；② `_occupants` 索引只在 `AddOccupant` 维护，`RemoveOccupantByPosition` 不清理索引 → **单位/建筑被删除后仍能按 uid 查到**（僵尸引用），与 `MAP-03` 组合就是崩溃源。
 - **修复方向**：明确"一格一占据物"或"一格多槽位"的**唯一模型**，废弃其余入口；新增/移除占据物必须**同时**维护格子的槽位与 uid 索引（建议由 Map 统一封装成单一方法对）。
 - **关联**：`MAP-03`、`MAP-12`、`CON-06`、`UNIT-05`
+
+> 🔎 **已确认（v0.3.6 / WP-2.7 验收）**：本条在无头用例里被实测复现 —— 建造走的 `MapAppService.SetOccupant` 只写 `cell.Occupant`，`cell.Building` 恒为 null，因此 `RemoveBuildingByPosition`（`ConstructionAppService.cs:110-121`）对自建建筑**完全无效**（既不拆地块、也不回收产出修正器）。同时发现同族的 `Map.GetBuildingInfo` 在空格子上会抛 NRE（已补 null 保护，见 `D26`）。本轮**不修**（占用模型归 `WP-3.4`），但已把"缺陷仍在"固定成断言（`D27`），修好时用例会失败并提醒改成正向断言。
 
 #### `MAP-05` 地形 Id 与配置表引用的地形名不匹配 —— 【P1｜数据层缺口】
 - **现象**：仓库里的地形资产是 `test1 ~ test5`，而建筑/单位配置要求的地形是 `"plain"`。
@@ -1112,6 +1114,8 @@
 | v0.3.3 | 2026-09-14 | **WP-1.4 完成（M0-1 ② 通关）**：7 张配置表统一为 `Config/{表名}.json` 并全部通电（`ConfigTables`）+ 启动期分级校验（`ConfigValidator`/`ConfigReport`，error 阻断 / warning 放行）；新增 `ModifierTargetRegistry`（Target 名登记表，由资源/单位表派生）。**校验器当场抓出两个真实缺陷**：`UnitsConfigDto` 缺 `[JsonProperty("Units")]` 导致整张单位表静默解析为 0 条；`Events` 表为裸数组（与 `EventsConfigDto` 根对象不符）→ 均修复。无头验收 **33/33 通过、退出码 0**，真实配置 **0 error / 0 warning**。新增决策 D11~D17。 |
 | **v0.3.4** | 2026-09-14 | **WP-1.5 口径重标定（秒 → 游戏日）+ WP-1.2 `GodotTimeDriver`**：`Duration`/`GrowInterval`/`PopulationGrowthInterval` 全部改按**日**计（Resources 5/8/0 → 30 月结；Buildings 10/30/20 → 90/120/60、人口 15 → 300；Units 8/12/15 → 30/35/50，对齐设计 工人 30 日/民兵 35 日/弓箭手 50 日）；硬编码节拍收敛到 `Scripts/Core/Time/TimeConstants.cs`；新增纯 C# **`GameTimeService`**（订阅 `GameClock.DayElapsed`，逐日派发 `OnTick(1 日)`）替换从未入场景的 `GodotTimeService`；新增 `Scripts/Autoload/GodotTimeDriver.cs`（`Node, ITimeDriver`，由 `ServiceContainer` 自动挂载）；校验器新增**单位自检**（>360 日 → warning「疑似仍是秒口径」）。**顺带修复**：`ResourcesAppService` 的 `BaseGrowth>0` 门槛会让 `BaseGrowth=0` 的资源永不结算（Idea 的 250 idea/月 无处到账）→ 改为只看 `GrowInterval`。无头验收 **43/43 通过、退出码 0**（真实配置仍 0 error / 0 warning）。新增决策 D18~D22。 |
 | **v0.3.5** | 2026-09-14 | **WP-2.1 跨树前置修复（`TECH-07`，M0-2 ①）**：`TechPrerequisite{TreeId,NodeId}` + JSON 兼容层（旧 `"nodeId"` 表不破）；`TechTree.CanResearch` 支持跨树（解析器由应用层注入，未注入 = fail closed）；`HydrateConfigs` 补入"存档后新增"的节点；`TechTreesAppService` 新增 `CanResearch` 并给 `Research` 补前置闸门（不再"先扣 Idea 再静默丢弃"）；`ConfigValidator` 把跨树前置缺树/缺节点与**跨树成环**判 error（全局 DFS）；`Config/TechTrees.json` 新增 `science/counting`（0 idea / 0 日）与最小 `physics` 树（`simple_machine_intuition` ← `science:counting`）；`ConfigTableGuide` 升 v1.2。无头验收 **49/49 通过、退出码 0**（真实配置 0 error / 1 条预期 warning）。新增决策 D23~D25 与 §18.4 回归看板 |
+| **v0.3.6** | 2026-09-14 | **WP-2.7 建筑产出接线（M0-2 ②）**：建筑 Id 收敛为设计稿口径（营地 `camp` / 工坊 `workshop` / 学院 `school` / 军营 `military_camp`，旧的 `house`/`library`/`barracks` 废弃），数值取自设计稿「建造时间 / 效果」列（营地 90 日·人口上限 9·半径 1·间隔 300；工坊 90 日；学院 240 日·`IdeaGrowth` +250/月；军营 60 日）；`ConfigTableGuide` 升 v1.3。**顺带修**：`Map.GetBuildingInfo` 在空格子上抛 NRE（与 `GetOccupantInfo` 对齐后返回 null）。**新增断言**：建成学院后 6 个月恰好 +1500 idea、回收修正器即停，并把 `MAP-04`（建筑只写 `cell.Occupant` → 拆除对自建建筑失效）固定成断言防止悄悄改动。无头验收 **52/52 通过、退出码 0**。新增决策 D26~D28 |
+
 
 ---
 
@@ -1840,7 +1844,7 @@ WP-0.4 ─→ WP-3.5 / WP-3.8 / WP-5.3
 | 里程碑 | 组成 | **退出条件（可自动验证）** |
 | :--- | :--- | :--- |
 | **M0-1 · 无头骨架** | 批次 0 + 批次 1（`WP-0.1~0.4`、`WP-1.1~1.5`） | ① xUnit 中 `clock.Advance(1080)` 后 `CurrentDay == 1080` 且 `DayElapsed` **恰好派发 1080 次**；② 7 张配置表全部解析成功并通过引用完整性校验；③ 三档流速切换后，"每 10 日 / 每 30 日"节拍在**游戏日维度**保持不变 |
-| **M0-2 · 单玩家可玩** | 批次 2（`WP-2.1~2.10`） | ① **物理树根节点（简单机械直觉）可研究** → 证明 `TECH-07` 死锁解除；② 建成 School 后 6 个月内存出 250 idea/月；③ 营地 90 日建成 → 人口上限与视野生效；④ 工坊训练工人 30 日后单位出现且人口 −1；⑤ 固定种子下 3 年事件触发次数落在期望区间 | **① ✅ 已通过（WP-2.1 / v0.3.5，检查 49/49）；②~⑤ ⏳ 待做** |
+| **M0-2 · 单玩家可玩** | 批次 2（`WP-2.1~2.10`） | ① **物理树根节点（简单机械直觉）可研究** → 证明 `TECH-07` 死锁解除；② 建成 School 后 6 个月内存出 250 idea/月；③ 营地 90 日建成 → 人口上限与视野生效；④ 工坊训练工人 30 日后单位出现且人口 −1；⑤ 固定种子下 3 年事件触发次数落在期望区间 | **① ✅ WP-2.1；② ✅ WP-2.7（检查 52/52）；③~⑤ ⏳ 待做** |
 | **M0-3 · 世界可存续** | 批次 3（`WP-3.1~3.10`） | ① 存档 → 读档 → `Advance(360)` 后，建筑/单位/人口/任务/迷雾/时间**逐项等价**；② 工人（M=10）跨平原（5）10 日走 2 格、跨山地（25）需 30 日（与设计示例一致）；③ 同格交战 N 日后一方 HP 归零、单位移除、掉落进池；④ 敌方单位封锁格不可建造 |
 | **M1 · 可感知调试版** | `WP-5.1/5.2/5.3` | 人能在地图上看到地形/建筑/单位/资源变化，并手动推进 1 月，用于手感与数值校验 |
 | **M2 · 正式表现层** | `WP-5.4` + 美术资源 | 正式 UI 与美术；表现层只消费"查询 / 事件 / 意图"三契约，不改核心 |
@@ -2026,7 +2030,7 @@ WP-0.4 ─→ WP-3.5 / WP-3.8 / WP-5.3
 | 里程碑 | 验收项 | 状态 |
 | :--- | :--- | :--- |
 | M0-2 | ① 物理树根节点（简单机械直觉）可研究 | ✅ `WP-2.1`（检查 49/49） |
-| M0-2 | ② 建成 School 后 6 个月内存出 250 idea/月 | ⏳ `WP-2.7`（建筑产出接线） |
+| M0-2 | ② 建成 School 后 6 个月内存出 250 idea/月 | ✅ `WP-2.7`（检查 52/52） |
 | M0-2 | ③ 营地 90 日建成 → 人口上限与视野生效 | ⏳ `WP-2.3` |
 | M0-2 | ④ 工坊训练工人 30 日后单位出现且人口 −1 | ⏳ `WP-2.5` |
 | M0-2 | ⑤ 固定种子下 3 年事件触发次数落在期望区间 | ⏳ `WP-2.8` |
@@ -2041,7 +2045,7 @@ dotnet build 'Science Potato.csproj'
 dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessChecks.csproj'
 ```
 
-当前验收结果（2026-09-14，**49/49 通过、退出码 0**）：M0-1 组 43 项 + M0-2 组 6 项。
+当前验收结果（2026-09-14，**52/52 通过、退出码 0**）：M0-1 组 43 项 + M0-2 组 9 项。
 
 | 分组 | 数量 | 覆盖 |
 | :--- | :--- | :--- |
@@ -2051,6 +2055,9 @@ dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessC
 | Map 常驻内存（WP-3.1） | 5 | 只读盘一次 / 占据物跨调用不丢失（可按 uid 取回）/ 人口不被读盘重置 / `Flush` 只写脏地图 / 落盘后新会话仍读不到占据物（WP-3.2 待补） |
 | 口径重标定（WP-1.5 / WP-1.2） | 10 | 节拍常量单点（事件 1 日 / 攻击 1 日 / 移动 10 日 / 月结 30 日）/ **一帧跨多日仍逐日派发**（1080 日 → 1080 次）/ 不足一日不提前触发 / **真实 Resources 表 `GrowInterval=30` → 1080 日结算 36 次**（Idea 即使 `BaseGrowth=0` 也照常结算）/ 三档 1·3·6 日每真实秒的月结次数一致 / 暂停不派发 / 移动 108 次·攻击 1080 次 / 真实 5 张表时长全落 [1,360] 日且无口径警告 / 秒值残留（600）只 warning 不阻断 / 组合根 + `ManualTimeDriver` 推进 1 个月触发 1 次月结 |
 | 跨树前置（WP-2.1） | 6 | 三种前置写法（本树 / `tree:node` / 结构体）都能解析且写出口径一致 / 跨树前置 **fail closed**（未挂解析器不可研究）且**同树前置不走跨树查询** / **M0-2 ①**：真实配置下「计数」研究前物理树根节点不可研究 → 研究后可研究 → 30 日后完成 → 重开存档仍成立 / 存档后**新增**节点可被 `HydrateConfigs` 带出 / 校验器对跨树前置缺树·缺节点·跨树成环判 error 且合法跨树不误报 / 真实配置 warning 白名单（仅 `science/counting` 的 0 日，防"白名单空转"） |
+
+| 2026-09-14 | WP-2.1 **跨树前置修复**（`TECH-07` 死锁） | ✅ 完成 | ① **类型**：新增 `TechPrerequisite{TreeId,NodeId}` + `TechPrerequisiteJsonConverter`（兼容层：`"nodeId"` 旧写法 / `"treeId:nodeId"` 紧凑写法 / `{TreeId,NodeId}` 结构体），`ITechNodeConfig.Prerequisites` 由 `List<string>` 改为 `List<TechPrerequisite>`；② **判定**：`TechTree.CanResearch` 逐条走新 `IsPrerequisiteMet`（本树查本树集合、跨树走 `AttachResearchLookup` 注入的只读解析器；未挂解析器 = **fail closed**），新增 `GetPrerequisites`/`AttachResearchLookup`；③ **装配**：`TechTreesAppService.GetOrCreateTechTree` 每次挂解析器（跨树走 `_repo.GetTreeById` **只读**载入兄弟树，不用 `GetOrCreate` 以免"查询"变成"建档"），新增 `CanResearch(mapId,ownerId,treeId,nodeId)`；**顺带修**：`Research` 此前不校验前置 → 会"先扣 Idea、再在完成回调里被 `Tree.Research` 静默丢弃"，现前置未满足直接返回；④ **Hydrate**：`HydrateConfigs` 由"只 hydrate 已存在节点"改为**同时补入表里新增的节点**（否则先有存档、后加表时新科技永远看不见 —— 跨树前置正是"按表增量开放"的模式）；⑤ **填表**：`Config/TechTrees.json` 新增 `science/counting`（设计 0 idea / 0 日，根节点）+ 最小 `physics` 树（`simple_machine_intuition` ← `science:counting`，2000 idea / 30 日），93 节点规模差 → §18.4 债务项；⑥ **校验**：`ConfigValidator` 前置校验升级 —— 跨树前置的**树 Id 与节点 Id 必须存在**（error，`D13` 的升级点）、成环检测改为**跨树统一建边后的全局 DFS**（逐树 DFS 抓不到跨树环），建筑/单位/事件的 `TechRequirements` 仍保持 warning；⑦ **指南**：`ConfigTableGuide` 升 v1.2（三种写法 + 样板 + 附录 C 的 error/warning 清单同步）。检查 **+6 项**（总计 **49/49**、退出码 0），含 **M0-2 ① 门槛**：真实配置下 `physics/simple_machine_intuition` 在「计数」研究前不可研究、研究后可研究、30 日后真正完成、重开存档仍成立 |
+| 2026-09-14 | WP-2.7 **建筑产出接线**（建筑 Id 收敛 + Modifier → 月结） | ✅ 完成 | ① **填表**：`Config/Buildings.json` 改为设计稿口径的 4 条 —— `camp`（营地 90 日 / 人口上限 9·半径 1·间隔 300 日 / 视野 1）、`workshop`（工坊 90 日 / 视野 2 / 无产出）、`school`（学院 240 日 / `IdeaGrowth` **+250 Absolute** / `CanResearch`）、`military_camp`（军营 60 日 / 视野 3），旧的 `house`/`library`/`barracks` 全部废弃（并用断言锁死"旧 Id 不存在"）；`Duration` 与人口三件套逐项对齐设计稿"建造时间/效果"列；② **接线**：产出链路本身已由 `ConstructionAppService` 完工回调 → `ModifierAppService` → `ResourcesAppService` 月结（`GrowInterval=30`）构成，本轮**用端到端断言把它钉住**：真实地图 + 真实仓储（临时目录）+ 真实时间总线，施工期 239 日 Idea 恒为 0 → 第 240 日完工 → 之后每 30 日 +250（6 个月恰好 +1500）→ 按 sourceId 回收修正器后立即不再产出；③ **顺带修**：`Map.GetBuildingInfo` 在**空格子**上抛 NRE（与 `GetOccupantInfo` 对齐后返回 null）—— 任何"查询任意格"的调用方都会踩到（`MAP-03` 家族）；④ **固定已知缺陷**：`MAP-04`（建造只写 `cell.Occupant`，`cell.Building` 恒空 → `RemoveBuildingByPosition` 对自建建筑整体失效：既不拆地块也不回收修正器）加了一条"缺陷仍在"的断言，`WP-3.4` 修好时它会失败并提醒改成正向断言；⑤ **指南**：`ConfigTableGuide` 升 v1.3（Id 口径 + 设计数值来源 + 产出写法）。检查 **+3 项**（总计 **52/52**、退出码 0），**M0-2 ② 通过** |
 
 
 ## 18.3 实施期决策与偏差记录
@@ -2082,6 +2089,10 @@ dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessC
 | D23 | **`UNIT-10` 记作"显式缺陷"而非"数值偏差"**：`MoveTick` 把 MP 上限写成了单次恢复量（`Scripts/Units/Application/UnitsAppService.cs:158`：`CurrentMP = Math.Min(CurrentMP + MoveRechargePerTick, MoveRechargePerTick)`），而单位表的 `MoveRechargePerTick` = 3 / 2 / 1.5 **全部小于最小地形消耗 5** → 三支部队**当前完全无法移动**（不是"走得慢"） | M0-1/M0-2 的验收项都不涉及移动（M0-2 ④ 只要求"单位出现"），故本轮**不改行为**，只在日志里显式标注缺陷等级：避免 M1 手测时把"单位不动"误判成手感问题或新引入的 bug。修复归 `WP-3.5`（R1~R7 重写 + 地形消耗/通行权限），字段收敛（删 `Attack`/`Movement`、`MovementPoint` → `MP`）见 §15。回归条件见 §18.4 |
 | D24 | 跨树前置的**三层口径**：① 领域层 `TechTree` 只认 `TechPrerequisite{TreeId,NodeId}`，跨树解析靠注入的 `AttachResearchLookup`，**未注入 = fail closed**（跨树前置判未满足，宁可暂时不可研究也不错误放行）；② 应用层 `TechTreesAppService` 用 `_repo.GetTreeById` **只读**载入兄弟树（不用 `GetOrCreateTechTree`，以免"查询能否研究"变成"建档 + 写盘"）；③ 校验层升级：科技树自身的**前置闭合**（含跨树缺树 / 缺节点 / 跨树成环）判 error，而建筑/单位/事件表对科技树的 `TechRequirements` 仍保持 warning | `D13` 的升级点按计划兑现：跨树前置的树 Id 或节点 Id 任一不存在，都等于"该科技永久不可解锁"（正是 `TECH-07` 的成因），因此不能再降级放行；而"别的表引用科技树"不属于科技树内部闭合，维持既有降级口径。只读查询每次都会重载该 owner 的树文件（`GenericJsonRepository.Load` 的语义），因此"研究完成即 `SaveTree`"是正确性前提（既有行为）；树集合的缓存优化留给 `WP-2.9` |
 | D25 | **待办缺陷（本轮发现，未修）**：`ResourcesConsumption.Consume()` 只改内存池、**没有回写**（`Scripts/Resources/Application/ResourcesAppService.cs:46-50` + `Scripts/Resources/Domain/ResourcesConsumption.cs:29-32`）→ 研发/建造扣掉的资源会在下次 `LoadResourcesPool` 时"复活"（无头验收里 `Research` 扣 2000 Idea 后重读池仍是原值） | 不阻断 M0-2 ①（验收只看"科技是否研究完成"），但它会让 M1 里"资源花掉了"看起来生效、实际回滚。归属 `WP-3.2`（实体持久化）/`WP-3.3`（统一存档点）；最小修法是 `Consume()` 后立即 `SaveResources`（届时顺带把 `_repo` 注入消耗契约）。已挂账于 §18.4 |
+| D26 | **`Map.GetBuildingInfo` 空格子 NRE（验收时发现，已修）**：`Map.cs:115-121`（修复后）原来 `if (_cells.TryGetValue(...)) return cell.Building.GetInfo();` —— `cell.Building` 为 null 时直接抛 NRE（与同族的 `GetOccupantInfo` 不一致）。无头用例第一次调用它查"学院是否落位"就崩了 | 修复与 `GetOccupantInfo` 对齐：`&& cell.Building != null`，空格子返回 null。这是 `MAP-03` 家族（"宽容 API / 严格 API 混用"）的又一实例：任何"查询任意格"的调用方（UI 高亮、建造合法性、测试）都会踩到。仅补 null 保护，不改 `MAP-03` 的整体收口（仍由 `WP-3.4` 统一安全 API） |
+| D27 | **`MAP-04` 被"固定成断言"而不是就地修复**：`Map.AddOccupant` 只写 `cell.Occupant`、`cell.Building` 恒为 null，于是 `RemoveBuildingByPosition` 对 `ConstructionAppService` 自建的建筑**整体失效**（既不拆地块、也不回收它的产出修正器） | 本轮只做 `WP-2.7`（填表 + 产出接线），不动占用模型 —— 占用模型是 `WP-3.4`「地块占用权威一致」的核心工作（要同时决定"一格一占据物 vs 多槽位"并维护 uid 索引）。为了让这条缺陷**不会被悄悄改动/遗忘**，在 `BuildingProductionChecks` 里加了一条"缺陷仍在"的断言（`WP-3.4` 修好时它会失败，提示改成正向断言）。产出侧的"可回收"已用 `RemoveModifiersBySourceId` 单独验证，不依赖失效的拆除路径 |
+| D28 | **无头验收必须放开"单帧最多派发 30 日"（`D2`）**：`GameClock.MaxDaysPerAdvance` 默认 30 是给真机防卡顿用的，测试里 `AdvanceDays(239)` 只会派发 30 日、其余记入欠账 —— 症状是"用例跑完但时间只走了 60 日"（本轮 M0-2 ② 因此卡在 `day=60`） | 约定：**凡是一次推进 > 30 日的用例，先 `Session.Clock.MaxDaysPerAdvance = int.MaxValue`**（`WP-1.1` 的 `D2` 已经写明，本轮把它落到用法上）。同时给 `Check.Run` 补了失败时的"第一帧堆栈"输出，避免以后靠猜定位 |
+
 
 ## 18.4 降级项与未修缺陷回归看板（v0.3.5 新增）
 
@@ -2108,3 +2119,9 @@ dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessC
 | `D25` | 资源消耗**不落盘**：`ResourcesConsumption.Consume()` 后无 `SaveResources` | 研发/建造的"已花掉"会在下次读盘时回滚 | WP-3.2 / 3.3 |
 | 内容规模 ①| 科技树 3 树 **93 节点** vs 当前最小样例 6 节点（military 3 / science 3 / physics 1） | 物理/化学树的 35 / 10 节点在 M1 手测里是空的（但**链路已通**：跨树前置 + 0 成本根节点均已验收） | 填表（批次 4 起，配 `WP-4.14` UI 门控） |
 | 内容规模 ②| 建筑 24 条 / 单位 5 类 vs 当前样例 3 / 3 | M0-2 ②~④ 只依赖 School / 营地 / 工坊三条 | `WP-2.5` / `WP-2.6` |
+| `MAP-04` 拆除失效（**已固定断言**） | 建造只写 `cell.Occupant`，`cell.Building` 恒空 → 拆除既不拆地块也不回收产出修正器（`D27`） | 玩家无法拆除建筑；建筑升级（`WP-2.6`）与易主（`WP-4.8`）都依赖同一占用模型 | WP-3.4 |
+| 资源词汇不一致 | 设计稿用「基础石材 / food / basic minerals」，原型表只有 Gold / Wood / Idea（建筑造价与矿场/农田产出因此无法照抄设计值） | 所有造价与产出的**数值映射**都是近似；`resources.md` 的 4~5 种基础资源落地时需一次性重填 | 填表（批次 4 起，配 `WP-3.9` 结算器） |
+| 建筑前置（附属 / 升级）未建模 | 设计稿的"前置"列既有科技也有**建筑**（如 日晷 ← School（建筑）），`IBuildingConfig` 只有 `TechRequirements`，没有"需要已有建筑"的字段 | 日晷、观星台等附属建筑无法表达；建筑升级（`WP-2.6`）也要用到 | `WP-2.6` / `WP-2.12+` |
+| `PopulationGrowth` 修正器未接线 | 住房人口由 `ConstructionAppService.RegisterHousingTask` 的 `IntervalTask` 直接 `AddPopulation(1)` 驱动，`PopulationGrowth` target 填了也不会被读（设计稿把营地的人口效果记在 Modifier 列） | 科技/事件想"加快人口增长"无处生效；人口三件套（上限/半径/间隔）目前是**每格**语义，而设计稿是"半径 1 格内总计 9 人" | `WP-2.3`（人口任务）/ 批次 4 修正器宿主化 |
+| 小地图只剩一个群系 | 生成器锚点数 = `Density/100 × 面积`（Voronoi），8×8 这种小图常常全图同一种地形（实测某 seed 全 water=不可通行） | M1 手测建议用 ≥24×24；真正的"地图配比"问题归生成器重做 | `WP-5.3` / 生成器 |
+

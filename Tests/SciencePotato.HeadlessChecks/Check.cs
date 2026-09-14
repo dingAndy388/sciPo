@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace SciencePotato.HeadlessChecks
 {
@@ -23,6 +24,10 @@ namespace SciencePotato.HeadlessChecks
 				Failures.Add(name);
 				Console.WriteLine($"[FAIL] {name}");
 				Console.WriteLine($"       {ex.Message}");
+
+				// 定位用：只打第一帧（harness 要能指出"哪一行抛的"，否则用例只能靠猜）
+				string frame = ex.StackTrace?.Split('\n').FirstOrDefault();
+				if (!string.IsNullOrWhiteSpace(frame)) Console.WriteLine($"       @{frame.Trim()}");
 			}
 		}
 
