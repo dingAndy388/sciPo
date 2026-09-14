@@ -159,7 +159,7 @@
   Modifiers             [Modifier]              否    建成后注册的全局效果
   Duration              float                    是    建造耗时(**游戏日**)
   Actions               [string]                 是    建筑可执行动作列表
-                                                      当前支持: "CanResearch"
+                                                      当前支持: "CanResearch"（学院）/ "CanTrain"（工坊·军营）
   VisionRadius          int                      否    开迷雾半径(格),默认填0
   IsHousing             bool                     是    是否为住房(true/false)
   PopulationRadius      int                      否    住房辐射人口半径(格)

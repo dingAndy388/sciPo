@@ -36,6 +36,30 @@ namespace SciencePotato.Scripts.Construction.Domain
 		/// <summary>是否已有订单在训练中（同时只训练 1 个）。</summary>
 		public bool HasActiveTraining => _trainingQueue.Any(order => order.IsActive);
 
+		/// <summary>（v0.3 / WP-2.4）当前绑定的建造者（null = 无建造者 / 已释放）。</summary>
+		public BuilderBinding BuilderBinding { get; private set; }
+
+		/// <summary>
+		/// （v0.3 / WP-2.4）绑定建造者：**每建筑同时仅 1 个**（`D6`）。
+		/// <para>传 <c>null</c> 表示"无建造者开工"（脚本/测试/未来"无需工人的建筑"），不算占用冲突。</para>
+		/// </summary>
+		/// <returns>是否绑定成功（已被占用则 false）。</returns>
+		public bool TryBindBuilder(BuilderBinding binding)
+		{
+			if (binding == null) return true;
+			if (BuilderBinding != null) return false;
+
+			BuilderBinding = binding;
+			return true;
+		}
+
+		/// <summary>（v0.3 / WP-2.4）释放建造者（完工或拆除时调用）：把单位从"忙"恢复为空闲。</summary>
+		public void ReleaseBuilder()
+		{
+			BuilderBinding?.Release();
+			BuilderBinding = null;
+		}
+
 		public MapOccupantInfo GetInfo()
 		{
 			info = new MapOccupantInfo(_pos, _id,_uid,_ownerId,_name, IsReady, -1f, OccupantType.Building);

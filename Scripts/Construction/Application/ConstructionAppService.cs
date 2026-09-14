@@ -42,9 +42,10 @@ namespace SciencePotato.Scripts.Construction.Application
 			_fog = fogAppService;
 		}
 
-		public void StartConstruction(string mapId, string buildingId, HexCubePosition position, int ownerId)
+		public bool StartConstruction(string mapId, string buildingId, HexCubePosition position, int ownerId, BuilderBinding builder = null)
 		{
 			var config = _buildingRepo.GetBuildingConfig(buildingId);
+			if (config == null) return false;
 
 			var consumptions = (from item in config.ResourceCost
 								select new Consumption(item.Key, item.Value)).ToList();
@@ -68,9 +69,12 @@ namespace SciencePotato.Scripts.Construction.Application
 				&& terrainRequirements.All(c => c.IsMet())
 				&& techRequirements.All(c => c.IsMet()))
 			{
-				contracts.ForEach(c => c.Consume());
-
 				Building building = _factory.CreateBuilding(buildingId, position, ownerId);
+
+				// 建造者绑定（v0.3 / WP-2.4 / `D6`）：每建筑同时仅 1 个；绑定失败（已被占用）则不消耗任何资源
+				if (!building.TryBindBuilder(builder)) return false;
+
+				contracts.ForEach(c => c.Consume());
 
 				string uid = building.GetInfo().UId;
 
@@ -87,11 +91,17 @@ namespace SciencePotato.Scripts.Construction.Application
 					if (config.IsHousing && config.PopulationCap > 0 && config.PopulationGrowthInterval > 0)
 						RegisterHousingTask(mapId, ownerId, uid, position, config);
 
+					// 完工 → 释放建造者（`D6`）：旧实现把单位永久留在"忙"状态
+					building.ReleaseBuilder();
+
 					_time.Unregister(buildTask);
 				};
 
 				_time.Register(buildTask);
+				return true;
 			}
+
+			return false;
 		}
 
 		public LinearTask ResumeConstruction(string mapId, TaskSnapshot snapshot)
@@ -114,6 +124,11 @@ namespace SciencePotato.Scripts.Construction.Application
 			{
 				var uid = info.Value.UId;
 				var buildingConfig = _buildingRepo.GetBuildingConfig(info.Value.Id);
+
+				// 拆除时释放建造者（v0.3 / WP-2.4）：施工中的建筑被拆 → 工人必须回到空闲，否则永远卡死
+				var building = _map.FindOccupantByUId(mapId, uid);
+				if (building is Building bound) bound.ReleaseBuilder();
+
 				_map.RemoveBuilding(mapId, position);
 				_fog.ResetArea(position, buildingConfig?.VisionRadius ?? 0);
 				_modifier.RemoveModifiersBySourceId(mapId, info.Value.OwnerId, uid);

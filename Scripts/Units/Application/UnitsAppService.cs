@@ -264,11 +264,41 @@ namespace SciencePotato.Scripts.Units.Application
 			}
 		}
 
+		/// <summary>
+		/// （v0.3 / WP-2.4 / `D6`）**由建造者单位发起建造**：校验能力 → 忙闲 → 距离 → 目标格，然后交给
+		/// <see cref="ConstructionAppService.StartConstruction"/>（带建造者绑定）。任一校验不过即返回且**无副作用**
+		/// （不扣资源、不产生建筑、不占用单位）。
+		/// <para>旧实现的两处错：① 只校验 <c>unit.Position == position</c>（要求建筑盖在**自己脚下**，
+		/// 而该格被自己占着 → 建造永远失败）；② 无论成功与否都把 <c>IsIdle</c> 置为 false（单位永久卡死）。</para>
+		/// </summary>
 		private void Build(string mapId, Unit unit, string building, HexCubePosition position)
 		{
-			if (unit.Position != position || !unit.IsIdle) return;
-			_construction.StartConstruction(mapId, building, position, unit.GetInfo().OwnerId);
-			unit.IsIdle = false;
+			var config = _repo.GetUnitConfig(unit.GetInfo().Id);
+
+			// ① 能力：只有 CanBuild 的单位才是建造者（设计稿：工人 CanBuild；民兵/弓箭手不行）
+			if (config == null || !(config.Actions?.Contains("CanBuild") ?? false)) return;
+
+			// ② 忙闲：每个建造者同时只干一件事（开工后 IsIdle=false，完工/被拆时释放）
+			if (!unit.IsIdle) return;
+
+			// ③ 距离：只能在本格或相邻格建造（设计稿"可在相邻格建造"）
+			if (unit.Position.DistenceTo(position) > 1) return;
+
+			// ④ 目标格必须为空（自己的格子被自己占着，所以"同格建造"会在这里被拒）
+			if (!_map.IsClear(mapId, position)) return;
+
+			var binding = new BuilderBinding
+			{
+				BuilderUId = unit.GetInfo().UId,
+				BuilderPosition = unit.Position,
+				TargetPosition = position,
+				OnRelease = () => unit.IsIdle = true, // 释放动作留在 Units 层（构造模块不认识 Unit 类型）
+			};
+
+			if (!_construction.StartConstruction(mapId, building, position, unit.GetInfo().OwnerId, binding)) return;
+
+			unit.IsIdle = false; // 只在真正开工后占用建造者
+			unit.MoveTarget = null;
 		}
 
 		// ==================== MOVE ENGINE ====================
