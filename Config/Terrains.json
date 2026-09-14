@@ -1,0 +1,9 @@
+{
+  "Terrains": [
+    { "Id": "plain",    "Name": "平原", "Weight": 0.50, "MoveCost": 5,  "Passable": true,  "UnlockTech": "" },
+    { "Id": "desert",   "Name": "沙漠", "Weight": 0.10, "MoveCost": 8,  "Passable": true,  "UnlockTech": "" },
+    { "Id": "forest",   "Name": "森林", "Weight": 0.20, "MoveCost": 10, "Passable": true,  "UnlockTech": "" },
+    { "Id": "mountain", "Name": "山地", "Weight": 0.05, "MoveCost": 25, "Passable": true,  "UnlockTech": "" },
+    { "Id": "water",    "Name": "水域", "Weight": 0.15, "MoveCost": 50, "Passable": false, "UnlockTech": "buoyancy" }
+  ]
+}

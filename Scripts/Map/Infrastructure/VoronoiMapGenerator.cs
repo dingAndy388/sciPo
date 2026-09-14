@@ -13,19 +13,20 @@ namespace SciencePotato.Scripts.Map.Infrastructure
 		private IConfigLoader _config;
 		private IEnumerable<ITerrainData> _terrainConfig;
 		private IMapGeneratorConfig _mapGeneratorConfig;
-		private string terrainConfigDir, generatorConfigPath;
+		private readonly ITerrainConfigRepository _terrainRepo;
+		private readonly string generatorConfigPath;
 
-		public VoronoiMapGenerator(string terrainConfigDir, string generatorConfigPath, IConfigLoader config)
+		public VoronoiMapGenerator(ITerrainConfigRepository terrainRepository, string generatorConfigPath, IConfigLoader config)
 		{
 			this._config = config;
-			this.terrainConfigDir = terrainConfigDir;
+			this._terrainRepo = terrainRepository;
 			this.generatorConfigPath = generatorConfigPath;
 		}
 
 		public Domain.Map Generate(int width, int height, int seed, string Id)
 		{
 			// reload config
-			_terrainConfig = _config.LoadAll<ITerrainData>(terrainConfigDir);
+			_terrainConfig = _terrainRepo.GetAll();
 			_mapGeneratorConfig = _config.Load<IMapGeneratorConfig>($"{generatorConfigPath}/Generator.tres");
 
 			// generate blank map

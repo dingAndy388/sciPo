@@ -255,7 +255,7 @@ namespace SciencePotato.Scripts.Units.Application
 			if (mapCell == null) return true;
 			byte vis = fog.GetVisibility(pos);
 			if (vis == FogAppService.Unexplored) return true;
-			return mapCell.Terrain != null && mapCell.Terrain.MoveCost > 0f;
+			return mapCell.Terrain != null && mapCell.Terrain.Passable;
 		}
 
 		private float GetCellMoveCost(string mapId, HexCubePosition pos)

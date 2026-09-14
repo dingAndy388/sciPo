@@ -13,7 +13,13 @@ namespace SciencePotato.Scripts.Map.Infrastructure
 	{
 		private readonly string _mapDir = "user://maps/";
 
-		private readonly IConfigLoader _configLoader = new GodotConfigService();
+		private readonly ITerrainConfigRepository _terrainRepo;
+
+		// v0.3 / WP-0.4：地形来源由 .tres 改为 JSON 配置表，故从外部注入
+		public GodotMapRepository(ITerrainConfigRepository terrainRepository)
+		{
+			_terrainRepo = terrainRepository;
+		}
 
 		public void DeleteMap(Domain.Map map)
 		{
@@ -40,7 +46,10 @@ namespace SciencePotato.Scripts.Map.Infrastructure
 			{
 				GD.Print("Loaded Map Position: " + cellSave.position.q + " , " + cellSave.position.r);
 				MapCell cell = new MapCell(cellSave.position);
-				cell.SetTerrain(_configLoader.Load<ITerrainData>($"res://Config/Terrains/{cellSave.terrain}.tres"));
+				ITerrainData terrain = _terrainRepo?.GetById(cellSave.terrain);
+				if (terrain == null)
+					GD.PushWarning($"[GodotMapRepository] 未知地形 Id '{cellSave.terrain}'（v0.3 WP-0.4：地形已迁移为 JSON 配置表）");
+				cell.SetTerrain(terrain);
 
 				map.SetCell(cellSave.position, cell);
 			}
@@ -64,7 +73,7 @@ namespace SciencePotato.Scripts.Map.Infrastructure
 			{
 				HexCubeCellSave cellSave = new HexCubeCellSave();
 				cellSave.position = (HexCubePosition)cell.Position;
-				cellSave.terrain = cell.Terrain.Id;
+				cellSave.terrain = cell.Terrain?.Id ?? string.Empty;
 				mapSave.cells.Add(cellSave);
 			}
 			if (!DirAccess.DirExistsAbsolute(_mapDir))

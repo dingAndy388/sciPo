@@ -6,10 +6,9 @@
     <RootNamespace>SciencePotato</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Remove="Scripts\Uniit\**" />
-    <Compile Remove="Scripts\Units\Events\**" />
-    <EmbeddedResource Remove="Scripts\Uniit\**" />
-    <EmbeddedResource Remove="Scripts\Units\Events\**" />
+    <!-- v0.3 / WP-0.2：测试工程与主工程分离，主工程的 .cs 通配需排除测试目录 -->
+    <Compile Remove="Tests\**" />
+    <EmbeddedResource Remove="Tests\**" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />

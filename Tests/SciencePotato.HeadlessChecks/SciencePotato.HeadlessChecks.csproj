@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AssemblyName>SciencePotato.HeadlessChecks</AssemblyName>
+    <RootNamespace>SciencePotato.HeadlessChecks</RootNamespace>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <!--
+      CS8785 = Godot 的 ScriptPathAttributeGenerator 在"非 Godot 工程"中运行失败
+      （Property 'GodotProjectDir' is null or empty）。本工程只消费纯 C# 类型，
+      该生成器不参与运行，故按已知无害警告抑制。
+    -->
+    <NoWarn>$(NoWarn);CS8785</NoWarn>
+  </PropertyGroup>
+
+  <!--
+    v0.3 / WP-0.2：M0-1 验收载具。
+    离线环境下 NuGet 缓存没有 xunit/nunit，故本工程不依赖任何外部测试包：
+    用结构化断言 + 进程返回码（0 = 全部通过）承担验收职责；后续具备网络条件时可平移为 xUnit。
+    注意：本工程通过 ProjectReference 引用主工程，主工程的 .cs 通配已排除 Tests\**（见 Science Potato.csproj）。
+  -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\Science Potato.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -152,7 +152,7 @@ namespace SciencePotato.Scripts.Map.Application
 			if (visibility == FogUnexplored)
 				return true;
 
-			return cell.Terrain != null && cell.Terrain.MoveCost > 0f;
+			return cell.Terrain != null && cell.Terrain.Passable;
 		}
 
 		private static float GetMoveCost(Domain.Map map, HexCubePosition pos)

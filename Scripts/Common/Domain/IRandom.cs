@@ -4,7 +4,7 @@ namespace SciencePotato.Scripts.Common.Domain
 {
 	public interface IRandom
 	{
-		int Next(int max, int min);
+		int Next(int min, int max);
 		int Next();
 		float NextGaussian(float mean, float std);
 		float NextFloat();

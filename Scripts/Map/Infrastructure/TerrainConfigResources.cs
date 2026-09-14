@@ -10,5 +10,7 @@ namespace SciencePotato.Scripts.Map.Infrastructure
 		[Export] public string Name { get; set; }
 		[Export] public float Weight { get; set; }
 		[Export] public float MoveCost { get; set; }
+		[Export] public bool Passable { get; set; } = true;
+		[Export] public string UnlockTech { get; set; }
 	}
 }
