@@ -163,7 +163,7 @@
   VisionRadius          int                      否    开迷雾半径(格),默认填0
   IsHousing             bool                     是    是否为住房(true/false)
   PopulationRadius      int                      否    住房辐射人口半径(格)
-  PopulationCap         int                      否    住房提供人口上限(每格)
+  PopulationCap         int                      否    住房提供人口上限(**半径内总计**)
   PopulationGrowthInterval int                   否    人口增长间隔(**游戏日**, 300 = 设计稿的营地 lv.I)
 
   [完整样板 JSON]
@@ -244,6 +244,10 @@
   - Duration 单位是游戏日；设计稿 A4 给的建造区间是 30~300 日
     （示例：营地 90 / 工坊 90 / 学院 240 / 军营 60，均取自设计稿"建造时间"列）
   - 住房人口三件套取自设计稿"效果"列（营地：上限 9、半径 1 格、增长间隔 300 秒 → 300 日）
+  - 人口上限口径（v0.3 / WP-2.3）：`PopulationCap` 是**半径 `PopulationRadius` 内的人口总计**
+    （设计稿原文"半径 1 格内总计 9 人"），不是每格配额 —— 半径 1 的 7 格共享这 9 个名额；
+    增长落在住房所在格。人口增长还会经过 `PopulationGrowth` 修正器
+    （`{Target:"PopulationGrowth", Type:"Absolute"|"Percent"}`，基数 1 人/间隔）
   - 产出用 Modifiers: { "Target": "IdeaGrowth", "Type": "Absolute", "Value": 250 }
     → 每次月结（Resources.GrowInterval=30）把 250 计入 Idea 的产出基数
   - Actions 当前只支持 "CanResearch"，留空写 []

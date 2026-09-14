@@ -92,6 +92,36 @@ namespace SciencePotato.Scripts.Map.Domain
 			return _occupants.TryGetValue(uid, out occupant);
 		}
 
+		/// <summary>（v0.3 / WP-2.3）范围内人口**总计**（含中心格）。</summary>
+		public int GetPopulationWithin(HexCubePosition center, int radius)
+		{
+			int total = 0;
+			foreach (HexCubePosition pos in center.InRadius(radius))
+				if (_cells.TryGetValue(pos, out MapCell cell))
+					total += cell.Population;
+
+			return total;
+		}
+
+		/// <summary>
+		/// （v0.3 / WP-2.3）按**范围内总计上限**增加人口（设计稿：营地「半径 1 格内总计 9 人」）。
+		/// <para>旧实现是「每格各自到 cap」：半径 1 的 7 格各自可达 9 → 实际容量 63，与设计稿不符（`CON-05`）。
+		/// 增长落在**中心格**（聚落中心 = 住房所在格）：设计稿描述的是聚落级总量，不是逐格配额。</para>
+		/// </summary>
+		/// <returns>实际增加的人数（0 = 已达上限或地块不存在）。</returns>
+		public int AddPopulationWithin(HexCubePosition center, int radius, int cap, int amount)
+		{
+			if (amount <= 0 || cap <= 0) return 0;
+			if (!_cells.TryGetValue(center, out MapCell cell)) return 0;
+
+			int room = cap - GetPopulationWithin(center, radius);
+			if (room <= 0) return 0;
+
+			int added = Math.Min(room, amount);
+			cell.AddPopulation(added);
+			return added;
+		}
+
 		public void AddOccupant(IMapOccupant occupant,HexCubePosition position)
 		{
 			if (_cells.TryGetValue(position, out _))

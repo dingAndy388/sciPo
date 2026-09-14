@@ -67,6 +67,29 @@ namespace SciencePotato.Scripts.Map.Application
 			return map != null && map.TryGetOccupantByUId(uid, out IMapOccupant occupant) ? occupant : null;
 		}
 
+		/// <summary>
+		/// （v0.3 / WP-2.3）**唯一的人口写入点**（`CON-05`）：走 <see cref="Map.AddPopulationWithin"/> 的
+		/// 「范围内总计上限」口径，并在真正变化时把地图标记为脏 —— 否则人口改动不会被下一个存档点写盘
+		/// （这是"人口不落盘"的一半；另一半是实体序列化，归 `WP-3.2`）。
+		/// </summary>
+		/// <returns>实际增加的人数。</returns>
+		public int AddPopulation(string mapId, HexCubePosition center, int radius, int cap, int amount)
+		{
+			var map = _session.Get(mapId);
+			if (map == null) return 0;
+
+			int added = map.AddPopulationWithin(center, radius, cap, amount);
+			if (added > 0) _session.MarkDirty(mapId);
+			return added;
+		}
+
+		/// <summary>（v0.3 / WP-2.3）范围内人口总计（只读；供断言与未来的 UI/结算器使用）。</summary>
+		public int GetPopulationWithin(string mapId, HexCubePosition center, int radius)
+		{
+			var map = _session.Get(mapId);
+			return map?.GetPopulationWithin(center, radius) ?? 0;
+		}
+
 		public void SetOccupant(string MapId, HexCubePosition position, IMapOccupant occupant)
 		{
 			var map = _session.Get(MapId);

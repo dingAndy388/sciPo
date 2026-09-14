@@ -40,9 +40,12 @@ namespace SciencePotato.HeadlessChecks
 		}
 
 		/// <summary>按给定配置源装配核心：测试里唯一的 <see cref="CoreBootstrap"/> 入口。</summary>
-		public static CoreServices BuildCore(InMemoryConfigSource configSource, bool failOnConfigErrors = true)
+		/// <param name="mapRepository">
+		/// （v0.3 / WP-2.3）可选：传入自己的地图仓库替身，便于断言存档点行为（`LoadCount`/`SaveCount`）。
+		/// </param>
+		public static CoreServices BuildCore(InMemoryConfigSource configSource, bool failOnConfigErrors = true, InMemoryMapRepository mapRepository = null)
 		{
-			var repository = new InMemoryMapRepository();
+			var repository = mapRepository ?? new InMemoryMapRepository();
 			return CoreBootstrap.Build(new CoreDependencies
 			{
 				FileSystem = new InMemoryFileSystem(),
@@ -56,7 +59,7 @@ namespace SciencePotato.HeadlessChecks
 			});
 		}
 
-		public static CoreServices BuildRealCore(bool failOnConfigErrors = true)
-			=> BuildCore(RealConfigSource(), failOnConfigErrors);
+		public static CoreServices BuildRealCore(bool failOnConfigErrors = true, InMemoryMapRepository mapRepository = null)
+			=> BuildCore(RealConfigSource(), failOnConfigErrors, mapRepository);
 	}
 }

@@ -85,7 +85,7 @@ namespace SciencePotato.Scripts.Construction.Application
 					_fog.RevealArea(position, config.VisionRadius);
 
 					if (config.IsHousing && config.PopulationCap > 0 && config.PopulationGrowthInterval > 0)
-						RegisterHousingTask(mapId, uid, position, config.PopulationRadius, config.PopulationCap, config.PopulationGrowthInterval);
+						RegisterHousingTask(mapId, ownerId, uid, position, config);
 
 					_time.Unregister(buildTask);
 				};
@@ -140,32 +140,38 @@ namespace SciencePotato.Scripts.Construction.Application
 			}
 		}
 
-		private void RegisterHousingTask(string mapId, string buildingUid, HexCubePosition center, int radius, int cap, int interval)
+		/// <summary>
+		/// （v0.3 / WP-2.3）注册住房的人口增长循环任务。修掉的三件事（`CON-04/05/06`）：
+		/// <list type="number">
+		/// <item>**`OwnerId`** 传建筑所有者（旧实现硬编码 <c>0</c> → 任务快照的归属永远是玩家 0，读档会把人口增长挂到别人名下）；</item>
+		/// <item>**上限**按「半径内**总计**」判定（设计稿：营地「半径 1 格内总计 9 人」；旧实现是每格各自到 9 → 半径 1 的 7 格可达 63 人），
+		/// 且写入走 <see cref="MapAppService.AddPopulation"/>（唯一写入点 + 脏标记 → 改动进入存档点）；</item>
+		/// <item>每次增长经过 **`PopulationGrowth` 修正器**（旧实现直接 <c>+1</c>，填了 Modifier 也不生效），
+		/// 用小数累加器保留不足 1 人的余量（例：+50% → 每两轮多出 1 人）。</item>
+		/// </list>
+		/// <para>任务的回收不在本方法里：住房被拆时由 <see cref="RemoveBuildingByPosition"/> →
+		/// <c>ITimeService.UnregisterByUId</c> 按 uid 范围注销（`CON-06`，`WP-2.2` 提供能力）。</para>
+		/// </summary>
+		private void RegisterHousingTask(string mapId, int ownerId, string buildingUid, HexCubePosition center, IBuildingConfig config)
 		{
-			// 口径（v0.3 / WP-1.5）：interval 来自 `PopulationGrowthInterval`，单位是**游戏日**
-			// （营地 300 日 = design 行里的"人口增长间隔 300 秒"按日口径重标定）
-			var task = new IntervalTask(0, interval, buildingUid, "PopulationGrowth", "none", mapId, 0);
+			// 口径（v0.3 / WP-1.5）：`PopulationGrowthInterval` 的单位是**游戏日**（营地 300 日）
+			var task = new IntervalTask(0, config.PopulationGrowthInterval, buildingUid, "PopulationGrowth", "none", mapId, ownerId);
+
+			float pending = 0f; // 小数余量：修正器可能给出非整数增长（如 +50%）
+
 			task.OnCompleted += () =>
 			{
-				foreach (var pos in GetHexPositionsInRadius(center, radius))
-				{
-					var cell = _map.GetMapCell(mapId, pos);
-					if (cell != null && cell.Population < cap)
-						cell.AddPopulation(1);
-				}
-			};
-			_time.Register(task);
-		}
+				pending += _modifier.GetValue(mapId, ownerId, "PopulationGrowth", 1f);
 
-		private IEnumerable<HexCubePosition> GetHexPositionsInRadius(HexCubePosition center, int radius)
-		{
-			for (int dq = -radius; dq <= radius; dq++)
-			{
-				int minDr = Math.Max(-radius, -dq - radius);
-				int maxDr = Math.Min(radius, -dq + radius);
-				for (int dr = minDr; dr <= maxDr; dr++)
-					yield return new HexCubePosition(center.q + dq, center.r + dr);
-			}
+				int whole = (int)Math.Floor(pending);
+				if (whole <= 0) return;
+
+				// 余量先扣掉：人口受上限约束，超出的部分不会排队等待（与设计稿"总量封顶"一致）
+				pending -= whole;
+				_map.AddPopulation(mapId, center, config.PopulationRadius, config.PopulationCap, whole);
+			};
+
+			_time.Register(task);
 		}
 
 		private void Research(string mapId, Building building, string targetParam)

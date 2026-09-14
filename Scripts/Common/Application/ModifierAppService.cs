@@ -44,5 +44,20 @@ namespace SciencePotato.Scripts.Common.Application
 			manager.RemoveModifiersBySourceId(sourceId);
 			_repo.SaveModifier(mapId, ownerId, manager.GetAllModifiers());
 		}
+
+		/// <summary>
+		/// （v0.3 / WP-2.3）读取某玩家在指定 Target 上的计算值：<c>(base + ΣAbsolute) × (1 + ΣPercent)</c>。
+		/// <para>用途：让"速率/产出"类消费点能读到修正器。此前 `PopulationGrowth` 只登记在
+		/// <see cref="SciencePotato.Scripts.Core.Config.ModifierTargetRegistry"/> 里、**没有任何消费点** ——
+		/// 填了也不生效（§18.4「PopulationGrowth 修正器未接线」）。人口增长是该 target 的第一个消费点；
+		/// 其余（`BuildingSpeed` / `UnitTrainingSpeed` / `ResearchSpeed` 等）随 `WP-4.4` 分批接线。</para>
+		/// </summary>
+		public float GetValue(string mapId, int ownerId, string target, float baseValue = 1f)
+		{
+			if (string.IsNullOrWhiteSpace(target)) return baseValue;
+
+			var manager = new ModifierManager(_repo.LoadModifiers(mapId, ownerId));
+			return manager.GetValue(new[] { target }, baseValue);
+		}
 	}
 }
