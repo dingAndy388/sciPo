@@ -1,8 +1,10 @@
 ================================================================================
   Science Potato - 配置填表指南 (Config Table Guide)
-  版本: 1.1 | 最后更新: 2026-09-14
+  版本: 1.2 | 最后更新: 2026-09-14
   v1.1 变更（v0.3 / WP-1.5）：全部时长字段的单位由「秒」重标定为「游戏日」；
   新增「时间口径」约定与附录C 的单位自检规则。
+  v1.2 变更（v0.3 / WP-2.1）：`Prerequisites` 支持**跨树前置**（`"tree:node"` 或结构体），
+  旧写法 `["nodeId"]` 继续有效；新增对应的填表示例与附录C 的 error 规则。
 ================================================================================
 
 目录:
@@ -336,10 +338,18 @@
   Techs             { string: {...} }        是    该树所有科技节点
     ──── 每个科技节点 ────
     Id              string                   是    节点ID(与key同)
-    Prerequisites   [string]                 否    前置科技节点ID列表
+    Prerequisites   [前置]                   否    前置科技列表，三种写法等价（见下）
     Cost            float                    是    研发消耗的"Idea"资源量
     Duration        float                    是    研发耗时(**游戏日**，设计区间 0~180 日)
     Modifiers       [Modifier]              否    研发完成后注册的效果
+
+  [Prerequisites 三种写法]（v0.3 / WP-2.1 起支持跨树）
+    ① 本树节点（旧表写法，继续有效）: "mathematics"
+    ② 跨树·紧凑写法               : "science:counting"      ← 冒号前是树 Id
+    ③ 跨树·结构体写法             : { "TreeId": "science", "NodeId": "counting" }
+    三者等价；推荐跨树时用 ②（最短、也最不容易写错）。
+    校验：跨树前置的**树 Id 与节点 Id 都必须真实存在**，否则判 error ——
+          填错就等于"该科技永久不可解锁"（TECH-07 的成因）。
 
   [完整样板 JSON]
   ```json
@@ -378,6 +388,13 @@
       },
       "science": {
         "Techs": {
+          "counting": {
+            "Id": "counting",
+            "Prerequisites": [],
+            "Cost": 0,
+            "Duration": 0,
+            "Modifiers": []
+          },
           "writing": {
             "Id": "writing",
             "Prerequisites": [],
@@ -395,6 +412,17 @@
             ]
           }
         }
+      },
+      "physics": {
+        "Techs": {
+          "simple_machine_intuition": {
+            "Id": "simple_machine_intuition",
+            "Prerequisites": ["science:counting"],
+            "Cost": 2000,
+            "Duration": 30,
+            "Modifiers": []
+          }
+        }
       }
     }
   }
@@ -402,6 +430,8 @@
 
   [注意事项]
   - Prerequisites 为空列表 [] 表示无前置，为根节点
+  - 跨树前置写 "树Id:节点Id"（如 "science:counting"）：物理/化学树的根节点都依赖数学树（v0.3 / WP-2.1）
+  - 前置的树 Id 或节点 Id 不存在、或前置关系成环（含跨树成环）→ 判 error，启动即报错
   - Cost 消耗的资源固定为 "Idea"
   - Modifiers 中的 Target 会传给 ModifierManager，可与建筑/事件的效果叠加
   - 研发完成后 sourceId=节点ID，方便以后撤销
@@ -555,7 +585,10 @@
   - Terrains：Weight<=0、MoveCost<0
   - Resources：GrowInterval<0、BaseGrowth<0、BaseLimit<=0、BaseValue<0 或 > BaseLimit
   - Buildings/Units：Duration<0、ResourceCost 负值、HP<=0，以及攻击/移动/视野/人口相关字段为负
-  - TechTrees：Cost<0、Duration<0、前置指向自己、前置成环、前置不在同一棵树内
+  - TechTrees：Cost<0、Duration<0、前置指向自己、前置成环（含跨树成环）、
+               前置不在同一棵树内、跨树前置的树 Id 不存在、跨树前置的节点 Id 在目标树中不存在
+               （v0.3 / WP-2.1：后两条本为 warning，收敛跨树前置后升级为 error ，
+                因为填错即等于"该科技永久不可解锁"，见 TECH-07）
   - Events：TriggerChance 不在 [0,1]、Duration<0
   - Modifier：Type 不是 "Percent" / "Absolute"（其余拼写会被静默当成 Absolute，见 MOD-05）
   - 跨表：TechRequirements / TechPrerequisites 引用了不存在的科技树
@@ -564,7 +597,10 @@
     "单位写错"由下面的自检按 warning 处理）
 
   [warning 清单]
-  - 未知地形 Id、未知资源名、树内不存在的科技节点（跨表引用先降级，WP-2.1 收敛）
+  - 未知地形 Id、未知资源名
+  - 建筑/单位/事件表的 TechRequirements 引用了树内不存在的科技节点
+    （v0.3 / WP-2.1：**科技树自身的 Prerequisites 已升级为 error**；这两者的差别是
+      "别的表引用科技树"仍先降级，"科技树内部的前置闭合"必须强校验）
   - Modifier.Target 不在登记表内
     （登记表 = 固定名 ∪ 资源派生 {资源名}Growth ∪ 单位派生 {单位ID}Attack / {单位ID}HP）
   - Modifier.Value=0、Name 为空、TerrainRequirements 为空、ResourceCost 为空（免费）

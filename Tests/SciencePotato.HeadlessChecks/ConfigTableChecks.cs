@@ -227,7 +227,7 @@ namespace SciencePotato.HeadlessChecks
 			Check.AssertEqual(3, tables.AllResources().Count(), "Resources 条目数");
 			Check.AssertEqual(3, tables.AllBuildings().Count(), "Buildings 条目数");
 			Check.AssertEqual(3, tables.AllUnits().Count(), "Units 条目数");
-			Check.AssertEqual(2, tables.TreeIds().Count(), "TechTrees 树数量");
+			Check.AssertEqual(3, tables.TreeIds().Count(), "TechTrees 树数量（WP-2.1 起含最小 physics 样例）");
 			Check.AssertEqual(3, tables.AllEvents().Count(), "Events 条目数");
 			Check.AssertEqual(4f, tables.Generator.Density, "Generator.Density（来自 Config/Generator.json）");
 
@@ -236,6 +236,8 @@ namespace SciencePotato.HeadlessChecks
 			Check.AssertEqual(60f, tables.Units.GetUnitConfig("archer").HP, "archer HP");
 			Check.AssertEqual("buoyancy", tables.Terrains.GetById("water").UnlockTech, "water 的解锁科技");
 			Check.Assert(tables.TechTrees.GetTechNodeConfig("science", "mathematics") != null, "science/mathematics 节点应可检索");
+			Check.Assert(tables.TechTrees.GetTechNodeConfig("science", "counting") != null, "science/counting 节点应可检索（WP-2.1 新增）");
+			Check.Assert(tables.TechTrees.GetTechNodeConfig("physics", "simple_machine_intuition") != null, "physics 树根节点应可检索（WP-2.1 新增）");
 			Check.AssertEqual(20, tables.Events.GetAllEvents().First(e => e.EventId == "plague").Duration, "plague 持续天数");
 		}
 

@@ -47,7 +47,7 @@ namespace SciencePotato.Scripts.Core.Config
 			ValidateResources(tables, report);
 			ValidateBuildings(tables, report, terrainIds, resourceIds, techNodes, registry);
 			ValidateUnits(tables, report, terrainIds, resourceIds, techNodes, registry);
-			ValidateTechTrees(tables, report, registry);
+			ValidateTechTrees(tables, report, techNodes, registry);
 			ValidateEvents(tables, report, resourceIds, techNodes, registry);
 			ValidateGenerator(tables, report);
 		}
@@ -237,7 +237,19 @@ namespace SciencePotato.Scripts.Core.Config
 
 		// ────────────────────────── TechTrees ──────────────────────────
 
-		private static void ValidateTechTrees(ConfigTables tables, ConfigReport report, ModifierTargetRegistry registry)
+		/// <summary>
+		/// 科技树校验（`WP-1.4` 初版 + `WP-2.1` 跨树前置升级）。
+		/// <para>前置的**分级口径**（`WP-2.1` 起）：</para>
+		/// <list type="bullet">
+		/// <item>本树前置（`TreeId` 为空或等于本树）缺节点 / 自环 → **error**（原口径不变）。</item>
+		/// <item>跨树前置（`TreeId` 非空）的**树 Id 不存在**或**节点 Id 在目标树中不存在** → **error**：
+		/// 这两种填法都等于"该科技永久不可解锁"，正是 `TECH-07` 的成因，不能再降级放行（`D13` 的升级点）。</item>
+		/// <item>建筑 / 单位 / 事件表的 `TechRequirements`（另一张表对科技树的引用）仍按 warning，见
+		/// <see cref="ValidateTechRequirements"/> —— 那属于"表间引用先降级"的既有口径。</item>
+		/// </list>
+		/// </summary>
+		private static void ValidateTechTrees(ConfigTables tables, ConfigReport report,
+			Dictionary<string, HashSet<string>> techNodeIndex, ModifierTargetRegistry registry)
 		{
 			if (tables.TechTrees == null) return;
 
@@ -280,27 +292,131 @@ namespace SciencePotato.Scripts.Core.Config
 					else ValidateDayUnit(report, "TechTrees", $"{treeId}/{key}", "Duration", node.Duration);
 					ValidateModifiers(report, "TechTrees", $"{treeId}/{key}", node.Modifiers, registry);
 
-					// 同表内闭合：前置必须落在同一棵树内（§13.z「引用完整性先只校验同表内闭合」→ error）
-					foreach (string prerequisite in node.Prerequisites ?? new List<string>())
+					// 前置校验（`WP-2.1`）：本树闭合 → error；跨树 → 树与节点都必须真实存在（否则永久不可解锁）
+					foreach (TechPrerequisite prerequisite in node.Prerequisites ?? new List<TechPrerequisite>())
 					{
-						if (!NotEmpty(prerequisite))
+						if (prerequisite == null)
 						{
-							report.Error("TechTrees", $"{treeId}/{key}", "前置列表中存在空 Id");
+							report.Error("TechTrees", $"{treeId}/{key}", "前置列表中存在 null 条目");
 							continue;
 						}
-						if (prerequisite == key)
+						if (!NotEmpty(prerequisite.NodeId))
 						{
-							report.Error("TechTrees", $"{treeId}/{key}", "前置指向自己（自环）");
+							report.Error("TechTrees", $"{treeId}/{key}", "前置列表中存在空节点 Id");
 							continue;
 						}
-						if (!nodes.ContainsKey(prerequisite))
+
+						if (!prerequisite.IsCrossTree || prerequisite.TreeId == treeId)
+						{
+							if (prerequisite.NodeId == key)
+								report.Error("TechTrees", $"{treeId}/{key}", "前置指向自己（自环）");
+							else if (!nodes.ContainsKey(prerequisite.NodeId))
+								report.Error("TechTrees", $"{treeId}/{key}",
+									$"前置 \"{prerequisite.NodeId}\" 不在同一棵树内（{treeId} 现有节点：{string.Join(", ", nodes.Keys)}）");
+							continue;
+						}
+
+						if (!techNodeIndex.TryGetValue(prerequisite.TreeId, out HashSet<string> otherNodes))
+						{
 							report.Error("TechTrees", $"{treeId}/{key}",
-								$"前置 \"{prerequisite}\" 不在同一棵树内（{treeId} 现有节点：{string.Join(", ", nodes.Keys)}）");
+								$"跨树前置引用了不存在的科技树 \"{prerequisite.TreeId}\"（TechTrees 表：{string.Join(", ", techNodeIndex.Keys)}）");
+							continue;
+						}
+						if (!otherNodes.Contains(prerequisite.NodeId))
+							report.Error("TechTrees", $"{treeId}/{key}",
+								$"跨树前置 \"{prerequisite.TreeId}:{prerequisite.NodeId}\" 在该树中不存在 → 此科技将永久不可解锁（TECH-07）");
 					}
 				}
-
-				ValidatePrerequisiteCycles(nodes, treeId, report);
 			}
+
+			// 成环检测放在**树循环之外**：边表跨树统一建好后做一次全局 DFS（`WP-2.1`）
+			ValidatePrerequisiteCycles(tables, report);
+		}
+
+		/// <summary>
+		/// 前置成环检测（迭代式 DFS 三色）：成环的科技永远无法研发。
+		/// <para>（v0.3 / WP-2.1）图**跨树统一建边**：跨树前置让环可以跨树出现（例：物理 A ← 数学 B、数学 B ← 物理 A），
+		/// 逐树各自 DFS 是检测不到的。</para>
+		/// </summary>
+		private static void ValidatePrerequisiteCycles(ConfigTables tables, ConfigReport report)
+		{
+			const int InProgress = 1;
+			const int Done = 2;
+			Dictionary<string, List<string>> edges = BuildPrerequisiteEdges(tables);
+			var state = new Dictionary<string, int>(StringComparer.Ordinal);
+
+			foreach (string start in edges.Keys)
+			{
+				if (state.ContainsKey(start)) continue;
+				state[start] = InProgress;
+				var stack = new Stack<(string Node, int Next)>();
+				stack.Push((start, 0));
+
+				while (stack.Count > 0)
+				{
+					(string node, int next) = stack.Pop();
+					List<string> prerequisites = edges.TryGetValue(node, out List<string> list) ? list : null;
+					if (prerequisites == null || next >= prerequisites.Count)
+					{
+						state[node] = Done;
+						continue;
+					}
+
+					stack.Push((node, next + 1));
+					string prerequisite = prerequisites[next];
+					// 空 Id / 自环 / 不存在的节点都由前置校验单独报错，这里只负责"环"
+					if (!edges.ContainsKey(prerequisite)) continue;
+
+					if (state.TryGetValue(prerequisite, out int prerequisiteState) && prerequisiteState == InProgress)
+					{
+						report.Error("TechTrees", prerequisite, "前置关系成环：该科技将永远无法研发");
+						continue;
+					}
+					if (!state.ContainsKey(prerequisite))
+					{
+						state[prerequisite] = InProgress;
+						stack.Push((prerequisite, 0));
+					}
+				}
+			}
+		}
+
+		/// <summary>
+		/// （v0.3 / WP-2.1）跨树统一的前置边表：<c>"treeId/nodeId" → 前置键列表</c>。
+		/// <para>自环、空 Id、指向不存在节点的边在入表时丢弃（各自有专门的报错项），保证 DFS 只见合法边。</para>
+		/// </summary>
+		private static Dictionary<string, List<string>> BuildPrerequisiteEdges(ConfigTables tables)
+		{
+			var edges = new Dictionary<string, List<string>>(StringComparer.Ordinal);
+
+			foreach (string treeId in tables.TreeIds())
+			{
+				if (!NotEmpty(treeId)) continue;
+
+				ITechTreeConfig tree = tables.TechTrees.GetTechTreeConfig(treeId);
+				if (tree?.Techs == null) continue;
+
+				foreach (KeyValuePair<string, ITechNodeConfig> pair in tree.Techs)
+				{
+					if (!NotEmpty(pair.Key) || pair.Value?.Prerequisites == null) continue;
+
+					string self = $"{treeId}/{pair.Key}";
+					var targets = new List<string>();
+					foreach (TechPrerequisite prerequisite in pair.Value.Prerequisites)
+					{
+						if (prerequisite == null || !NotEmpty(prerequisite.NodeId)) continue;
+
+						string target = prerequisite.IsCrossTree
+							? $"{prerequisite.TreeId}/{prerequisite.NodeId}"
+							: $"{treeId}/{prerequisite.NodeId}";
+
+						if (target != self) targets.Add(target);
+					}
+					edges[self] = targets;
+				}
+			}
+
+			return edges;
 		}
 
 		// ────────────────────────── Events ──────────────────────────
@@ -372,7 +488,7 @@ namespace SciencePotato.Scripts.Core.Config
 				"该值疑似仍是秒口径，请重标定（v0.3 / WP-1.5，`TIME-13`）");
 		}
 
-		/// <summary>全树节点索引：treeId → 节点 Id 集合（供建筑/单位/事件的跨表引用校验）。</summary>
+		/// <summary>全树节点索引：treeId → 节点 Id 集合（供建筑/单位/事件的跨表引用校验与跨树前置校验）。</summary>
 		private static Dictionary<string, HashSet<string>> BuildTechNodeIndex(ConfigTables tables)
 		{
 			var index = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
@@ -383,49 +499,6 @@ namespace SciencePotato.Scripts.Core.Config
 				index[treeId] = new HashSet<string>(tree?.Techs?.Keys ?? Enumerable.Empty<string>(), StringComparer.Ordinal);
 			}
 			return index;
-		}
-
-		/// <summary>前置成环检测（迭代式 DFS 三色）：成环的科技永远无法研发。</summary>
-		private static void ValidatePrerequisiteCycles(Dictionary<string, ITechNodeConfig> nodes, string treeId, ConfigReport report)
-		{
-			const int InProgress = 1;
-			const int Done = 2;
-			var state = new Dictionary<string, int>(StringComparer.Ordinal);
-
-			foreach (string start in nodes.Keys)
-			{
-				if (state.ContainsKey(start)) continue;
-				state[start] = InProgress;
-				var stack = new Stack<(string Node, int Next)>();
-				stack.Push((start, 0));
-
-				while (stack.Count > 0)
-				{
-					(string node, int next) = stack.Pop();
-					List<string> prerequisites = nodes.TryGetValue(node, out ITechNodeConfig config) ? config?.Prerequisites : null;
-					if (prerequisites == null || next >= prerequisites.Count)
-					{
-						state[node] = Done;
-						continue;
-					}
-
-					stack.Push((node, next + 1));
-					string prerequisite = prerequisites[next];
-					// 空 Id / 缺失前置 / 自环都由前面的规则单独报错，这里只负责"环"
-					if (!NotEmpty(prerequisite) || prerequisite == node || !nodes.ContainsKey(prerequisite)) continue;
-
-					if (state.TryGetValue(prerequisite, out int prerequisiteState) && prerequisiteState == InProgress)
-					{
-						report.Error("TechTrees", $"{treeId}/{prerequisite}", "前置关系成环：该科技将永远无法研发");
-						continue;
-					}
-					if (!state.ContainsKey(prerequisite))
-					{
-						state[prerequisite] = InProgress;
-						stack.Push((prerequisite, 0));
-					}
-				}
-			}
 		}
 
 		private static void ValidateCosts(ConfigReport report, string table, string ownerId,

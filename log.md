@@ -534,7 +534,7 @@
 
 #### `UNIT-01` `UnitFactory` 参数语义错位、字段冗余 —— 【P1｜逻辑层缺口】
 - **现象**：创建单位时把 `config.Movement` 同时传给了 `mp`（移动点池）与 `movement`（机动性）两个参数；而 `config.Attack` 只被写进 `Unit.Attack`（一个从未被战斗逻辑读取的字段），真正用于伤害的是 `config.AttackDamage`。
-- **证据**：`Scripts/Units/Domain/UnitFactory.cs:15-17`；`Scripts/Units/Domain/Unit.cs:15-25`（`Attack`/`Movement`/`MovementPoint` 三个语义重叠字段）；实际伤害来源 `UnitsAppService.cs:323`（`defUnit.HP -= atkUnit.AttackDamage`）
+- **证据**：`Scripts/Units/Domain/UnitFactory.cs:15-17`；`Scripts/Units/Domain/Unit.cs:15-25`（`Attack`/`Movement`/`MovementPoint` 三个语义重叠字段）；实际伤害来源 `UnitsAppService.cs:326`（`defUnit.HP -= atkUnit.AttackDamage`）
 - **根因**：配置表与实体字段各自演进：`Attack`（配置）→ 语义分裂为 `Attack`（意图）与 `AttackDamage`（实现），而 `Movement` 与 `MovementPoint` 职责边界未定义。
 - **影响**：① 策划改 `Attack` 字段**不会有任何效果**（数值不生效的隐性 bug，极易被当成"平衡问题"排查很久）；② `MovementPoint` 与 `MoveRechargePerTick` 语义重叠，导致 `UNIT-02` 的 MP 上限错误；③ 未来的"攻击力受 Modifier 影响"（配置表已有 `swordsmanAttack` 目标，见 `Document/TechTreesConfig.json:11`）**当前根本不会被应用**——因为没有读取修正器的战斗计算路径。
 - **修复方向**：明确每个字段的唯一语义并在配置表/代码里对齐（建议：`Attack` 即伤害，删掉 `AttackDamage`；`MovementPoint` 作为"移动点上限"，`MoveRechargePerTick` 改为"每节拍恢复量"）；战斗与移动计算必须走 `ModifierManager`（这才是"推拉结合"里"拉"的真正消费点）。
@@ -542,7 +542,7 @@
 
 #### `UNIT-02` MP 上限被压成单次恢复量 → 单位可能永久卡死 —— 【P1｜逻辑层缺口】
 - **现象**：每 10 秒的移动节拍里，移动点被写成 `CurrentMP = min(CurrentMP + MoveRechargePerTick, MoveRechargePerTick)`：**上限恒等于单次恢复量**，也就是"每节拍只能积累到够走一格（且只能是代价 ≤ 恢复量的一格）"。
-- **证据**：`Scripts/Units/Application/UnitsAppService.cs:156`；配合地形代价 `GetCellMoveCost`（`:218-219`）、不可通行判定 `:211-216`
+- **证据**：`Scripts/Units/Application/UnitsAppService.cs:158`；配合地形代价 `GetCellMoveCost`（`:221-222`）、不可通行判定 `:214-219`（行号按 v0.3.5 复核）
 - **根因**：`Unit.MovementPoint`（配置的"机动性/上限"）与 `MoveRechargePerTick`（"每节拍恢复"）两个概念混淆，实现时选了后者当上限。
 - **影响**：① 只要存在 `MoveCost > MoveRechargePerTick` 的地形，单位**永远无法进入**（MP 永远不够）——目前因为地形 `MoveCost` 全是 0（`MAP-06`）而"看起来"是别的问题；② 一旦补上地形代价（例如森林=2，而弓箭手恢复=1.5），弓箭手会被永久卡在森林边缘；③ "攒机动力翻山"这类设计无法表达。
 - **修复方向**：把 `MovementPoint`（上限/池容量）与 `MoveRechargePerTick`（恢复速率）分开使用；明确"移动点不足时是否可以跨节拍累积"的规则，并让设计师可配置。
@@ -887,13 +887,13 @@
 | Buildings | `Actions: ["CanResearch"]` | 只有 `CanResearch` 在建筑侧 switch 中实现（`ConstructionAppService.cs:131-136`） | ⚠️ 新增动作要改核心代码（`CON-02`） |
 | Buildings | `IsHousing/PopulationRadius/PopulationCap/PopulationGrowthInterval` | 全部生效于 `RegisterHousingTask`，但任务不注销、人口不落盘、`OwnerId` 写成 0 | ❌ 功能不完整（`CON-04/05/06`） |
 | Buildings | `VisionRadius` | 建造完成时 `RevealArea` 生效（`ConstructionAppService.cs:85`） | ⚠️ 续跑路径不生效（`CON-03`） |
-| Units | `Attack: 8` / `AttackDamage: 8` | 两个字段数值相同，但**只有 `AttackDamage` 被使用**（`UnitsAppService.cs:323`） | ❌ 策划改 `Attack` 无效（`UNIT-01`） |
+| Units | `Attack: 8` / `AttackDamage: 8` | 两个字段数值相同，但**只有 `AttackDamage` 被使用**（`UnitsAppService.cs:326`） | ❌ 策划改 `Attack` 无效（`UNIT-01`） |
 | Units | `Movement: 4` / `MoveRechargePerTick: 2` | 前者只作为初始 MP 与未使用字段；后者成为 MP 上限 | ❌ 语义冲突（`UNIT-01/02`） |
 | Units | `PopulationCost: 1` | 由 `PopulationConsumption` 生效（`UnitsAppService.cs:62-67`） | ✅ 可用（但人口不落盘） |
 | Units | `VisionRadius` | 同时被"开视野"和"停止移动的索敌半径"两处使用 | ⚠️ 语义过载（`UNIT-06`） |
 | TechTrees | `Cost: 50` | 服务层硬编码资源名 `"Idea"`（`TechTreesAppService.cs:57`） | ❌ 无法配置多资源（`TECH-02`） |
 | TechTrees | `Modifiers: [{Target:"swordsmanAttack"}]` | 修正器能被挂载，但**战斗计算根本不读修正器** | ❌ 数值不生效（`UNIT-01`） |
-| TechTrees | `Prerequisites` | 生效（`TechTree.cs:64-74`），但只在本树内校验 | ⚠️ 跨树前置不支持 |
+| TechTrees | `Prerequisites` | 生效（`TechTree.cs:100-124`），**v0.3.5 / WP-2.1 起支持跨树** | ✅ 跨树前置（`TECH-07` 已修） |
 | Events | `TriggerChance` | 按 1 秒判定（文档写"每天"） | ❌ 频率与文档不符（`EVT-02`） |
 | Events | `Duration: 0`（永久） | 挂上后不撤销、且每次触发叠加一份 | ❌ 数值失控（`EVT-02`、`MOD-07`） |
 | Events | `Name/Description` | 配置齐全但**代码从不读取** | ⚠️ UI 无法展示（`EVT-04`） |
@@ -1111,6 +1111,7 @@
 | v0.3.2 | 2026-09-14 | **M0-1 续推**：WP-1.3 组合根（`CoreBootstrap`/`GameSession`/`CoreServices`/`CoreDependencies`）与 WP-3.1 Map 常驻内存（`MapSession`）落地；`MapAppService` 改走会话缓存（解除 M0-2 ③④ 的阻塞点）；无头验收从 12 项扩到 **20 项全部通过**。新增决策 D7~D10（含"导出需包含 `*.json`"的待办风险）。 |
 | v0.3.3 | 2026-09-14 | **WP-1.4 完成（M0-1 ② 通关）**：7 张配置表统一为 `Config/{表名}.json` 并全部通电（`ConfigTables`）+ 启动期分级校验（`ConfigValidator`/`ConfigReport`，error 阻断 / warning 放行）；新增 `ModifierTargetRegistry`（Target 名登记表，由资源/单位表派生）。**校验器当场抓出两个真实缺陷**：`UnitsConfigDto` 缺 `[JsonProperty("Units")]` 导致整张单位表静默解析为 0 条；`Events` 表为裸数组（与 `EventsConfigDto` 根对象不符）→ 均修复。无头验收 **33/33 通过、退出码 0**，真实配置 **0 error / 0 warning**。新增决策 D11~D17。 |
 | **v0.3.4** | 2026-09-14 | **WP-1.5 口径重标定（秒 → 游戏日）+ WP-1.2 `GodotTimeDriver`**：`Duration`/`GrowInterval`/`PopulationGrowthInterval` 全部改按**日**计（Resources 5/8/0 → 30 月结；Buildings 10/30/20 → 90/120/60、人口 15 → 300；Units 8/12/15 → 30/35/50，对齐设计 工人 30 日/民兵 35 日/弓箭手 50 日）；硬编码节拍收敛到 `Scripts/Core/Time/TimeConstants.cs`；新增纯 C# **`GameTimeService`**（订阅 `GameClock.DayElapsed`，逐日派发 `OnTick(1 日)`）替换从未入场景的 `GodotTimeService`；新增 `Scripts/Autoload/GodotTimeDriver.cs`（`Node, ITimeDriver`，由 `ServiceContainer` 自动挂载）；校验器新增**单位自检**（>360 日 → warning「疑似仍是秒口径」）。**顺带修复**：`ResourcesAppService` 的 `BaseGrowth>0` 门槛会让 `BaseGrowth=0` 的资源永不结算（Idea 的 250 idea/月 无处到账）→ 改为只看 `GrowInterval`。无头验收 **43/43 通过、退出码 0**（真实配置仍 0 error / 0 warning）。新增决策 D18~D22。 |
+| **v0.3.5** | 2026-09-14 | **WP-2.1 跨树前置修复（`TECH-07`，M0-2 ①）**：`TechPrerequisite{TreeId,NodeId}` + JSON 兼容层（旧 `"nodeId"` 表不破）；`TechTree.CanResearch` 支持跨树（解析器由应用层注入，未注入 = fail closed）；`HydrateConfigs` 补入"存档后新增"的节点；`TechTreesAppService` 新增 `CanResearch` 并给 `Research` 补前置闸门（不再"先扣 Idea 再静默丢弃"）；`ConfigValidator` 把跨树前置缺树/缺节点与**跨树成环**判 error（全局 DFS）；`Config/TechTrees.json` 新增 `science/counting`（0 idea / 0 日）与最小 `physics` 树（`simple_machine_intuition` ← `science:counting`）；`ConfigTableGuide` 升 v1.2。无头验收 **49/49 通过、退出码 0**（真实配置 0 error / 1 条预期 warning）。新增决策 D23~D25 与 §18.4 回归看板 |
 
 ---
 
@@ -1327,14 +1328,14 @@
 | E2 | 训练**结束后**人口 −1 | ⚠️ | L：现在训练**前**扣（`UnitsAppService.cs:62-75`） | ✔ | 人口扣除移入完成回调 — **小** |
 | E3 | 训练队列（上限 5、同时 1 个） | ❌ | L：任务 Id=`UnitId` 互相覆盖（`TIME-03`） | ✘ | 建筑训练队列组件 + 任务键改 UId — **中** |
 | E4 | 单位出现在建筑格或相邻格 | ⚠️ | L：现直接放在指定格（`:81`） | ✔ | 完成时寻找可用格 — **小** |
-| E5 | **移动力离散累积模型**（R1~R7） | ❌ | L：MP 上限被压成单次恢复量（`UnitsAppService.cs:156`；`UNIT-10`） | ✘ | 重写移动 tick — **中** |
+| E5 | **移动力离散累积模型**（R1~R7） | ❌ | L：MP 上限被压成单次恢复量（`UnitsAppService.cs:158`；`UNIT-10`） | ✘ | 重写移动 tick — **中** |
 | E6 | 移动不消耗游戏时间 | ❌ | L：同 E5 | ✘ | 同 E5 — **中** |
 | E7 | 目的地可改；已通过格不可撤（瞬时位移下自然成立） | ⚠️ | L：每次 tick 重算路径（`:161-166`） | ✔ | 目的地变更时重算 — **小** |
 | E8 | 不可通行地形（山地/未解锁水域） | ⚠️ | L：只看 `MoveCost>0`（`:252-259`） | ✔（修 `MAP-06` 后） | 随 B1/B2 — **小** |
 | E9 | **同格战斗**（双方处于同一地块，一格一对） | ❌ | L：现为邻格/射程攻击、不进敌格（`UNIT-12`） | ✘ | 新增交战状态：进入敌格即交战 — **大** |
 | E10 | 战斗按**日**结算（ATK=每日伤害） | ⚠️ | L：攻击 1 秒 tick（`:296`） | ✔ | 节拍改 1 日 — **小** |
 | E11 | 攻击范围 0=近战相邻、≥1=隔格 | ✅ | `:275-283,310-321` | ✔ | 保留（"近战/远程"由该字段派生） |
-| E12 | 对建筑伤害衰减 50%，加伤乘其后（0.5×1.5=0.75） | ❌ | L：无目标类型与系数（`:323`） | ✘ | 伤害计算加"目标类型系数" — **小~中** |
+| E12 | 对建筑伤害衰减 50%，加伤乘其后（0.5×1.5=0.75） | ❌ | L：无目标类型与系数（`:326`） | ✘ | 伤害计算加"目标类型系数" — **小~中** |
 | E13 | 单位标签 + 条件化修正（长矛兵对近战 +20%、重装 −25%、弩炮对建筑 +50%） | ❌ | D+L：无标签、无防御侧修正（`UNIT-18`） | ✘ | `Tags` + 条件修正求值器 — **中** |
 | E14 | 弓箭手优先攻击远程 | ❌ | L：无索敌策略 | ✘ | 目标选择加优先级 — **中** |
 | E15 | 单位合并（同模板、HP 之和≤上限、同格） | ❌ | L：无 `MaxHP`、无合并（`UNIT-17`） | ✘ | `Unit` 加 `MaxHP` + 合并用例 — **中** |
@@ -1350,7 +1351,7 @@
 | # | 设计稿功能 | 判定 | 缺口 & 证据 | 扩展点 | 最小改动方案 + 工作量 |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | F1 | 3 树 93 节点；树内串行、三树并行、未来可配并发 | ⚠️ | L：**无并发限制**，可无限并行（`TechTreesAppService.cs:50-80`） | ✘ | 按树研究队列 + 并发上限配置 — **中** |
-| F2 | **跨树前置**（46 多前置、33 处跨树） | ❌ | L：`CanResearch` 只查本树集合（`TechTree.cs:64-74`）→ **物理树 35 节点永久不可解锁**（`TECH-07`） | ✘ | 前置结构改 `{treeId,nodeId}` + 跨树查询 — **中**（P0 最急） |
+| F2 | **跨树前置**（46 多前置、33 处跨树） | ❌ | L：`CanResearch` 只查本树集合 → **物理树 35 节点永久不可解锁**（`TECH-07`） | ✘ | 前置结构改 `{treeId,nodeId}` + 跨树查询 — **中**（P0 最急） |
 | F3 | 消耗 idea（0~8000），含 0 消耗 0 时长节点 | ✅ | `Cost` + `LinearTask(Target=0)`（`:54-64`） | ✔ | 只填表 |
 | F4 | 研究时间 0~180 日 | ⚠️ | D：秒口径 | ✔ | 填日值 — **小** |
 | F5 | 效果=数值修正（产量/上限/消耗/时长/视野/伤害 六类） | ⚠️ | L：唯一消费点是产量（`ResourcesAppService.cs:71-73`）；其余五类无消费点 | ✔（逐类接线） | 上限→`AddLimit`；时长→任务 Target 修正；视野→视野读取；伤害→战斗求值 — **中~大** |
@@ -1440,11 +1441,13 @@
 
 #### `TECH-07` 跨树前置失效（物理树 35 节点永久不可解锁） —— 【P0｜逻辑层 + 数据层缺口】
 - **现象**：科技节点前置只有"节点名列表"、不含所属树；`CanResearch` 只在本树已研究集合里查找。而设计稿中**物理树的根节点前置是数学节点**（简单机械直觉 ← 计数）。
-- **证据**：`Scripts/TechTrees/Domain/TechTree.cs:64-74`、`Scripts/TechTrees/Domain/ITechNodeConfig.cs:9`、`design/research_tree.md`（物理 35 节点中 23 个引用数学、化学 10 个引用数学）
+- **证据**：`Scripts/TechTrees/Domain/TechTree.cs:100-124`、`Scripts/TechTrees/Domain/ITechNodeConfig.cs:14`（行号按 v0.3.5 修复后复核）、`design/research_tree.md`（物理 35 节点中 23 个引用数学、化学 10 个引用数学）
 - **根因**：`ITechNodeConfig.Prerequisites: List<string>` 缺少树维度；`CanResearch` 未做跨树查询。
 - **影响**：**物理树整体不可解锁**（其所有根节点均依赖数学节点）；化学树 10 个节点同样卡死 → 93 个节点中约 45 个永久不可达。
 - **修复方向**：前置结构改为 `List<{TreeId, NodeId}>`；`CanResearch` 改为按树查询；`HydrateConfigs` 与配置表同步改造。
 - **关联**：`F2`、`WP-2.1`、`D5`（建筑升级条件同样受益）
+
+> ✅ **已修复（v0.3.5 / WP-2.1，2026-09-14）**：`ITechNodeConfig.Prerequisites` 改为 `List<TechPrerequisite{TreeId,NodeId}>`（JSON 兼容层同时接受 `"nodeId"` / `"treeId:nodeId"` / 结构体三种写法，**旧表不需要改写**）；`TechTree.CanResearch` 逐条走 `IsPrerequisiteMet`，跨树靠应用层注入的只读解析器（未注入 = fail closed），`TechTreesAppService` 新增 `CanResearch` 并把解析器接到每次取树之后；`HydrateConfigs` 同时补入"存档后新增"的节点；校验器把**跨树缺树 / 缺节点**与**跨树成环**判 error（成环检测改为跨树统一建边后的全局 DFS）。填报侧新增 `science/counting`（0 idea / 0 日）与最小 `physics` 树，**M0-2 ① 已通过**（49/49 检查、退出码 0）。剩余：93 节点规模差已挂 §18.4，`WP-2.9` 负责单树串行与树集合缓存
 
 #### `CON-09` 没有"建筑升级"用例 —— 【P0｜逻辑层缺口】
 > ⚠️ **v0.3 降级（P0 → P1）**：M0-2 ②③④ 全部只需 lv.I 建筑（School lv.I / 营地 / 工坊lv.I），升级链不在验收内。级别收敛依据见 §17.3。
@@ -1473,9 +1476,10 @@
 - **关联**：`B1/B2/E8`、`WP-0.4`
 
 #### `UNIT-10` 移动力离散累积模型未实现 —— 【P0｜逻辑层缺口】
+> ⚠️ **v0.3.5 显式缺陷标注（`D23`）**：本条**不只是"数值偏差"，而是"单位完全不可移动"** —— `MoveTick` 把 MP 上限写成了单次恢复量（`UnitsAppService.cs:158`），而单位表的 `MoveRechargePerTick` = 3 / 2 / 1.5 **全部小于最小地形消耗 5**（平原），因此三支部队今天**一格都走不了**。M0-1/M0-2 的验收项不涉及移动，本轮**按计划不改行为**（修复归 `WP-3.5`），但 M1 手测前必须知道这一点，避免把"单位不动"误判成手感问题或新引入的 bug。回归条件见 §18.4。
 > ⚠️ **v0.3 降级（P0 → P1）**：**M0-3 ②** 才验收移动模型；M0-2 ④ 只要求"单位出现"。级别收敛依据见 §17.3。
 - **现象**：实现把 MP 上限压成"单次恢复量"（`CurrentMP = min(CurrentMP + recharge, recharge)`），与设计口径 R1~R7（静默上限 = M、移动中无上限、够则瞬时连格位移、到达清零）完全不同；移动节拍为 10 秒而非 10 游戏日。
-- **证据**：`Scripts/Units/Application/UnitsAppService.cs:150-234`（`:156` 是关键一行）、`design/unit.md`（移动力累积段）；本条**吸收原 `UNIT-02`（MP 上限压死）与 `UNIT-03`（节拍失衡）**
+- **证据**：`Scripts/Units/Application/UnitsAppService.cs:152-236`（`:158` 是关键一行）、`design/unit.md`（移动力累积段）；本条**吸收原 `UNIT-02`（MP 上限压死）与 `UNIT-03`（节拍失衡）**
 - **根因**：`MovementPoint`（池容量）与 `MoveRechargePerTick`（恢复量）语义混淆，实现时把后者当上限。
 - **影响**：① 移动力数值（10/40/25）全部无法生效；② 消耗大于恢复量的地形永远无法通过；③ "跨 25 消耗地块等 30 天"的手感无法重现。
 - **修复方向**：按 R1~R7 重写移动 tick；用 `MP` 字段取代 `Movement/MovementPoint` 的混用。
@@ -1491,7 +1495,7 @@
 
 #### `UNIT-12` 战斗模型与设计不符（邻格攻击 → 同格交战） —— 【P1｜逻辑层缺口】
 - **现象**：现有实现是"近战贴到邻格、远程在射程内隔格攻击"，且单位**不会进入敌格**；设计稿要求"双方处于**同一地块**内交战，每格只能有一个单位或一对交战单位"，并按游戏日持续结算伤害。
-- **证据**：`Scripts/Units/Application/UnitsAppService.cs:269-333`（`:286-291` 近战寻位、`:310-321` 距离校验、`:323` 伤害）、`design/unit.md`（战斗机制段）
+- **证据**：`Scripts/Units/Application/UnitsAppService.cs:271-336`（`:288-292` 近战寻位、`:313-324` 距离校验、`:326` 伤害）、`design/unit.md`（战斗机制段）
 - **根因**：战斗被实现为"两个对象互相扣血"，而不是"一个格子上的交战状态"。
 - **影响**：① 战斗表现与战术（占位封锁、一格一对）无法实现；② 单位合并（`E15`）依赖"同格"语义；③ 敌方单位"玩家必须击败它才能进入该地块"（`UNIT-14`）也无法表达。
 - **修复方向**：引入 `CellCombat`（交战状态：攻击方/防守方/位置）替代"邻格攻击"；伤害按日结算；`ATK` 为每日伤害。
@@ -1515,7 +1519,7 @@
 
 #### `UNIT-18` 无单位标签与条件化伤害修正（克制/减伤/对建筑加成） —— 【P1｜逻辑层 + 数据层缺口】
 - **现象**：实现只有"攻击侧伤害"一个数值，没有"目标类型/目标标签"条件、没有"防御侧减伤"。设计稿要求：长矛兵"对近战敌人伤害 +20%"、弓箭手"优先攻击远程敌人"、重装卫士"受到伤害 −25%"、弩炮"对建筑伤害 +50%"。
-- **证据**：`Scripts/Units/Application/UnitsAppService.cs:323`（直接 `HP -= AttackDamage`）、`Scripts/Units/Domain/IUnitConfig.cs:6-22`；本条**吸收原提议的 `UNIT-15`**
+- **证据**：`Scripts/Units/Application/UnitsAppService.cs:326`（直接 `HP -= AttackDamage`）、`Scripts/Units/Domain/IUnitConfig.cs:6-22`；本条**吸收原提议的 `UNIT-15`**
 - **根因**：Modifier 体系只有"作用于某 target 的绝对/比例值"，没有"条件筛选"维度（`MOD-02` 的另一面）。
 - **影响**：兵种克制（设计正文明确要求的机制）完全缺失；攻城/护卫等单位的定位无法表达。
 - **修复方向**：单位加 `Tags`（近战/远程由 `AttackRange` 派生，额外标签如攻城/学者/侦察另填）；新增"条件化修正"求值（条件 = 目标标签 / 目标类型 / 自身标签）；伤害公式按"衰减 → 加伤"顺序（0.5×1.5=0.75）。
@@ -1836,7 +1840,7 @@ WP-0.4 ─→ WP-3.5 / WP-3.8 / WP-5.3
 | 里程碑 | 组成 | **退出条件（可自动验证）** |
 | :--- | :--- | :--- |
 | **M0-1 · 无头骨架** | 批次 0 + 批次 1（`WP-0.1~0.4`、`WP-1.1~1.5`） | ① xUnit 中 `clock.Advance(1080)` 后 `CurrentDay == 1080` 且 `DayElapsed` **恰好派发 1080 次**；② 7 张配置表全部解析成功并通过引用完整性校验；③ 三档流速切换后，"每 10 日 / 每 30 日"节拍在**游戏日维度**保持不变 |
-| **M0-2 · 单玩家可玩** | 批次 2（`WP-2.1~2.10`） | ① **物理树根节点（简单机械直觉）可研究** → 证明 `TECH-07` 死锁解除；② 建成 School 后 6 个月内存出 250 idea/月；③ 营地 90 日建成 → 人口上限与视野生效；④ 工坊训练工人 30 日后单位出现且人口 −1；⑤ 固定种子下 3 年事件触发次数落在期望区间 |
+| **M0-2 · 单玩家可玩** | 批次 2（`WP-2.1~2.10`） | ① **物理树根节点（简单机械直觉）可研究** → 证明 `TECH-07` 死锁解除；② 建成 School 后 6 个月内存出 250 idea/月；③ 营地 90 日建成 → 人口上限与视野生效；④ 工坊训练工人 30 日后单位出现且人口 −1；⑤ 固定种子下 3 年事件触发次数落在期望区间 | **① ✅ 已通过（WP-2.1 / v0.3.5，检查 49/49）；②~⑤ ⏳ 待做** |
 | **M0-3 · 世界可存续** | 批次 3（`WP-3.1~3.10`） | ① 存档 → 读档 → `Advance(360)` 后，建筑/单位/人口/任务/迷雾/时间**逐项等价**；② 工人（M=10）跨平原（5）10 日走 2 格、跨山地（25）需 30 日（与设计示例一致）；③ 同格交战 N 日后一方 HP 归零、单位移除、掉落进池；④ 敌方单位封锁格不可建造 |
 | **M1 · 可感知调试版** | `WP-5.1/5.2/5.3` | 人能在地图上看到地形/建筑/单位/资源变化，并手动推进 1 月，用于手感与数值校验 |
 | **M2 · 正式表现层** | `WP-5.4` + 美术资源 | 正式 UI 与美术；表现层只消费"查询 / 事件 / 意图"三契约，不改核心 |
@@ -1861,7 +1865,7 @@ WP-0.4 ─→ WP-3.5 / WP-3.8 / WP-5.3
 | `Resources` | Name / Description / GrowInterval / BaseGrowth / BaseValue / BaseLimit / DependentModifiers | `GrowInterval = 30`（日）；Id 规范（`Idea` / `Food` / `BasicMinerals`，显示名可中文）；新增 `ProductionVariance`（默认 0.2）；预留 `ShareLimitGroup`（矿石分级） |
 | `Buildings` | BuildingId / Name / ResourceCost / TerrainRequirements / TechRequirements / Modifiers / Duration / Actions / VisionRadius / IsHousing / Population* | 新增 `Category`、`PrerequisiteBuildings`、`UpgradeTo`、`UpgradeTechRequirements`、`UpgradeCost`、`UpgradeDuration`、`TrainableUnits`、`ModifierScope{Radius,FilterTags}`、`HasHP`、`MaxHP`、`IsVictoryCritical`；`Duration` 改"日"；`Modifiers` 支持宿主/条件/口径 |
 | `Units` | UnitId / ResourceCost / TerrainRequirements / TechRequirements / Duration / HP / Attack / Movement / Actions / VisionRadius / MoveRechargePerTick / AttackRadius / AttackDamage / PopulationCost | 重命名为设计口径：`HP` / `MaxHP` / `ATK` / `AttackRange` / `MP`（每 10 日回复量）/ `VisionRadius` / `InfluenceRadius` / `Maintenance` / `Tags` / `TargetPriority` / `ConditionalModifiers` / `TrainBuildings` / `Loot`（敌方）/ `SpawnTable`（敌方）；`Duration` 改"日"；**删除** `Attack`（与 ATK 重复）与 `Movement`（与 MP 重复） |
-| `TechTrees` | Id / Prerequisites(List&lt;string&gt;) / Cost(float) / Duration / Modifiers | `Prerequisites` → `[{TreeId, NodeId}]`；`Cost` → `ResourceCost`（结构统一，数值不变即全 idea）；`Duration` 改"日"；新增树级 `Concurrency`；`Effects` 区分"修正"与"解锁"（解锁仅 UI 文案，**权威源在建筑表**） |
+| `TechTrees` | Id / Prerequisites(List&lt;string&gt;) / Cost(float) / Duration / Modifiers | `Prerequisites` → `[{TreeId, NodeId}]`（✅ v0.3.5 / WP-2.1 已实现：领域类型 `TechPrerequisite`，JSON 兼容 `"nodeId"` / `"treeId:nodeId"` / 结构体三种写法，旧表不改；`Concurrency`/`Effects`/`ResourceCost` 仍未做）；`Cost` → `ResourceCost`（结构统一，数值不变即全 idea）；`Duration` 改"日"；新增树级 `Concurrency`；`Effects` 区分"修正"与"解锁"（解锁仅 UI 文案，**权威源在建筑表**） |
 | `Events` | EventId / Name / Description / TriggerChance / Duration / Modifiers / ResourcePrerequisites / TechPrerequisites | 根对象改为 `{"Events":[…]}`；`TriggerChance` → `TriggerChancePerDay`；`Duration` 改"日"（0 = 永久）；新增 `OneTimeEffects`（一次性资源结算）；**删除**"分类"列 |
 | `Terrains`（**新 JSON 表**） | — | `Id` / `Name` / `MoveCost` / `Passable` / `UnlockTech` / `Weight` / `Sprite` / `Color`；量级：平原 5 / 沙漠 8 / 森林 10 / 山地 25 / 水域 50（需解锁） |
 | `MapGenerator` | Density | 新增敌方刷新相关（或直接由单位表 `SpawnTable` 与地形概率决定） |
@@ -1959,6 +1963,28 @@ WP-0.4 ─→ WP-3.5 / WP-3.8 / WP-5.3
 
 **v0.2 新增 21 条**（其中 8 条已在 v0.3 由 P0 降为 P1，见 §17.3）：`TIME-12`、`TIME-13`、`TIME-14`、`TIME-11`、`TECH-07`、`CON-09`、`MAP-16`、`MAP-17`、`UNIT-10`、`UNIT-11`、`UNIT-12`、`UNIT-13`、`UNIT-14`、`UNIT-18`、`UNIT-19`、`EVT-06`、`RES-01`、`RES-02`、`FOG-05`、`FOG-06`、`DEP-11`
 
+### 17.3 P0 收敛判定（v0.3）
+
+判定标准：**不做就无法通过 M0-1 或 M0-2 的自动验收**（M0-1 = Advance(1080) 逐日派发 1080 次 / 7 张配置表可解析并通过校验 / 档位切换后节拍在游戏日维度不变；M0-2 = 物理树根节点可研究 / School 6 个月产出 250 idea / 营地 90 日建成并生效 / 工坊训练工人 30 日且人口 −1 / 3 年事件触发次数落区间）。
+
+**保留 P0（10 条）**
+
+| 问题 ID | 判定依据 | 关联 WP | 状态 |
+| :--- | :--- | :--- | :--- |
+| TIME-12 | M0-1 ①③ 直接验收 GameClock（Advance / 逐日派发 / 档位） | WP-1.1 | ✅ 已验收 |
+| TIME-05 | 与 TIME-12 同一验收面（日口径 + 档位），M0-1 ③ | WP-1.1 / 1.5 | ✅ 已验收 |
+| TIME-13 | M0-1 ③「每 10 日 / 每 30 日节拍在游戏日维度不变」 | WP-1.5 | ✅ 已验收 |
+| WIRE-01 | 不做则无法构造会话，M0-1 ② 与 M0-2 全项不可执行 | WP-1.3 | ✅ 已验收 |
+| WIRE-03 | M0-1 ② 要求 7 张表全部可加载 | WP-0.3 / 1.4 | ✅ 已验收 |
+| MAP-17 | M0-1 ② 含 Terrains 表；M0-2 ③ 建造需地形可通行 | WP-0.4 | ✅ 已验收 |
+| EVT-01 | 事件表为裸数组，EventsConfigDto 解析必失败 → M0-1 ② 直接不过 | WP-2.8 | ⏳ 待做 |
+| DEP-07 | M0-1 ①②③、M0-2 ①~⑤ 的**验收载具**（xUnit + 内存实现） | WP-0.2 | ✅ 已验收 |
+| MAP-01 | **代码复核**：每次操作 LoadMap 而存档不存占据物/人口 → 完成回调 GetOccupantByUId 抛 KeyNotFoundException、人口永远为 0 → M0-2 ③④ 不可能通过（需前移） | WP-3.1 | ✅ 已验收 |
+| TECH-07 | M0-2 ① 直接验收跨树前置 | WP-2.1 | ✅ 已修复（M0-2 ① 通过） |
+
+**降级 P1（8 条）**：WIRE-02、MAP-02、TIME-01、TIME-02、TIME-14、CON-09、MAP-16、UNIT-10 —— 逐条理由见第 12 节各条目顶部的 v0.3 标注，回归条件见 §18.4。
+
+
 ---
 
 **维护约定**：
@@ -1966,13 +1992,15 @@ WP-0.4 ─→ WP-3.5 / WP-3.8 / WP-5.3
 - 每条修复完成后，在对应条目末尾追加 `> ✅ 已修复（PR/commit 摘要）`，**不要删除原诊断内容**。
 - 改造项（`WP-x.y`）完成后，在第 13 节对应行末追加状态标记；里程碑验收结果写入第 14 节。
 - 设计稿相关结论放入第 10 节（规格锁定）并注明来源文档；新发现的设计矛盾追加到 §10.5 的关闭清单。
-- 行号引用基于 commit `c6dda9a`，改造后需重新核对。
+- 行号引用基于 commit `c6dda9a`；`v0.3.5` 已按**修复后的实际行号**复核 `Scripts/TechTrees/**`、`Scripts/Core/Config/ConfigValidator.cs`、`Scripts/Units/Application/UnitsAppService.cs` 与 `Config/TechTrees.json` 相关的引用（其余文件若仍有偏差，按"就近定位"理解）。
 
 ---
 
 # 18. 实施进度（滚动更新）
 
-## 18.1 M0-1 批次进度
+## 18.1 批次进度
+
+### M0-1（批次 1 · 时间与装配通电）
 
 | 日期 | WP | 状态 | 验证方式 / 产物 |
 | :--- | :--- | :--- | :--- |
@@ -1987,6 +2015,22 @@ WP-0.4 ─→ WP-3.5 / WP-3.8 / WP-5.3
 | 2026-09-14 | WP-1.4 7 张配置表通电 + 启动期校验 | ✅ 完成 | **7 张表统一为 `Config/{表名}.json`**（Terrains/Resources/Buildings/Units/TechTrees/Events/Generator；`Document/*Config.json` 经 `git mv` 迁入，Events 由裸数组改为 `{ "Events": [...] }`，Generator 新增 JSON 表）；新增 `Scripts/Core/ConfigTables.cs` + `Scripts/Core/Config/`（`ConfigTableLoader`/`ConfigValidator`/`ConfigReport`/`ConfigIssue`/`ModifierTargetRegistry`）：装载"能不能解析"+ 校验"内容对不对"写入同一份报告，**error 阻断启动 / warning 仅提示**（`CoreDependencies.FailOnConfigErrors` 可关）；`ServiceContainer` 启动时把报告打到 Godot 控制台。**顺带修复两处真实缺陷**：`UnitsConfigDto` 缺 `[JsonProperty("Units")]`（单位表原本整表解析为 0 条）、`Events` 表根对象不符。检查 13 项通过（总计 **33/33**） |
 | 2026-09-14 | WP-1.5 口径重标定（秒 → 日） | ✅ 完成 | ① **常量单点**：新增 `Scripts/Core/Time/TimeConstants.cs`（日历 + 事件 1 日 / 攻击 1 日 / 移动 10 日 / 月结 30 日 + 单位自检边界 360 日），`EventAppService.cs:39`、`UnitsAppService.cs:145,296` 的 `1f`/`10f` 全部改引常量；② **节拍总线换口径**：新增纯 C# `GameTimeService`（订阅 `GameClock.DayElapsed` → 逐日 `OnTick(1 日)`，倒序遍历以便任务自注销；任务快照改为**日边界**同步，写盘频率降为 1/60），`ITimeService` 删除无人设置的 `Scale`、新增 `CurrentDay`，`ITickable` 注释锚定"日"；③ **配置重标定**：Resources 5/8/0 → **30/30/30**（月结；Idea 靠 Modifier 到账）、Buildings 10/30/20 → 90/120/60 且人口 15 → 300、Units 8/12/15 → **30/35/50**（= 设计 工人/民兵/弓箭手）；④ **单位自检**：`ConfigValidator.ValidateDayUnit` 对 5 张表的时长字段判「>360 日 → warning 疑似秒口径」。检查 10 项通过（总计 **43/43**） |
 
+### M0-2（批次 2 · 单玩家可玩）
+
+| 日期 | WP | 状态 | 验证方式 / 产物 |
+| :--- | :--- | :--- | :--- |
+| 2026-09-14 | WP-2.1 **跨树前置修复**（`TECH-07` 死锁） | ✅ 完成 | ① **类型**：新增 `TechPrerequisite{TreeId,NodeId}` + `TechPrerequisiteJsonConverter`（兼容层：`"nodeId"` 旧写法 / `"treeId:nodeId"` 紧凑写法 / `{TreeId,NodeId}` 结构体），`ITechNodeConfig.Prerequisites` 由 `List<string>` 改为 `List<TechPrerequisite>`；② **判定**：`TechTree.CanResearch` 逐条走新 `IsPrerequisiteMet`（本树查本树集合、跨树走 `AttachResearchLookup` 注入的只读解析器；未挂解析器 = **fail closed**），新增 `GetPrerequisites`/`AttachResearchLookup`；③ **装配**：`TechTreesAppService.GetOrCreateTechTree` 每次挂解析器（跨树走 `_repo.GetTreeById` **只读**载入兄弟树，不用 `GetOrCreate` 以免"查询"变成"建档"），新增 `CanResearch(mapId,ownerId,treeId,nodeId)`；**顺带修**：`Research` 此前不校验前置 → 会"先扣 Idea、再在完成回调里被 `Tree.Research` 静默丢弃"，现前置未满足直接返回；④ **Hydrate**：`HydrateConfigs` 由"只 hydrate 已存在节点"改为**同时补入表里新增的节点**（否则先有存档、后加表时新科技永远看不见 —— 跨树前置正是"按表增量开放"的模式）；⑤ **填表**：`Config/TechTrees.json` 新增 `science/counting`（设计 0 idea / 0 日，根节点）+ 最小 `physics` 树（`simple_machine_intuition` ← `science:counting`，2000 idea / 30 日），93 节点规模差 → §18.4 债务项；⑥ **校验**：`ConfigValidator` 前置校验升级 —— 跨树前置的**树 Id 与节点 Id 必须存在**（error，`D13` 的升级点）、成环检测改为**跨树统一建边后的全局 DFS**（逐树 DFS 抓不到跨树环），建筑/单位/事件的 `TechRequirements` 仍保持 warning；⑦ **指南**：`ConfigTableGuide` 升 v1.2（三种写法 + 样板 + 附录 C 的 error/warning 清单同步）。检查 **+6 项**（总计 **49/49**、退出码 0），含 **M0-2 ① 门槛**：真实配置下 `physics/simple_machine_intuition` 在「计数」研究前不可研究、研究后可研究、30 日后真正完成、重开存档仍成立 |
+
+### 18.1.1 里程碑验收对照
+
+| 里程碑 | 验收项 | 状态 |
+| :--- | :--- | :--- |
+| M0-2 | ① 物理树根节点（简单机械直觉）可研究 | ✅ `WP-2.1`（检查 49/49） |
+| M0-2 | ② 建成 School 后 6 个月内存出 250 idea/月 | ⏳ `WP-2.7`（建筑产出接线） |
+| M0-2 | ③ 营地 90 日建成 → 人口上限与视野生效 | ⏳ `WP-2.3` |
+| M0-2 | ④ 工坊训练工人 30 日后单位出现且人口 −1 | ⏳ `WP-2.5` |
+| M0-2 | ⑤ 固定种子下 3 年事件触发次数落在期望区间 | ⏳ `WP-2.8` |
+
 ## 18.2 复现命令
 
 ```powershell
@@ -1997,7 +2041,7 @@ dotnet build 'Science Potato.csproj'
 dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessChecks.csproj'
 ```
 
-当前 M0-1 验收结果（2026-09-14，**43/43 通过、退出码 0**）：
+当前验收结果（2026-09-14，**49/49 通过、退出码 0**）：M0-1 组 43 项 + M0-2 组 6 项。
 
 | 分组 | 数量 | 覆盖 |
 | :--- | :--- | :--- |
@@ -2006,6 +2050,7 @@ dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessC
 | 组合根（WP-1.3） | 3 | 装配后可生成地图且常驻内存 / 配置缺失快速失败（消息指明表名）/ 会话时钟可推进 |
 | Map 常驻内存（WP-3.1） | 5 | 只读盘一次 / 占据物跨调用不丢失（可按 uid 取回）/ 人口不被读盘重置 / `Flush` 只写脏地图 / 落盘后新会话仍读不到占据物（WP-3.2 待补） |
 | 口径重标定（WP-1.5 / WP-1.2） | 10 | 节拍常量单点（事件 1 日 / 攻击 1 日 / 移动 10 日 / 月结 30 日）/ **一帧跨多日仍逐日派发**（1080 日 → 1080 次）/ 不足一日不提前触发 / **真实 Resources 表 `GrowInterval=30` → 1080 日结算 36 次**（Idea 即使 `BaseGrowth=0` 也照常结算）/ 三档 1·3·6 日每真实秒的月结次数一致 / 暂停不派发 / 移动 108 次·攻击 1080 次 / 真实 5 张表时长全落 [1,360] 日且无口径警告 / 秒值残留（600）只 warning 不阻断 / 组合根 + `ManualTimeDriver` 推进 1 个月触发 1 次月结 |
+| 跨树前置（WP-2.1） | 6 | 三种前置写法（本树 / `tree:node` / 结构体）都能解析且写出口径一致 / 跨树前置 **fail closed**（未挂解析器不可研究）且**同树前置不走跨树查询** / **M0-2 ①**：真实配置下「计数」研究前物理树根节点不可研究 → 研究后可研究 → 30 日后完成 → 重开存档仍成立 / 存档后**新增**节点可被 `HydrateConfigs` 带出 / 校验器对跨树前置缺树·缺节点·跨树成环判 error 且合法跨树不误报 / 真实配置 warning 白名单（仅 `science/counting` 的 0 日，防"白名单空转"） |
 
 
 ## 18.3 实施期决策与偏差记录
@@ -2034,26 +2079,32 @@ dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessC
 | D20 | 配置时长字段**是否改数值**取决于"旧秒值是否落在日的合理区间"：Resources/Buildings/Units **必须改**（5/8/0、10/30/20、8/12/15 在日口径下分别太小/与设计不符），TechTrees/Events **不改**（20/40/60/15/30 与 30/20/0 恰好落在 0~180 与 5~30 的设计区间内） | 口径重标定是**语义**变更，不是"批量乘系数"：能对齐设计稿的都按设计稿填（工人 30 日、民兵 35 日、弓箭手 50 日、营地人口 300 日），否则会引入无法解释的魔数。TechTrees/Events 的数值不改，但**由校验器的单位自检锁死口径**（>360 → warning），避免以后被再次误填成秒 |
 | D21 | `ResourcesAppService.StartGrowthTasks` 的跳过条件由 `GrowInterval <= 0 || BaseGrowth <= 0` 改为**只看 `GrowInterval`** | 原条件让 `BaseGrowth=0` 的资源永不建结算任务 —— 而 Idea 的正确形态正是"基础产出 0 + 全靠建筑/科技 Modifier"（`GrowInterval=30`）。不改这一行，M0-2 ② 的"School 250 idea/月"永远无法到账（Modifier 无处结算），且 `GrowInterval=0` 仍保持"不自动结算"的旧语义 |
 | D22 | 任务快照落盘口径：由"每帧每任务写 JSON"改为**游戏日边界**同步（写盘频率 ≈ 1/60），完整"统一存档点"仍留给 `WP-3.3` | `A8`/`TIME-08` 的中间形态：本批次先把口径与派发打通，不动存档架构（避免与 `WP-3.2/3.3` 的实体存档 DTO 冲突）。`GameTimeService` 的 `ITaskRepository` 参数是可选的（无头测试传 null），`WP-3.3` 接入时无需再改调用方 |
+| D23 | **`UNIT-10` 记作"显式缺陷"而非"数值偏差"**：`MoveTick` 把 MP 上限写成了单次恢复量（`Scripts/Units/Application/UnitsAppService.cs:158`：`CurrentMP = Math.Min(CurrentMP + MoveRechargePerTick, MoveRechargePerTick)`），而单位表的 `MoveRechargePerTick` = 3 / 2 / 1.5 **全部小于最小地形消耗 5** → 三支部队**当前完全无法移动**（不是"走得慢"） | M0-1/M0-2 的验收项都不涉及移动（M0-2 ④ 只要求"单位出现"），故本轮**不改行为**，只在日志里显式标注缺陷等级：避免 M1 手测时把"单位不动"误判成手感问题或新引入的 bug。修复归 `WP-3.5`（R1~R7 重写 + 地形消耗/通行权限），字段收敛（删 `Attack`/`Movement`、`MovementPoint` → `MP`）见 §15。回归条件见 §18.4 |
+| D24 | 跨树前置的**三层口径**：① 领域层 `TechTree` 只认 `TechPrerequisite{TreeId,NodeId}`，跨树解析靠注入的 `AttachResearchLookup`，**未注入 = fail closed**（跨树前置判未满足，宁可暂时不可研究也不错误放行）；② 应用层 `TechTreesAppService` 用 `_repo.GetTreeById` **只读**载入兄弟树（不用 `GetOrCreateTechTree`，以免"查询能否研究"变成"建档 + 写盘"）；③ 校验层升级：科技树自身的**前置闭合**（含跨树缺树 / 缺节点 / 跨树成环）判 error，而建筑/单位/事件表对科技树的 `TechRequirements` 仍保持 warning | `D13` 的升级点按计划兑现：跨树前置的树 Id 或节点 Id 任一不存在，都等于"该科技永久不可解锁"（正是 `TECH-07` 的成因），因此不能再降级放行；而"别的表引用科技树"不属于科技树内部闭合，维持既有降级口径。只读查询每次都会重载该 owner 的树文件（`GenericJsonRepository.Load` 的语义），因此"研究完成即 `SaveTree`"是正确性前提（既有行为）；树集合的缓存优化留给 `WP-2.9` |
+| D25 | **待办缺陷（本轮发现，未修）**：`ResourcesConsumption.Consume()` 只改内存池、**没有回写**（`Scripts/Resources/Application/ResourcesAppService.cs:46-50` + `Scripts/Resources/Domain/ResourcesConsumption.cs:29-32`）→ 研发/建造扣掉的资源会在下次 `LoadResourcesPool` 时"复活"（无头验收里 `Research` 扣 2000 Idea 后重读池仍是原值） | 不阻断 M0-2 ①（验收只看"科技是否研究完成"），但它会让 M1 里"资源花掉了"看起来生效、实际回滚。归属 `WP-3.2`（实体持久化）/`WP-3.3`（统一存档点）；最小修法是 `Consume()` 后立即 `SaveResources`（届时顺带把 `_repo` 注入消耗契约）。已挂账于 §18.4 |
 
+## 18.4 降级项与未修缺陷回归看板（v0.3.5 新增）
 
+**用途**：v0.3 把 8 条 P0 降为 P1（判定见 §17.3），本轮又新增 3 类显式待办（`D23` 不可移动 / `D25` 消耗不落盘 / 内容规模差）。这张表的唯一职责是把"**什么条件下必须回到这些项**"写死，避免"降级 = 遗忘"。
 
-### 17.3 P0 收敛判定（v0.3）
+### 18.4.1 降级项（P0 → P1）回归条件
 
-判定标准：**不做就无法通过 M0-1 或 M0-2 的自动验收**（M0-1 = Advance(1080) 逐日派发 1080 次 / 7 张配置表可解析并通过校验 / 档位切换后节拍在游戏日维度不变；M0-2 = 物理树根节点可研究 / School 6 个月产出 250 idea / 营地 90 日建成并生效 / 工坊训练工人 30 日且人口 −1 / 3 年事件触发次数落区间）。
+| 问题 | 降级理由（摘要） | 回归条件（何时必须做） | 归属 WP | 状态 |
+| :--- | :--- | :--- | :--- | :--- |
+| `WIRE-02` 引擎耦合点又被绕过 | 调用点已收敛到 `IFileSystem` / `GameTimeService`，无头断言不受影响 | 出现任何"直接 `FileAccess` 读盘 / 用秒计时"的新代码；或 M1 真实运行出现存档路径不一致 | WP-1.2 / 5.x | 部分已修（`GodotTimeDriver`） |
+| `MAP-02` 每帧写盘 | 性能/IO 缺陷，不改变 headless 断言的正确性 | M1 手测卡顿/掉帧；或 `WP-3.2` / `WP-3.3` 落地统一存档点时一并收口 | WP-3.2 / 3.3 | 未修 |
+| `TIME-01` / `TIME-02` 秒制残留与节拍失衡 | `WP-1.5` 口径重标定 + 校验器单位自检已覆盖断言面 | 校验器报"疑似仍是秒口径"；或 M1 手感与设计明显不符 | WP-1.5 / 2.2 | 部分已修 |
+| `TIME-14` 月结未成体系 | `GrowInterval=30` 逐日派发已通过断言，差的只是"结算器汇总 → 需求 → 扣减" | M0-3 ① 月度经济结算器（`WP-3.9`） | WP-3.9 | 未修 |
+| `CON-09` 没有建筑升级 | M0-2 ②③④ 只用 lv.I 建筑（School lv.I / 营地 / 工坊 lv.I） | 科技树里 16 条"解锁 XX 升级"要落地时 | WP-2.6 | 未修 |
+| `MAP-16` 建筑 HP 与易主 | 城市攻防属批次 4，M0-1/2/3 验收均不涉及 | 需要"摧毁/夺取建筑"作为胜负条件时 | WP-4.8 | 未修 |
+| `UNIT-10` 移动力离散累积模型 | M0-3 ② 才验收移动；**当前单位 100% 不可移动（见 `D23`）** | **`WP-3.5` 开工即修**（M0-3 ② 之前） | WP-3.5 | 未修（显式缺陷） |
+| `MAP-17` 地形消耗量级（**已验收**） | Terrains 转 JSON 且量级对齐（平原 5 / 山地 25 / 水域 50） | 移动模型重写（`WP-3.5`）若发现量级不适配 | WP-3.5 | ✅ 已验收（量级可能在 WP-3.5 微调） |
 
-**保留 P0（10 条）**
+### 18.4.2 新增显式待办（v0.3.5）
 
-| 问题 ID | 判定依据 | 关联 WP |
-| :--- | :--- | :--- |
-| TIME-12 | M0-1 ①③ 直接验收 GameClock（Advance / 逐日派发 / 档位） | WP-1.1 |
-| TIME-05 | 与 TIME-12 同一验收面（日口径 + 档位），M0-1 ③ | WP-1.1 / 1.5 |
-| TIME-13 | M0-1 ③「每 10 日 / 每 30 日节拍在游戏日维度不变」 | WP-1.5 |
-| WIRE-01 | 不做则无法构造会话，M0-1 ② 与 M0-2 全项不可执行 | WP-1.3 |
-| WIRE-03 | M0-1 ② 要求 7 张表全部可加载 | WP-0.3 / 1.4 |
-| MAP-17 | M0-1 ② 含 Terrains 表；M0-2 ③ 建造需地形可通行 | WP-0.4 |
-| EVT-01 | 事件表为裸数组，EventsConfigDto 解析必失败 → M0-1 ② 直接不过 | WP-2.8 |
-| DEP-07 | M0-1 ①②③、M0-2 ①~⑤ 的**验收载具**（xUnit + 内存实现） | WP-0.2 |
-| MAP-01 | **代码复核**：每次操作 LoadMap 而存档不存占据物/人口 → 完成回调 GetOccupantByUId 抛 KeyNotFoundException、人口永远为 0 → M0-2 ③④ 不可能通过（需前移） | WP-3.1 |
-| TECH-07 | M0-2 ① 直接验收跨树前置 | WP-2.1 |
-
-**降级 P1（8 条）**：WIRE-02、MAP-02、TIME-01、TIME-02、TIME-14、CON-09、MAP-16、UNIT-10 —— 逐条理由见第 12 节各条目顶部的 v0.3 标注。
+| 项 | 内容 | 影响面 | 归属 WP |
+| :--- | :--- | :--- | :--- |
+| `D23` | 单位**完全不可移动**：MP 上限被压成恢复量，且恢复量（3 / 2 / 1.5）< 最小地形消耗（5） | 移动 / 战斗 / 侦察全部；M0-3 ② 的验收面 | WP-3.5 |
+| `D25` | 资源消耗**不落盘**：`ResourcesConsumption.Consume()` 后无 `SaveResources` | 研发/建造的"已花掉"会在下次读盘时回滚 | WP-3.2 / 3.3 |
+| 内容规模 ①| 科技树 3 树 **93 节点** vs 当前最小样例 6 节点（military 3 / science 3 / physics 1） | 物理/化学树的 35 / 10 节点在 M1 手测里是空的（但**链路已通**：跨树前置 + 0 成本根节点均已验收） | 填表（批次 4 起，配 `WP-4.14` UI 门控） |
+| 内容规模 ②| 建筑 24 条 / 单位 5 类 vs 当前样例 3 / 3 | M0-2 ②~④ 只依赖 School / 营地 / 工坊三条 | `WP-2.5` / `WP-2.6` |
