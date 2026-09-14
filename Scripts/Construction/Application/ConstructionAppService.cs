@@ -22,6 +22,9 @@ namespace SciencePotato.Scripts.Construction.Application
 		private readonly ModifierAppService _modifier;
 		private readonly FogAppService _fog;
 
+		/// <summary>（v0.3 / WP-2.10）领域事件总线（可空 = 无人订阅，发布变成空操作）。</summary>
+		private readonly IDomainEventBus _events;
+
 		public ConstructionAppService(
 			MapAppService mapAppService,
 			ResourcesAppService resourceAppService,
@@ -30,7 +33,8 @@ namespace SciencePotato.Scripts.Construction.Application
 			IBuildingConfigRepository buildingRepo,
 			ITimeService time,
 			ModifierAppService modifierAppService,
-			FogAppService fogAppService)
+			FogAppService fogAppService,
+			IDomainEventBus eventBus = null)
 		{
 			_map = mapAppService;
 			_resource = resourceAppService;
@@ -40,6 +44,7 @@ namespace SciencePotato.Scripts.Construction.Application
 			_time = time;
 			_modifier = modifierAppService;
 			_fog = fogAppService;
+			_events = eventBus;
 		}
 
 		public bool StartConstruction(string mapId, string buildingId, HexCubePosition position, int ownerId, BuilderBinding builder = null)
@@ -125,6 +130,12 @@ namespace SciencePotato.Scripts.Construction.Application
 				RegisterHousingTask(mapId, ownerId, uid, position, config);
 
 			if (occupant is Building building) building.ReleaseBuilder();
+
+			// 推送（v0.3 / WP-2.10）：首次建成与升级完成是两类事件 —— 订阅方（UI/成就/联动）无需再轮询 `IsReady`
+			if (previousConfig == null)
+				_events?.Publish(new BuildingCompletedEvent(mapId, ownerId, uid, config.BuildingId, position));
+			else
+				_events?.Publish(new BuildingUpgradedEvent(mapId, ownerId, uid, previousConfig.BuildingId, config.BuildingId));
 
 			_time.Unregister(task);
 		}

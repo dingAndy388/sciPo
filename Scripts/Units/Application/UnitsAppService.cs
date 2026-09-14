@@ -26,6 +26,9 @@ namespace SciencePotato.Scripts.Units.Application
 		private readonly FogAppService _fog;
 		private readonly IBuildingConfigRepository _buildingRepo;
 
+		/// <summary>（v0.3 / WP-2.10）领域事件总线（可空 = 无人订阅）。</summary>
+		private readonly IDomainEventBus _events;
+
 		public UnitsAppService(
 			MapAppService mapApp,
 			TechTreesAppService techTreeApp,
@@ -35,7 +38,8 @@ namespace SciencePotato.Scripts.Units.Application
 			IUnitsRepository repo,
 			UnitFactory factory,
 			FogAppService fogAppService,
-			IBuildingConfigRepository buildingRepo = null)
+			IBuildingConfigRepository buildingRepo = null,
+			IDomainEventBus eventBus = null)
 		{
 			_map = mapApp;
 			_tech = techTreeApp;
@@ -46,6 +50,7 @@ namespace SciencePotato.Scripts.Units.Application
 			_factory = factory;
 			_fog = fogAppService;
 			_buildingRepo = buildingRepo;
+			_events = eventBus;
 		}
 
 		/// <summary>
@@ -213,6 +218,9 @@ namespace SciencePotato.Scripts.Units.Application
 
 			_fog.RevealArea(spawn.Value, unitConfig.VisionRadius);
 			RegisterMoveTask(mapId, order.UId);
+
+			// 推送（v0.3 / WP-2.10）：单位诞生（UI 刷新 / 成就 / 联动）
+			_events?.Publish(new UnitTrainedEvent(mapId, unit.GetInfo().OwnerId, order.UId, order.UnitId, spawn.Value));
 		}
 
 		/// <summary>
@@ -557,6 +565,10 @@ namespace SciencePotato.Scripts.Units.Application
 			if (defUnit.HP <= 0)
 			{
 				var pos = defUnit.Position;
+				string killedUId = defUnit.GetInfo().UId;
+				int killedOwner = defUnit.GetInfo().OwnerId;
+				string killedUnitId = defUnit.GetInfo().Id;
+
 				_map.RemoveOccupantByPosition(mapId, pos, defUnit);
 				_fog.ResetArea(pos, _repo.GetUnitConfig(defUnit.GetInfo().Id)?.VisionRadius ?? 0);
 				atkUnit.IsIdle = true;
@@ -565,6 +577,9 @@ namespace SciencePotato.Scripts.Units.Application
 				// 范围注销（v0.3 / WP-2.2）：阵亡单位名下的移动/训练任务一并回收，避免"已死对象"继续空转
 				_time.UnregisterByUId(targetUid);
 				_time.Unregister(task);
+
+				// 推送（v0.3 / WP-2.10 / `UNIT-08`）：阵亡原本没有任何推送 —— 亡语/击杀奖励/战报/成就都挂在这里
+				_events?.Publish(new UnitDiedEvent(mapId, killedOwner, killedUId, killedUnitId, pos, attackerUid));
 			}
 		}
 	}

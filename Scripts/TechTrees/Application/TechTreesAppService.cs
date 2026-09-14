@@ -16,6 +16,9 @@ namespace SciencePotato.Scripts.TechTree.Application
 		private readonly ModifierAppService _modifier;
 		private readonly ITimeService _time;
 
+		/// <summary>（v0.3 / WP-2.10）领域事件总线（可空 = 无人订阅）。</summary>
+		private readonly IDomainEventBus _events;
+
 		/// <summary>
 		/// （v0.3 / WP-2.9）**科技树常驻内存**（`(mapId, ownerId, treeId)` → 实例）。
 		/// <para>为什么必须缓存：研究是**有状态**的（"本树正在研究哪个节点"决定并发槽位，`F1`），
@@ -30,13 +33,15 @@ namespace SciencePotato.Scripts.TechTree.Application
 			TechTreeDomain.ITechTreesConfigRepository configRepo,
 			ResourcesAppService resourceAppService,
 			ModifierAppService modifierAppService,
-			ITimeService timeService)
+			ITimeService timeService,
+			IDomainEventBus eventBus = null)
 		{
 			_repo = repo;
 			_configRepo = configRepo;
 			_resource = resourceAppService;
 			_modifier = modifierAppService;
 			_time = timeService;
+			_events = eventBus;
 		}
 
 		/// <summary>
@@ -157,6 +162,9 @@ namespace SciencePotato.Scripts.TechTree.Application
 				{
 					_modifier.AddModifiers(mapId, ownerId, nodeId, modifiers);
 				}
+
+				// 推送（v0.3 / WP-2.10 / `TECH-05`）：研究完成原本没有任何推送（UI 提示/内容联动都靠轮询）
+				_events?.Publish(new ResearchCompletedEvent(mapId, ownerId, treeId, nodeId));
 
 				_time.Unregister(task);
 			};

@@ -606,6 +606,7 @@
 - **影响**：① "死亡遗言/亡语""击杀奖励（经验/资源/科技进度）""战报/通知""成就/统计"这类需求**全部无处挂载**；② UI 无法感知战场变化，只能轮询全图。
 - **修复方向**：引入轻量的领域事件发布/订阅（或"战斗结果"返回值 + 由应用层分发），先覆盖"实体创建/完成/移除/受击/死亡"这几类关键事件。**这是设计稿里大量"触发/联动"类需求（遗言、连锁、任务奖励）的共同前置。**
 - **关联**：`CON-01`、`UNIT-04`、`TECH-05`、`EVT-04`
+> ✅ **已修复（v0.3.14 / WP-2.10）**：阵亡分支在"移除占据物 + 重置视野 + 范围注销 + 停攻击循环"之后发布 `UnitDiedEvent`（含阵亡方 owner、单位模板、位置、凶手 uid）；订阅方就此可挂亡语/击杀奖励/战报/成就。
 
 #### `UNIT-09` 单位完全没有持久化层 —— 【P1｜架构层缺陷 + 命名】
 - **现象**：不存在"单位仓库"的任何实现；名字最像的 `IUnitsRepository` 实际只有一个 `GetUnitConfig(unitId)` 方法（**配置读取**），其实现 `UnitsConfigRepository` 也是配置仓库（继承 `GenericConfigRepository`）。
@@ -658,6 +659,7 @@
 - **影响**：① 无法实现"研究完成后解锁新建筑/新单位/新动作"这类**内容联动**（只能靠查询时到处 `IsResearched` 判断，属于轮询方案）；② UI 无法弹出"研究完成"提示；③ 无法做"研究完成触发事件/任务"的链式设计。
 - **修复方向**：与 `UNIT-08` 一起引入领域事件（`ResearchCompleted` 等），至少让应用层能发布/订阅。
 - **关联**：`UNIT-08`、`TECH-03`、`EVT-04`
+> ✅ **已修复（v0.3.14 / WP-2.10）**：研究完成回调里发布 `ResearchCompletedEvent`（树 Id + 节点 Id + owner），UI 提示与"研究完成 → 解锁联动"不再需要轮询 `IsResearched`。
 
 #### `TECH-06` 反序列化后配置需手动回填（隐式契约） —— 【P2｜逻辑层缺口】
 - **现象**：`TechNode.Config` 标了 `[JsonIgnore]`，因此从存档反序列化后为 null；必须由 `TechTree.HydrateConfigs(configRepo)` 逐节点回填，且该方法只在"从仓储取树"的路径上被调用。
@@ -704,6 +706,7 @@
 - **影响**：① 玩家不知道自己触发了什么事件（`Name`/`Description` 字段配了却没人用，见 `EventConfigDto.cs:9-10`）；② 无法做事件面板/历史记录/弹窗；③ 无法排查"数值为什么变了"（配合 `MOD-07`）。
 - **修复方向**：事件触发时发布领域事件（携带配置文案与修正器信息）；提供"当前生效事件列表"查询供 UI 展示倒计时。
 - **关联**：`UNIT-08`、`TECH-05`、`MOD-07`、`EVT-02`
+> ◐ **部分修复（v0.3.14 / WP-2.10）**：`EventAppService` 在触发瞬间发布 `GameEventTriggeredEvent`（含事件 Id/名称/持续期）→ "触发即有推送"。**未做**：`WP-2.8` 的 `GetTriggerCounts`/`GetActiveEvents` 仍是查询口径；`EVT-06` 要求的"事件暂停 + 玩家决策"（`WP-4.12`）与历史记录仍未提供。
 
 #### `EVT-05` 先扣资源后挂修正器，无回滚 —— 【P2｜逻辑层缺口】
 - **现象**：判定阶段遍历所有前置条件（资源够 + 科技满足）→ 通过后 `ConsumePrerequisites` 立刻扣资源 → 紧接挂修正器。若挂修正器/注册到期任务抛异常，资源已经扣掉。
@@ -1137,6 +1140,7 @@
 | **v0.3.11** | 2026-09-14 | **WP-2.4 建造者校验（`D6`）**：`BuilderBinding` 把在建建筑与建造者单位绑定（`Building.TryBindBuilder` = 每建筑同时仅 1 个 / `ReleaseBuilder` = 完工或被拆时释放）；`UnitsAppService.Build` 四道门（`CanBuild` 能力 / 单位空闲 / 距离 ≤1 / 目标格为空）后经 `StartConstruction(mapId, buildingId, position, ownerId, builder)` 开工，**失败即无副作用**；修掉两个硬伤 —— 旧实现要求"盖在自己脚下"（该格被自己占着 → 建造永远失败）与"无论成败都置忙"（单位永久卡死）。无头验收 **90/90 通过、退出码 0**。新增决策 D38~D39 |
 | **v0.3.12** | 2026-09-14 | **WP-2.6 建筑升级 + 完成逻辑收敛（`CON-09`、`CON-03`、`D4/D5/D14`）**：`IBuildingConfig` 新增 `UpgradeTo/UpgradeCost/UpgradeDuration/UpgradeTechRequirements`，`Config/Buildings.json` 补齐 **4 条 lv.I→II→III 链（12 条）**（数值取自设计稿 buildings.md）；`Building.ApplyUpgrade` 换级**保持 uid 不变**；`ConstructionAppService.StartUpgrade` 校验等级链/科技前置/消耗/建造者绑定，升级期间建筑未就绪；**完成路径收敛为单一 `CompleteConstruction`**（首次建造/升级/续跑三条路径共用 → 修 `CON-03`：续跑完成也会开视野与注册人口任务），升级时按 uid 回收旧修正器与旧人口任务（不叠加、不重复）；校验器新增升级链校验（悬空/自环 error）。无头验收 **90/90 通过、退出码 0**。新增决策 D40~D41 |
 | **v0.3.13** | 2026-09-14 | **WP-2.9 科技树：单树串行 + 三树并行（`F1`、`TECH-01/04`）**：`ITechTreeConfig` 新增 `Concurrency`（默认 1；三棵树各自配），`TechTree` 新增研究槽位（`CanStartResearch`/`MarkResearchStarted`/`InProgress`），`TechTreesAppService` 以 `Concurrency` 闸住开工并**把树常驻内存**（否则每次读盘重建实例会让槽位状态丢失、串行形同虚设）；研究任务快照改用 `UId` 承载**所属树**（键 = `Research:{treeId}:{nodeId}`）→ `CreateResearchTask` 不再把 `nodeId` 当 `treeId`，旧口径快照显式拒绝续跑；校验器：`Concurrency<1` 判 error、`>1` 判 warning。无头验收 **96/96 通过、退出码 0**。新增决策 D42~D43 |
+| **v0.3.14** | 2026-09-14 | **WP-2.10 最小领域事件总线（`F10`、`TECH-05`、`UNIT-08`、`EVT-04`、`ROOT-4`）**：新增 `IDomainEventBus`/`DomainEventBus`（类型即频道：`Subscribe/Publish/Unsubscribe`、**快照派发**、**订阅者异常隔离**（记入 `Failures` 不打断玩法）、重复订阅幂等）与 6 类事件（建造完成 / 建筑升级 / 单位训练完成 / 单位阵亡 / 研究完成 / 事件触发）；建造-升级-研究-事件四条链路的发布点就位（`CompleteConstruction`/`CompleteTraining`/攻击阵亡分支/研究完成/`TickEvents` 触发瞬间），四个应用服务以可选构造参数接收总线；`CoreServices.DomainEvents` 由组合根提供**全进程一份**。无头验收 **103/103 通过、退出码 0**。新增决策 D44~D45 |
 
 
 ---
@@ -1385,7 +1389,7 @@
 | F7 | 效果=解锁 UI 面板/研究功能 | ❌ | W：无 UI 门控机制 | ✔（派生查询） | 表现层按 `IsResearched` 门控 — **中（表现层）** |
 | F8 | 效果=解锁水域通行 5.0 | ❌ | 同 B2 | ✘ | 通行权限 + 科技解锁 — **中** |
 | F9 | 研究是 School 的操作（按建筑等级） | ⚠️ | L：`CanResearch` 已存在（`ConstructionAppService.cs:123-137`）但不校验等级/不绑定建筑 | ✔ | 校验建筑等级 — **小~中** |
-| F10 | 科技完成推送（提示/联动） | ❌ | L：无事件（`TECH-05`） | ✘ | 领域事件 — **中** |
+| F10 | 科技完成推送（提示/联动） | ✅ | L：无事件（`TECH-05`） | ✘ | 领域事件 — **中** |
 | F11 | 研究进度持久化/续跑 | ✅ | L：`nodeId` 被当 `treeId`（`TECH-01`）→ 读档错乱 | ✔ | 修 + 快照加"树/节点" — **小~中** |
 
 ## G. 事件（8 行）
@@ -2057,6 +2061,7 @@ WP-0.4 ─→ WP-3.5 / WP-3.8 / WP-5.3
 | 2026-09-14 | WP-2.4 **建造者校验**（`D6`） | ✅ 完成 | ① **绑定**：新增 `BuilderBinding{BuilderUId, BuilderPosition, TargetPosition, OnRelease}`（`Construction.Domain`），`Building.TryBindBuilder` 保证**每建筑同时仅 1 建造者**、`ReleaseBuilder` 在**完工与被拆**两条路径上释放（释放动作由 Units 层以回调形式注入 → 构造模块不认识 `Unit` 类型，避免模块环）；② **订单校验**：`UnitsAppService.Build` 四道门 —— `CanBuild` 能力（民兵等非建造者被拒）/ 单位空闲（每建造者同时 1 座）/ 距离 ≤ 1（相邻格）/ 目标格为空；`StartConstruction` 改为 `bool` 并接受可选 <c>builder</c>（无建造者的脚本/测试路径保持兼容），绑定失败时**不消耗任何资源**；③ **修硬伤**：旧实现要求"建筑盖在自己脚下"（而该格被自己占着 → 建造永远失败）且无论成败都置 `IsIdle=false`（单位永久卡死），现在只在真正开工后占用、完工/被拆自动释放；④ **副作用**：被拒请求不留建筑、不留任务、不占用单位（资源维度因 `D25` 不可观测，用例改以三个状态面判定）。检查 **+6 项**（总计 **83/83**、退出码 0） |
 | 2026-09-14 | WP-2.6 **建筑升级 lv.I→II→III + 完成逻辑收敛**（`CON-09`、`CON-03`、`D4/D5/D14`） | ✅ 完成 | ① **配置**（`D4`/`D5`/`D14`）：`IBuildingConfig` 新增 `UpgradeTo`（晋级目标）/`UpgradeCost`（升级消耗）/`UpgradeDuration`（游戏日）/`UpgradeTechRequirements`（升级条件 = 已解锁科技节点），`Config/Buildings.json` 由 4 条扩到 **12 条**（营地/工坊/学院/军营 各 lv.I~III），数值取自设计稿 buildings.md（营地人口 9/1/300 → 18/1/240 → 36/2/180；学院 250 → 1000 → 3000 idea/月；工坊·军营训练速度 +20%/+50%），资源词汇按原型表映射（基础石材→Wood、food→Gold，量级缩放）；② **域**：`Building.ApplyUpgrade` **换 Id/Name 但保持 uid** —— 修正器/迷雾/任务/易主都以 uid 为锚；③ **服务**：`StartUpgrade(mapId, buildingUid, ownerId, builder)` 校验「已就绪 + 有 UpgradeTo + 目标建筑存在 + 科技前置 + 消耗可付 + 建造者绑定」，升级期间 `IsReady=false`（训练/研究门控自动失效）；`UnitsAppService` 新增 `CanUpgrade` 动作（由 `CanBuild` 角色派生，无需新单位字段）且 `ExcuteAction` 改为**返回 bool**（`CON-01` 的最小闭合：调用方能拿到成败）；④ **完成逻辑收敛**（修 `CON-03`）：首次建造 / 升级 / 读档续跑三条路径统一走 `CompleteConstruction`，升级时按 uid **回收旧修正器与旧人口任务**（不叠加、不重复），续跑完成现在也会开视野 + 注册人口任务（旧实现手抄漏项）；⑤ **校验器**：升级链校验 —— `UpgradeTo` 悬空/自环判 **error**、缺 `UpgradeDuration` 判 warning、升级消耗与科技前置沿用建造口径。检查 **+7 项**（总计 **90/90**、退出码 0） |
 | 2026-09-14 | WP-2.9 **科技树：单树串行 + 三树并行（并发可配）**（`F1`、`TECH-01/04`） | ✅ 完成 | ① **配置**：`ITechTreeConfig.Concurrency`（默认 1）/`Config/TechTrees.json` 三棵树各填 `Concurrency: 1` —— 设计稿 research_tree.md「每棵树同时只能进行一项研发，三棵树互相独立」；② **域**：`TechTree` 增加研究槽位（`Concurrency` / `InProgress` / `CanStartResearch`（= 够格 ∧ 槽位未满）/ `MarkResearchStarted`/`MarkResearchFinished`；槽位**只在内存**，理由见 `D43`），`InitializeFromConfig`/`HydrateConfigs` 都随表更新并发值；③ **服务**：`Research` 用 `MarkResearchStarted` 闸住开工（被拒时**不扣资源**；资源不足时**归还槽位**，不会因一次失败把树堵死），新增 `CanStartResearch`/`GetInProgress`/`GetConcurrency` 查询（`WP-4.14` 的门控面）；**树常驻内存**（`_trees` 缓存，否则每次 `GetOrCreateTechTree` 从盘上重建实例 → 槽位状态丢失、串行失效）；④ **任务键**（`TECH-01`/`TECH-04`）：研究任务 `UId` = **所属树 Id**（原来是 `none`）、`Id` = 节点 Id → 键 = `Research:{treeId}:{nodeId}`；`CreateResearchTask` 从 `snapshot.UId` 取树（不再把 `nodeId` 当 `treeId`），旧口径快照（`UId=none`）显式拒绝续跑；⑤ **校验器**：`Concurrency<1` 判 error（否则该树永远无法开工）、`>1` 判 warning（超出设计稿当前口径）；⑥ **指南**：TechTrees 段补字段与样板。检查 **+6 项**（总计 **96/96**、退出码 0） |
+| 2026-09-14 | WP-2.10 **最小领域事件总线**（`F10`、`TECH-05`、`UNIT-08`、`EVT-04`、`ROOT-4`） | ✅ 完成 | ① **总线**：新增 `IDomainEventBus`（`Common/Application`）+ `DomainEventBus`（`Common/Infrastructure`）—— 类型即频道（`Subscribe<T>`/`Publish<T>`/`Unsubscribe<T>`/`SubscriberCount<T>`/`Failures`）；三个健壮性口径：**派发用快照**（订阅者可在回调里订阅/退订）、**异常隔离**（某个订阅者抛异常只记入 `Failures`，其余订阅者照常收到、发布方主流程不中断）、**重复订阅幂等**；② **事件类型**（`Common/Domain/DomainEvents.cs`）：`BuildingCompletedEvent` / `BuildingUpgradedEvent`（含 from/to 等级）/ `UnitTrainedEvent` / `UnitDiedEvent`（含凶手 uid）/ `ResearchCompletedEvent` / `GameEventTriggeredEvent`（含持续期）；③ **发布点**：`CompleteConstruction`（首次建成与升级分成两类事件）、`CompleteTraining`（单位诞生）、攻击致死的分支（阵亡 + 范围注销之后）、研究完成回调、`EventAppService.TickEvents` 的触发瞬间；四个应用服务以**可选构造参数**接收总线（不传 = 空操作，便于老用例零改动）；④ **组合根**：`CoreServices.DomainEvents` 由 `CoreBootstrap` 创建**全进程一份**（避免"各服务各 new 一个总线"导致订阅方静默收不到消息）；⑤ **验收**：真实配置端到端触发六类事件（含"弓箭手 12 日射杀敌方工人"的阵亡链路）+ 总线健壮性用例。检查 **+7 项**（总计 **103/103**、退出码 0），**M0-2 ⑤ 条线之外的最后一块拼图（推送侧）落地** |
 
 ### 18.1.1 里程碑验收对照
 
@@ -2066,7 +2071,7 @@ WP-0.4 ─→ WP-3.5 / WP-3.8 / WP-5.3
 | M0-2 | ② 建成 School 后 6 个月内存出 250 idea/月 | ✅ `WP-2.7`（检查 52/52） |
 | M0-2 | ③ 营地 90 日建成 → 人口上限与视野生效 | ✅ `WP-2.3` |
 | M0-2 | ④ 工坊训练工人 30 日后单位出现且人口 −1 | ✅ `WP-2.5` |
-| M0-2 | ⑤ 固定种子下 3 年事件触发次数落在期望区间 | ✅ `WP-2.8`（检查 90/90） |
+| M0-2 | ⑤ 固定种子下 3 年事件触发次数落在期望区间 | ✅ `WP-2.8`（检查 103/103） |
 
 ## 18.2 复现命令
 
@@ -2078,7 +2083,7 @@ dotnet build 'Science Potato.csproj'
 dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessChecks.csproj'
 ```
 
-当前验收结果（2026-09-14，**96/96 通过、退出码 0**）：M0-1 组 43 项 + M0-2 组 53 项。
+当前验收结果（2026-09-14，**103/103 通过、退出码 0**）：M0-1 组 43 项 + M0-2 组 60 项。
 
 | 分组 | 数量 | 覆盖 |
 | :--- | :--- | :--- |
@@ -2096,6 +2101,7 @@ dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessC
 | 建造者绑定（WP-2.4） | 6 | 非建造者（民兵）不能下令建造且不占用单位（`D6`）/ 相邻空格可建、隔 2 格与脚下同格被拒（旧实现只能盖脚下 → 永远失败）/ 每建造者同时只建 1 座：施工中再下令被拒、完工后自动释放并能接新工地 / 被拒的建造不留建筑·不留任务·不占用建造者（资源维度受 `D25` 限制）/ 施工中的建筑被拆 → 建造者回到空闲 + 建造任务被注销 / 域内 `TryBindBuilder` 拒绝第二个建造者、释放后可重绑 |
 | 建筑升级（WP-2.6） | 7 | 升级链完整且参数取自设计稿（4 链 × 3 级 = 12 条；营地 9/1/300 → 18/1/240 → 36/2/180；学院 250/1000/3000；工坊·军营 +20%/+50%）/ 门控：科技未解锁·资源不足·已最高级·未完工 全部拒绝 / 升级成功：Id 与名称换级、**uid 不变**、升级中未就绪、完成释放建造者 / 修正器换级不叠加（lv.II 1000 × 1.3 科技加成 = 1300，若残留旧 250 则为 1625）/ 人口任务换级不重复（仍 1 条、Target 300 → 240）/ **`CON-03`**：续跑完成也开视野 + 注册人口任务 / 校验器守卫升级链（悬空/自环 error、缺时长 warning、负消耗 error） |
 | 科技树并发（WP-2.9） | 6 | 三棵树 `Concurrency=1` 且真实配置 0 error / 树内串行：同树第二个请求被拒（任务数不增）、完成后槽位释放、下一个才开工 / 三树并行：科学树 + 军事树两项并存并各自完成（互不阻塞）/ 并发可配：`Concurrency=2` 时同树两项并行且都完成 / 研究任务键：`UId`=树、`Id`=节点、键 = `Research:{tree}:{node}`；续跑按树恢复（不再把 nodeId 当 treeId）、旧口径快照拒绝续跑 / 校验器：`<1` error、`>1` warning |
+| 领域事件（WP-2.10） | 7 | 总线：快照派发 / 异常隔离（`Failures` 记录且不打断发布方）/ 重复订阅幂等 / 可退订 / 无订阅者不抛异常 / 建造完成事件（uid·Id·owner·位置）/ 升级完成事件（from→to，且不重复推送「建成」）/ 训练完成事件（uid 与落位单位一致）/ **单位阵亡事件**（`UNIT-08`：含阵亡方 owner 与凶手 uid）/ 研究完成事件（树+节点）/ 事件触发推送（`EVT-04`） |
 
 
 
@@ -2146,6 +2152,8 @@ dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessC
 | D41 | **升级中的最小语义 = `IsReady = false`**（不引入新状态字段） | 训练门控（`WP-2.5`）、研究门控（`ExcuteAction`）都已经在检查 `IsReady`，复用它即可让"升级中"建筑自然停止工作；副作用是 UI 需要把"未就绪"渲染成"施工中/升级中"两态，归 `WP-5.1` 调试层。备选是加 `IsUpgrading` 字段 —— 会多出一处状态同步（拆除/完工/读档都要清），当前收益不足 |
 | D42 | **树内串行 = 域内研究槽位（`Concurrency`）**，而不是"给研究任务排队" | 备选：① 在应用层维护"每树一个研究队列"（状态两处真相：树的已研究集合之外还有一份队列）；② 用任务清单反推"该树是否在忙"（要先扫全表任务，且读档后扫不到）。取域内槽位：`CanStartResearch` 是唯一判定点，任务数自然 ≤ 并发上限。**Suffix**：被拒的请求**不扣资源**（先占位后扣费，失败即归还槽位） |
 | D43 | **科技树必须常驻内存**，`InProgress` 槽位**只存内存**（`[JsonIgnore]`，不落盘） | 发现过程：首版把 `_inProgress` 只放在 `TechTree` 上，而 `GetOrCreateTechTree` 每次都从盘上反序列化新实例 → 槽位在两次调用间丢失，"树内串行"形同虚设（用例当场抓住）。修法：应用服务持有 `_trees` 缓存（与 `MapSession` 同思路，正式注册表归 `WP-3.3`）。而"进行中"**不落盘**的理由：研究进度由任务快照承载（`WP-3.2` 才恢复任务），若树文件里写着"研究中"而任务没恢复，该树会永远堵死 —— 比丢进度更糟 |
+| D44 | **事件总线用类型作频道、同步派发、异常隔离** | 备选：① 字符串主题（拼错即静默丢消息，与 `MOD-05`/`TIME-03` 同类教训）；② 异步队列（原型期没有帧边界/线程模型，反而让"事件什么时候到"不可断言）；③ 让异常向上抛（一个坏掉的 UI 回调会打断"建筑完工"这类核心流程）。取类型频道 + 同步 + 隔离：既能在用例里同步断言，又保证玩法流程不被订阅方拖垮。**代价**：异常被吞进 `Failures`（不静默，但不致命），表现层需要自己检查 |
+| D45 | **总线只在组合根创建一次**（`CoreServices.DomainEvents`），应用服务以可选构造参数接收 | 若各服务各自 `new DomainEventBus()`，表现层订阅的那条总线与应用服务发布的那条不是同一个 → 消息静默丢失（最典型的"事件系统看起来做了但没人收到"）。可选参数是为了让不关心事件的旧用例零改动，同时保留"无人订阅 = 空操作" |
 
 
 
@@ -2195,3 +2203,5 @@ dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessC
 | 升级/建造的"完成"只在内存（v0.3.12） | `CompleteConstruction` 会重挂修正器、重开视野、重注册人口任务，但这些**派生状态**没有落盘（`ModifierRepository` 有盘、迷雾有盘、任务有盘，建筑等级只在 `Building` 对象上） | 读档后建筑等级丢失 → 修正器/人口任务与等级不一致（"lv.I 的产出但名字是 lv.III"） | `WP-3.2`（实体持久化）必须把建筑等级 + 建造者绑定 + 训练队列一起存 |
 | 科技树"研究中的节点"不落盘（v0.3.13） | `TechTree.InProgress` 是内存槽位（`D43`）：读档后"正在研究哪个节点"丢失（任务快照也还没恢复，见"任务恢复未接线"行） | 读档后研究进度归零、需要玩家重新点一次研究（资源已扣过的那次不会自动继续） | `WP-3.2`（任务/实体持久化）—— 任务恢复后把 `InProgress` 一并恢复 |
 | 三棵树之外没有更多树的并发口径（v0.3.13） | `Concurrency` 是**每棵树**的配置，`Config/TechTrees.json` 目前 3 棵树；设计稿的 93 节点里"一树多研发"是后续节点效果（需要节点效果能改 `Concurrency`） | 现在只能靠填表改；"某节点解锁本树并发 +1"还没有落点 | 批次 4（节点效果扩展，配 `WP-4.4` 修正作用面） |
+| 事件没有历史记录 / 没有队列（v0.3.14） | 总线是"即时同步派发"：**发布时不存在的订阅者永远收不到**（例如读档后 UI 才挂上订阅，之前发生的事件就丢了） | UI 若晚于模拟启动订阅，会漏掉前几个事件 | 需要"事件日志/重放"时再引入（M2 表现层 / `WP-5.4`）；`Effect` 类事件不需要 |
+| 事件总线未进入 Godot 侧装配（v0.3.14） | `CoreBootstrap` 已创建 `DomainEvents`，但 `ServiceContainer` 尚未把 Construction/Units/TechTrees/Events 服务装配起来（见上一条"未进组合根"） | M1 之前必须补：否则真实运行时无人发布/订阅 | `WP-5.1`（M1 调试层）前必须补装配 |

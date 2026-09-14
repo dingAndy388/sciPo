@@ -215,7 +215,6 @@ namespace SciencePotato.HeadlessChecks
 			public ConfigTables Tables;
 			public HexCubePosition Spawn;
 			public HexCubePosition Site;
-			public int SpawnSeq;
 
 			/// <summary>
 			/// 生成一个已就绪的单位（走 `CreateUnit` 的"直接生成"入口；训练队列由 `WP-2.5` 覆盖）。

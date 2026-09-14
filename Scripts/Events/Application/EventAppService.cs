@@ -32,6 +32,9 @@ namespace SciencePotato.Scripts.Events.Application
 		private readonly ITimeService _time;
 		private readonly IRandom _random;
 
+		/// <summary>（v0.3 / WP-2.10）领域事件总线（可空 = 无人订阅）。</summary>
+		private readonly IDomainEventBus _events;
+
 		/// <summary>生效中的事件：键 = `mapId_ownerId_eventId`。</summary>
 		private readonly Dictionary<string, ActiveEvent> _active = new(StringComparer.Ordinal);
 
@@ -53,7 +56,8 @@ namespace SciencePotato.Scripts.Events.Application
 			TechTreesAppService tech,
 			ModifierAppService modifier,
 			ITimeService time,
-			IRandom random)
+			IRandom random,
+			IDomainEventBus eventBus = null)
 		{
 			_eventRepo = eventRepo;
 			_resources = resources;
@@ -61,6 +65,7 @@ namespace SciencePotato.Scripts.Events.Application
 			_modifier = modifier;
 			_time = time;
 			_random = random;
+			_events = eventBus;
 		}
 
 		public void StartEventsEngine(string mapId, int ownerId)
@@ -122,6 +127,9 @@ namespace SciencePotato.Scripts.Events.Application
 				string key = EntryKey(mapId, ownerId, evt.EventId);
 				_active[key] = new ActiveEvent(mapId, ownerId, evt.EventId, evt.Name, evt.Duration);
 				_triggerCounts[key] = _triggerCounts.TryGetValue(key, out int count) ? count + 1 : 1;
+
+				// 推送（v0.3 / WP-2.10 / `EVT-04`）：触发瞬间的推送（原本只能轮询 `GetActiveEvents`）
+				_events?.Publish(new GameEventTriggeredEvent(mapId, ownerId, evt.EventId, evt.Name, evt.Duration));
 			}
 
 			// 持续期推进放在**当日结算之后**：触发当日不计入，次日开始每天减 1，

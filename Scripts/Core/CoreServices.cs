@@ -1,3 +1,4 @@
+using SciencePotato.Scripts.Common.Application;
 using SciencePotato.Scripts.Common.Domain;
 using SciencePotato.Scripts.Core.Config;
 using SciencePotato.Scripts.Core.Time;
@@ -36,6 +37,13 @@ namespace SciencePotato.Scripts.Core
 		public IMapGenerator MapGenerator { get; init; }
 
 		public MapAppService Map { get; init; }
+
+		/// <summary>
+		/// （v0.3 / WP-2.10）**领域事件总线**：全进程一份（`ROOT-4` / `UNIT-08` / `TECH-05` / `EVT-04`）。
+		/// <para>应用服务在构造时接收它并发布事件；表现层/统计/联动模块订阅它，
+		/// 从而不必轮询 `IsReady`/`IsResearched`/`GetActiveEvents`。</para>
+		/// </summary>
+		public IDomainEventBus DomainEvents { get; init; }
 	}
 }
 

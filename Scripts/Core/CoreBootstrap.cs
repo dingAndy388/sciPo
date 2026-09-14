@@ -1,3 +1,5 @@
+using SciencePotato.Scripts.Common.Application;
+using SciencePotato.Scripts.Common.Infrastructure;
 using SciencePotato.Scripts.Core.Config;
 using SciencePotato.Scripts.Core.Time;
 using SciencePotato.Scripts.Map.Application;
@@ -39,6 +41,10 @@ namespace SciencePotato.Scripts.Core
 			var clock = new GameClock();
 			var timeService = new GameTimeService(clock);
 
+			// 3.5) 领域事件总线（v0.3 / WP-2.10）：**全进程一份**，由应用服务发布、表现层/统计订阅。
+			//      放在组合根创建，是为了避免"每个服务各 new 一个总线"导致订阅方收不到消息（静默失联）。
+			var domainEvents = new DomainEventBus();
+
 			// 4) 会话状态（Map 常驻内存）：地图仓库由宿主工厂按地形配置构造
 			var mapRepository = dependencies.MapRepositoryFactory(tables.Terrains);
 			var maps = new MapSession(mapRepository);
@@ -63,6 +69,7 @@ namespace SciencePotato.Scripts.Core
 				ConfigReport = report,
 				MapGenerator = mapGenerator,
 				Map = mapService,
+				DomainEvents = domainEvents,
 			};
 		}
 	}

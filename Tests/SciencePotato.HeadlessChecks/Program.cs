@@ -24,6 +24,7 @@ namespace SciencePotato.HeadlessChecks
 			BuilderChecks.RunAll();
 			UpgradeChecks.RunAll();
 			TechTreeConcurrencyChecks.RunAll();
+			DomainEventChecks.RunAll();
 
 			return Check.Summary();
 		}
