@@ -165,6 +165,10 @@
   PopulationRadius      int                      否    住房辐射人口半径(格)
   PopulationCap         int                      否    住房提供人口上限(**半径内总计**)
   PopulationGrowthInterval int                   否    人口增长间隔(**游戏日**, 300 = 设计稿的营地 lv.I)
+  TrainableUnits        [string]                 否    可训练单位 Id 列表(空 = 不能训练;
+                                                      设计稿: 工坊→worker, 军营→swordsman/archer)
+  TrainingQueueLimit    int                      否    训练队列上限(默认 5; 0 = 不排队;
+                                                      同时只训练 1 个是引擎口径, 不需要填)
 
   [完整样板 JSON]
   ```json
@@ -183,7 +187,9 @@
         "IsHousing": true,
         "PopulationRadius": 1,
         "PopulationCap": 9,
-        "PopulationGrowthInterval": 300
+        "PopulationGrowthInterval": 300,
+        "TrainableUnits": [],
+        "TrainingQueueLimit": 0
       },
       "workshop": {
         "BuildingId": "workshop",
@@ -193,12 +199,14 @@
         "TechRequirements": {},
         "Modifiers": [],
         "Duration": 90,
-        "Actions": [],
+        "Actions": ["CanTrain"],
         "VisionRadius": 2,
         "IsHousing": false,
         "PopulationRadius": 0,
         "PopulationCap": 0,
-        "PopulationGrowthInterval": 0
+        "PopulationGrowthInterval": 0,
+        "TrainableUnits": ["worker"],
+        "TrainingQueueLimit": 5
       },
       "school": {
         "BuildingId": "school",
@@ -215,7 +223,9 @@
         "IsHousing": false,
         "PopulationRadius": 0,
         "PopulationCap": 0,
-        "PopulationGrowthInterval": 0
+        "PopulationGrowthInterval": 0,
+        "TrainableUnits": [],
+        "TrainingQueueLimit": 0
       },
       "military_camp": {
         "BuildingId": "military_camp",
@@ -225,12 +235,14 @@
         "TechRequirements": {},
         "Modifiers": [],
         "Duration": 60,
-        "Actions": [],
+        "Actions": ["CanTrain"],
         "VisionRadius": 3,
         "IsHousing": false,
         "PopulationRadius": 0,
         "PopulationCap": 0,
-        "PopulationGrowthInterval": 0
+        "PopulationGrowthInterval": 0,
+        "TrainableUnits": ["swordsman", "archer"],
+        "TrainingQueueLimit": 5
       }
     }
   }
@@ -239,6 +251,12 @@
   [注意事项]
   - 非住房建筑: IsHousing=false, PopulationRadius=0, PopulationCap=0,
     PopulationGrowthInterval=0
+  - 训练口径（v0.3 / WP-2.5）：所有单位**由建筑训练**（设计稿），因此每个单位至少要出现在
+    某个建筑的 TrainableUnits 里（校验器对"没有任何建筑可训练它"记 warning）；
+    训练建筑的 Actions 需含 CanTrain（与 TrainableUnits 不匹配会被校验器提示）
+  - 训练队列：TrainingQueueLimit 个排队名额（默认 5），**同时只训练 1 个**（引擎口径）；
+    入队时扣资源、完成时扣人口（PopulationCost）并在建筑格或相邻空格落位
+  - TrainingQueueLimit=0 表示"该建筑不训练"（与 TrainableUnits=[] 一起用于营地/学院这类非训练建筑）
   - 建筑 Id 采用设计稿口径（v0.3 / WP-2.7）：营地 camp / 工坊 workshop /
     学院 school / 军营 military_camp（旧原型 house、library、barracks 已废弃）
   - Duration 单位是游戏日；设计稿 A4 给的建造区间是 30~300 日

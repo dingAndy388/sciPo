@@ -15,7 +15,8 @@ namespace SciencePotato.Scripts.Construction.Domain
 		{
 			var config = _repo.GetBuildingConfig(buildingId);
 
-			return new Building(position,config.BuildingId, Guid.NewGuid().ToString(), ownerId, config.Name);
+			// v0.3 / WP-2.5：训练队列上限随配置进建筑实例（默认 5，见 BuildingConfigDto）
+			return new Building(position,config.BuildingId, Guid.NewGuid().ToString(), ownerId, config.Name, config.TrainingQueueLimit);
 		}
 	}
 }

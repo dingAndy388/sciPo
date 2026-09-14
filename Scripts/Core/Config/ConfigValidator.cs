@@ -40,12 +40,13 @@ namespace SciencePotato.Scripts.Core.Config
 			// 跨表引用所需的索引（表缺失时为空集合，不再重复报错 —— 装载段已记 error）
 			var terrainIds = new HashSet<string>(tables.AllTerrains().Select(t => t?.Id).Where(NotEmpty), StringComparer.Ordinal);
 			var resourceIds = new HashSet<string>(tables.AllResources().Select(r => r?.Name).Where(NotEmpty), StringComparer.Ordinal);
+			var unitIds = new HashSet<string>(tables.AllUnits().Select(u => u?.UnitId).Where(NotEmpty), StringComparer.Ordinal);
 			Dictionary<string, HashSet<string>> techNodes = BuildTechNodeIndex(tables);
 			ModifierTargetRegistry registry = ModifierTargetRegistry.From(tables);
 
 			ValidateTerrains(tables, report);
 			ValidateResources(tables, report);
-			ValidateBuildings(tables, report, terrainIds, resourceIds, techNodes, registry);
+			ValidateBuildings(tables, report, terrainIds, resourceIds, techNodes, registry, unitIds);
 			ValidateUnits(tables, report, terrainIds, resourceIds, techNodes, registry);
 			ValidateTechTrees(tables, report, techNodes, registry);
 			ValidateEvents(tables, report, resourceIds, techNodes, registry);
@@ -133,7 +134,8 @@ namespace SciencePotato.Scripts.Core.Config
 
 		private static void ValidateBuildings(ConfigTables tables, ConfigReport report,
 			HashSet<string> terrainIds, HashSet<string> resourceIds,
-			Dictionary<string, HashSet<string>> techNodes, ModifierTargetRegistry registry)
+			Dictionary<string, HashSet<string>> techNodes, ModifierTargetRegistry registry,
+			HashSet<string> unitIds)
 		{
 			if (tables.Buildings == null) return;
 
@@ -179,7 +181,40 @@ namespace SciencePotato.Scripts.Core.Config
 					report.Warn("Buildings", key, "非住房建筑却填了人口字段（指南要求 IsHousing=false 时三项均为 0）");
 
 				ValidateActionList(report, "Buildings", key, building.Actions);
+				ValidateTrainableUnits(report, key, building, unitIds);
 			}
+		}
+
+		/// <summary>
+		/// （v0.3 / WP-2.5）**可训练单位名单**的校验（`UNIT-11`）：
+		/// <list type="bullet">
+		/// <item><c>TrainableUnits</c> 里的 Id 必须存在于单位表 → 否则 **error**（否则该建筑永远训练不出任何东西，
+		/// 且是"填错一个字母就静默失效"的典型 —— 与 `MOD-05` 同类教训）；</item>
+		/// <item><c>Actions</c> 声明了 <c>CanTrain</c> 但名单为空 → **warning**（UI 会出现按钮却永远失败）；</item>
+		/// <item>名单非空但建筑没有 <c>CanTrain</c> 动作 → **warning**（服务端可训练、UI 却不给入口）；</item>
+		/// <item><c>TrainingQueueLimit &lt; 0</c> → error；<c>== 0</c> → warning（无法排队）。</item>
+		/// </list>
+		/// <para>反向检查（"某个单位没有任何建筑能训练它"）放在 <c>ValidateUnits</c> 里做，那里有全表视野。</para>
+		/// </summary>
+		private static void ValidateTrainableUnits(ConfigReport report, string key, IBuildingConfig building, HashSet<string> unitIds)
+		{
+			List<string> trainable = building.TrainableUnits ?? new List<string>();
+			bool declareCanTrain = (building.Actions ?? new List<string>()).Contains("CanTrain");
+
+			if (declareCanTrain && trainable.Count == 0)
+				report.Warn("Buildings", key, "Actions 含 CanTrain 但 TrainableUnits 为空：UI 有入口却永远训练失败");
+			if (!declareCanTrain && trainable.Count > 0)
+				report.Warn("Buildings", key, "填了 TrainableUnits 但 Actions 缺 CanTrain：服务端可训练、UI 没有入口（`WP-4.14` 门控）");
+
+			foreach (string unitId in trainable)
+			{
+				if (!NotEmpty(unitId)) report.Error("Buildings", key, "TrainableUnits 含空 Id");
+				else if (!unitIds.Contains(unitId)) report.Error("Buildings", key, $"TrainableUnits 引用了不存在的单位 Id「{unitId}」");
+			}
+
+			if (building.TrainingQueueLimit < 0) report.Error("Buildings", key, $"TrainingQueueLimit={building.TrainingQueueLimit} 不能为负");
+			else if (building.TrainingQueueLimit == 0 && trainable.Count > 0)
+				report.Warn("Buildings", key, "TrainableUnits 非空但 TrainingQueueLimit=0：该建筑无法排队训练");
 		}
 
 		// ────────────────────────── Units ──────────────────────────
@@ -233,6 +268,15 @@ namespace SciencePotato.Scripts.Core.Config
 				else if (unit.Duration == 0f) report.Warn("Units", key, "Duration=0：瞬间训练完成");
 				else ValidateDayUnit(report, "Units", key, "Duration", unit.Duration);
 			}
+
+			// 反向完整性（v0.3 / WP-2.5）：设计稿规定"所有单位由建筑产出"，因此每个单位至少要被
+			// 某个建筑列入 TrainableUnits，否则玩家永远造不出它（填表规模化后极易出现，例如新增单位忘了挂建筑）。
+			var trainableAnywhere = new HashSet<string>(
+				tables.AllBuildings().SelectMany(building => building?.TrainableUnits ?? new List<string>()).Where(NotEmpty),
+				StringComparer.Ordinal);
+			foreach (string key in seen)
+				if (!trainableAnywhere.Contains(key))
+					report.Warn("Units", key, "没有任何建筑把它列入 TrainableUnits：玩家无法训练该单位（敌方刷新不受影响）");
 		}
 
 		// ────────────────────────── TechTrees ──────────────────────────

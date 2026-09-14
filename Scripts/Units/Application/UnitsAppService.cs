@@ -6,6 +6,7 @@ using SciencePotato.Scripts.Fog.Application;
 using SciencePotato.Scripts.Map.Application;
 using SciencePotato.Scripts.Resources.Application;
 using SciencePotato.Scripts.TechTree.Application;
+using SciencePotato.Scripts.Construction.Domain;
 using SciencePotato.Scripts.Units.Domain;
 using System;
 using System.Collections.Generic;
@@ -23,6 +24,7 @@ namespace SciencePotato.Scripts.Units.Application
 		private readonly ITimeService _time;
 		private readonly UnitFactory _factory;
 		private readonly FogAppService _fog;
+		private readonly IBuildingConfigRepository _buildingRepo;
 
 		public UnitsAppService(
 			MapAppService mapApp,
@@ -32,7 +34,8 @@ namespace SciencePotato.Scripts.Units.Application
 			ITimeService timeService,
 			IUnitsRepository repo,
 			UnitFactory factory,
-			FogAppService fogAppService)
+			FogAppService fogAppService,
+			IBuildingConfigRepository buildingRepo = null)
 		{
 			_map = mapApp;
 			_tech = techTreeApp;
@@ -42,8 +45,13 @@ namespace SciencePotato.Scripts.Units.Application
 			_repo = repo;
 			_factory = factory;
 			_fog = fogAppService;
+			_buildingRepo = buildingRepo;
 		}
 
+		/// <summary>
+		/// **直接生成**单位（不经过建筑）—— 敌方刷新（`WP-3.8`）/ 调试 / 脚本用。
+		/// <para>玩家侧的产出走 <see cref="TrainUnit"/>：设计稿规定所有单位由建筑训练（`UNIT-11`）。</para>
+		/// </summary>
 		public void CreateUnit(string mapId, string unitId, HexCubePosition position, int ownerId)
 		{
 			var config = _repo.GetUnitConfig(unitId);
@@ -91,6 +99,136 @@ namespace SciencePotato.Scripts.Units.Application
 
 				_time.Register(trainingTask);
 			}
+		}
+
+		// ==================== TRAINING (BUILDING-BOUND) ====================
+
+		/// <summary>
+		/// （v0.3 / WP-2.5 / `UNIT-11` / `D10`）**由建筑训练单位**：校验 → 扣资源 → 入队 → （空闲则）开工。
+		/// <para>校验链（任一不过即返回 false，不产生任何副作用）：</para>
+		/// <list type="number">
+		/// <item>训练建筑存在且**已完工**（`IsReady`）；</item>
+		/// <item>该单位在建筑的 <c>TrainableUnits</c> 里（`UNIT-11`：设计稿规定所有单位由建筑产出）；</item>
+		/// <item>队列**未满**（上限来自 `TrainingQueueLimit`，默认 5）；</item>
+		/// <item>资源足够（在**入队时**扣除："订单已下"即锁定成本，见 `D36`）；</item>
+		/// <item>人口够用：`建筑半径 1 内人口 − 队列已占用人口 ≥ PopulationCost`（扣**完成时**执行 —— `E2`）。</item>
+		/// </list>
+		/// <para>**建筑等级校验**：设计稿要求"工坊 lv.II 才能训练 X"，但配置表还没有等级字段
+		/// （`CON-09` 的升级体系已降级），故本轮按计划**跳过等级校验**并在 §18.4 记为可回归项。</para>
+		/// </summary>
+		/// <param name="mapId">地图 Id。</param>
+		/// <param name="buildingUid">训练建筑（工坊 / 军营 …）的 uid —— 训练与建筑绑定的锚点。</param>
+		/// <param name="unitId">要训练的单位模板 Id。</param>
+		/// <returns>是否成功入队。</returns>
+		public bool TrainUnit(string mapId, string buildingUid, string unitId)
+		{
+			if (_buildingRepo == null) return false;
+
+			var occupant = _map.FindOccupantByUId(mapId, buildingUid);
+			if (occupant is not Building building || !building.IsReady) return false;
+
+			int ownerId = building.GetInfo().OwnerId;
+			var buildingConfig = _buildingRepo.GetBuildingConfig(building.GetInfo().Id);
+			if (buildingConfig == null || !(buildingConfig.TrainableUnits?.Contains(unitId) ?? false)) return false;
+
+			var unitConfig = _repo.GetUnitConfig(unitId);
+			if (unitConfig == null) return false;
+
+			var consumptions = (from item in unitConfig.ResourceCost select new Consumption(item.Key, item.Value)).ToList();
+			List<IConsumable> contracts =
+			[
+				.. from item in consumptions select _resources.CreateResourceConsumption(item, mapId, ownerId),
+			];
+			if (!contracts.All(c => c.IsConsumable())) return false;
+
+			HexCubePosition center = building.GetInfo().Position;
+			int reserved = building.TrainingQueue.Sum(order => order.PopulationCost);
+			if (_map.GetPopulationWithin(mapId, center, 1) - reserved < unitConfig.PopulationCost) return false;
+
+			var order = new TrainingOrder
+			{
+				UnitId = unitId,
+				UId = Guid.NewGuid().ToString(), // 入队即锁定实例 uid（任务键 + 落位都用它）
+				Duration = unitConfig.Duration,
+				PopulationCost = unitConfig.PopulationCost,
+			};
+			if (!building.TryEnqueueTraining(order)) return false;
+
+			contracts.ForEach(c => c.Consume());
+			StartNextTraining(mapId, building);
+			return true;
+		}
+
+		/// <summary>
+		/// 队列推进（**同时只训练 1 个** —— 队列头）：没有在训订单且队列非空时，为队头注册训练任务。
+		/// <para>完成回调里做三件事（`E2` / `E4`）：落位 → 人口 −1 → 撤下订单并推进队列。</para>
+		/// </summary>
+		private void StartNextTraining(string mapId, Building building)
+		{
+			if (building == null || building.HasActiveTraining) return;
+
+			TrainingOrder order = building.PeekTraining();
+			if (order == null) return;
+
+			var unitConfig = _repo.GetUnitConfig(order.UnitId);
+			if (unitConfig == null)
+			{
+				building.DequeueTraining();
+				return;
+			}
+
+			order.IsActive = true;
+
+			// 任务键 = `Training:{unitUid}:{unitId}`（`WP-2.2`）：同名单位的不同实例各自独立
+			LinearTask trainingTask = new(0, order.Duration, unitConfig.UnitId, "Training", false, order.UId, mapId, building.GetInfo().OwnerId);
+
+			trainingTask.OnCompleted += () =>
+			{
+				CompleteTraining(mapId, building, order, unitConfig);
+				building.DequeueTraining();
+				StartNextTraining(mapId, building); // 立即推进下一个订单（保持"同时 1 个"）
+			};
+
+			_time.Register(trainingTask);
+		}
+
+		/// <summary>完成一个训练订单：**落位**（建筑格优先，其次相邻空格）→ 单位就绪 → **人口 −1** → 视野。</summary>
+		private void CompleteTraining(string mapId, Building building, TrainingOrder order, IUnitConfig unitConfig)
+		{
+			HexCubePosition? spawn = ResolveSpawnPosition(mapId, building.GetInfo().Position);
+			if (spawn == null)
+			{
+				// 无处落位（建筑格与相邻 6 格全被占）：订单作废，已扣资源不退 —— 见 §18.4.2（`WP-3.4` 的占用模型修好后重评）
+				return;
+			}
+
+			// 人口 −1（`E2`：设计稿要求"训练结束后"扣人口；扣的位置与校验口径一致 —— 建筑半径 1 内）
+			_map.ConsumePopulation(mapId, building.GetInfo().Position, 1, order.PopulationCost);
+
+			Unit unit = _factory.CreateUnit(order.UnitId, spawn.Value, building.GetInfo().OwnerId, order.UId);
+			if (unit == null) return;
+
+			unit.IsReady = true;
+			_map.SetOccupant(mapId, spawn.Value, unit);
+
+			_fog.RevealArea(spawn.Value, unitConfig.VisionRadius);
+			RegisterMoveTask(mapId, order.UId);
+		}
+
+		/// <summary>
+		/// 落位格：建筑所在格优先，其次半径 1 内的空格；都没有则返回 null。
+		/// <para>**当前占用模型**下建筑自己就占据着它的格子（一格一个 `Occupant`），所以"建筑格优先"
+		/// 实际会先失败、单位落到相邻空格 —— 与设计稿"单位出现在建筑格或相邻格"一致。
+		/// 等 `WP-3.4`（占用权威一致）/ `WP-4.9`（建筑嵌套）把"格内多占据物"落地后，这里无需改动即可回到"建筑格优先"。</para>
+		/// </summary>
+		private HexCubePosition? ResolveSpawnPosition(string mapId, HexCubePosition center)
+		{
+			if (_map.IsClear(mapId, center)) return center;
+
+			foreach (HexCubePosition pos in center.InRadius(1))
+				if (_map.IsClear(mapId, pos)) return pos;
+
+			return null;
 		}
 
 		public LinearTask ResumeTrainingTask(string mapId, TaskSnapshot snapshot)

@@ -90,6 +90,21 @@ namespace SciencePotato.Scripts.Map.Application
 			return map?.GetPopulationWithin(center, radius) ?? 0;
 		}
 
+		/// <summary>
+		/// （v0.3 / WP-2.5）扣人口（训练完成时的"人口 −1"，`E2`）：走 <see cref="Map.ConsumePopulationWithin"/>，
+		/// 有变化即打脏标记（与 <see cref="AddPopulation"/> 同一套"唯一写入点 + 存档点"约定）。
+		/// </summary>
+		/// <returns>实际扣除的人数。</returns>
+		public int ConsumePopulation(string mapId, HexCubePosition center, int radius, int amount)
+		{
+			var map = _session.Get(mapId);
+			if (map == null) return 0;
+
+			int consumed = map.ConsumePopulationWithin(center, radius, amount);
+			if (consumed > 0) _session.MarkDirty(mapId);
+			return consumed;
+		}
+
 		public void SetOccupant(string MapId, HexCubePosition position, IMapOccupant occupant)
 		{
 			var map = _session.Get(MapId);

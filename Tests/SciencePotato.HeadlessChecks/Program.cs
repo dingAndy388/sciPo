@@ -20,6 +20,7 @@ namespace SciencePotato.HeadlessChecks
 			EventEngineChecks.RunAll();
 			TaskLifecycleChecks.RunAll();
 			PopulationGrowthChecks.RunAll();
+			TrainingQueueChecks.RunAll();
 
 			return Check.Summary();
 		}

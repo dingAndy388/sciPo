@@ -13,7 +13,9 @@
       "IsHousing": true,
       "PopulationRadius": 1,
       "PopulationCap": 9,
-      "PopulationGrowthInterval": 300
+      "PopulationGrowthInterval": 300,
+      "TrainableUnits": [],
+      "TrainingQueueLimit": 0
     },
     "workshop": {
       "BuildingId": "workshop",
@@ -23,12 +25,14 @@
       "TechRequirements": {},
       "Modifiers": [],
       "Duration": 90,
-      "Actions": [],
+      "Actions": ["CanTrain"],
       "VisionRadius": 2,
       "IsHousing": false,
       "PopulationRadius": 0,
       "PopulationCap": 0,
-      "PopulationGrowthInterval": 0
+      "PopulationGrowthInterval": 0,
+      "TrainableUnits": ["worker"],
+      "TrainingQueueLimit": 5
     },
     "school": {
       "BuildingId": "school",
@@ -45,7 +49,9 @@
       "IsHousing": false,
       "PopulationRadius": 0,
       "PopulationCap": 0,
-      "PopulationGrowthInterval": 0
+      "PopulationGrowthInterval": 0,
+      "TrainableUnits": [],
+      "TrainingQueueLimit": 0
     },
     "military_camp": {
       "BuildingId": "military_camp",
@@ -55,12 +61,14 @@
       "TechRequirements": {},
       "Modifiers": [],
       "Duration": 60,
-      "Actions": [],
+      "Actions": ["CanTrain"],
       "VisionRadius": 3,
       "IsHousing": false,
       "PopulationRadius": 0,
       "PopulationCap": 0,
-      "PopulationGrowthInterval": 0
+      "PopulationGrowthInterval": 0,
+      "TrainableUnits": ["swordsman", "archer"],
+      "TrainingQueueLimit": 5
     }
   }
 }

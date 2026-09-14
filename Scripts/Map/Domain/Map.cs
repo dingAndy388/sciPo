@@ -92,6 +92,29 @@ namespace SciencePotato.Scripts.Map.Domain
 			return _occupants.TryGetValue(uid, out occupant);
 		}
 
+		/// <summary>
+		/// （v0.3 / WP-2.5）按**范围内总计**扣人口（与 <see cref="AddPopulationWithin"/> 同一口径的反向操作）：
+		/// 先扣中心格，不足再按半径展开顺序扣其余格；扣到 0 为止（不会出现负人口）。
+		/// <para>训练一个单位完成时消耗人口（`E2`）走这里；未来的"赤字减员"（`WP-3.10`）同样复用。</para>
+		/// </summary>
+		/// <returns>实际扣除的人数。</returns>
+		public int ConsumePopulationWithin(HexCubePosition center, int radius, int amount)
+		{
+			if (amount <= 0) return 0;
+
+			int remaining = amount;
+			foreach (HexCubePosition pos in center.InRadius(radius))
+			{
+				if (remaining <= 0) break;
+				if (!_cells.TryGetValue(pos, out MapCell cell) || cell.Population <= 0) continue;
+
+				int taken = Math.Min(cell.Population, remaining);
+				cell.SetPopulation(cell.Population - taken);
+				remaining -= taken;
+			}
+			return amount - remaining;
+		}
+
 		/// <summary>（v0.3 / WP-2.3）范围内人口**总计**（含中心格）。</summary>
 		public int GetPopulationWithin(HexCubePosition center, int radius)
 		{
