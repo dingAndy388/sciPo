@@ -11,6 +11,8 @@ namespace SciencePotato.HeadlessChecks
 
 			ClockChecks.RunAll();
 			ConfigChecks.RunAll();
+			MapSessionChecks.RunAll();
+			CoreBootstrapChecks.RunAll();
 
 			return Check.Summary();
 		}

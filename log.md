@@ -1106,6 +1106,7 @@
 | **v0.2** | 2026-09-14 | 纳入第二/三/四阶段：**设计规格锁定**（日为基础·30日/月·360日/年·三档流速·暂停；移动模型 R1~R7 与地形消耗量级 5/8/10/25/50；战斗同格+按日+建筑衰减 50%；经济月结+logistic 减员+单位维护默认值）、**93 行差距分析**、**49 个工作包 / 6 批次**、**M0/M1/M2 里程碑与验收标准**、**配置表字段增量规格**、**分层装配方案**（地形配置转 JSON）。新增 21 条问题（P0 8 / P1 9 / P2 4）、修订 14 条既有条目、关闭 4 项设计矛盾与 1 项废弃系统；统计 79 → **97 条**。 |
 | **v0.3** | 2026-09-14 | **P0 收敛与依赖补全**：按「M0-1/M0-2 验收是否需要」重新判定 18 条 P0 → **保留 10 条、8 条降为 P1**（`WIRE-02`/`MAP-02`/`TIME-01`/`TIME-02`/`TIME-14`/`CON-09`/`MAP-16`/`UNIT-10`，理由见 §17.3）；新增 **§13.z**（49 个 WP 的级别 / 全部依赖边 / 大项风险与降级方案 / 依赖主干图 / 批次重排）；统计 P0 18→10、P1 35→43（总数仍 97）。 |
 | v0.3.1 | 2026-09-14 | **M0-1 首批实现落地**：WP-0.1 清理、WP-0.2 验收载具（离线降级为可执行检查，12/12 通过、退出码 0）、WP-0.3 IO/配置抽象、WP-0.4 地形转 JSON（Config/Terrains.json）、WP-1.1 GameClock（逐日派发 / 三档 / 暂停 / 单帧上限）；dotnet build 通过。详见 §18。 |
+| v0.3.2 | 2026-09-14 | **M0-1 续推**：WP-1.3 组合根（`CoreBootstrap`/`GameSession`/`CoreServices`/`CoreDependencies`）与 WP-3.1 Map 常驻内存（`MapSession`）落地；`MapAppService` 改走会话缓存（解除 M0-2 ③④ 的阻塞点）；无头验收从 12 项扩到 **20 项全部通过**。新增决策 D7~D10（含"导出需包含 `*.json`"的待办风险）。 |
 
 ---
 
@@ -1969,8 +1970,8 @@ WP-0.4 ─→ WP-3.5 / WP-3.8 / WP-5.3
 | 2026-09-14 | WP-0.4 地形配置转 JSON | ✅ 完成 | 新增 `ITerrainsConfig`/`TerrainConfigDto`/`TerrainsConfigDto`/`ITerrainConfigRepository`/`TerrainsConfigRepository` + `Config/Terrains.json`（平原5/沙漠8/森林10/山地25/水域50，水域 `Passable=false`+`UnlockTech=buoyancy`）；`VoronoiMapGenerator` 与 `GodotMapRepository` 改为注入；`ITerrainData` 新增 `Passable`/`UnlockTech` 并让两处通行判定改用 `Passable`（消除 `MoveCost == 0` 魔法值） |
 | 2026-09-14 | WP-1.1 `GameClock` | ✅ 完成 | 新增 `Scripts/Core/Time/`（`GameClock`/`GameDate`/`TimeSpeedTier`/`ITimeDriver`）：日为基础、30 日/月、360 日/年、三档 1/3/6 日每真实秒、暂停、**逐日派发 `DayElapsed`**、单帧上限 30 日（超出记欠账）。M0-1 ①③ 断言通过 |
 | ⬜ | WP-1.2 `GodotTimeDriver` | 待做 | 依赖 WP-1.1/1.3 |
-| ⬜ | WP-1.3 `CoreBootstrap` + `GameSession` | 待做 | 依赖 WP-0.3/1.1 |
-| ⬜ | WP-3.1 Map 常驻内存（前移） | 待做 | 依赖 WP-1.3；**M0-2 ③④ 的前置** |
+| 2026-09-14 | WP-1.3 `CoreBootstrap` + `GameSession` | ✅ 完成 | 新增 `Scripts/Core/`（`CoreDependencies`/`CoreServices`/`CoreBootstrap`/`GameSession`）：唯一组合根、显式顺序装配、配置缺失快速失败；`ServiceContainer` 薄化为"Godot 适配器 + 调 Bootstrap"；`VoronoiMapGenerator` 生成器配置改为可空（无头回退 `GeneratorConfigDto`）。检查 3 项通过 |
+| 2026-09-14 | WP-3.1 Map 常驻内存（前移） | ✅ 完成 | 新增 `Scripts/Map/Domain/MapSession.cs`（内存缓存 + 脏标记 + 存档点 `Flush`）；`MapAppService` 由"每方法 Load/Save"改为走会话缓存（15 处 Load→Get、2 处 Save→MarkDirty、5 处补脏标记），构造函数改为 `(IMapGenerator, MapSession)`。检查 5 项通过（含"占据物/人口跨调用不丢失"） |
 | ⬜ | WP-1.4 7 张配置表通电 + 启动期校验 | 待做 | 依赖 WP-0.3/0.4/1.3 |
 | ⬜ | WP-1.5 口径重标定（秒 → 日） | 待做 | 依赖 WP-1.1/1.4 |
 
@@ -1984,7 +1985,7 @@ dotnet build 'Science Potato.csproj'
 dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessChecks.csproj'
 ```
 
-当前 M0-1 验收结果（2026-09-14）：
+当前 M0-1 验收结果（2026-09-14，**20/20 通过、退出码 0**）：`M0-1 ① 逐日派发 1080 次` ✅ ｜ `M0-1 ① 长跑无漏算` ✅ ｜ `M0-1 ③ 三档节拍在游戏日维度一致` ✅ ｜ `日期换算` ✅ ｜ `暂停冻结` ✅ ｜ `单帧上限欠账` ✅ ｜ `内存替身` ✅ ｜ `M0-1 ② 地形表可解析/量级/未知名返回 null` ✅ ｜ `WP-3.1 缓存与脏标记` ✅ ｜ `WP-3.1 占据物/人口跨调用不丢失（M0-2 前置）` ✅ ｜ `WP-1.3 组合根装配` ✅ ｜ `WP-1.3 配置缺失快速失败` ✅
 `M0-1 ① 逐日派发 1080 次` ✅ ｜ `M0-1 ① 长跑无漏算` ✅ ｜ `M0-1 ③ 三档节拍在游戏日维度一致（每 10 日 6 次）` ✅ ｜ `日期换算` ✅ ｜ `暂停冻结` ✅ ｜ `单帧上限欠账` ✅ ｜ `内存替身` ✅ ｜ `M0-1 ② 地形表可解析/量级/未知名返回 null` ✅
 
 ## 18.3 实施期决策与偏差记录
@@ -1997,6 +1998,10 @@ dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessC
 | D4 | 地形移出 `.tres` 后，`Config/Terrains/*.tres` 保留但**不再参与运行时** | 旧原型地形 Id（`test1~test5`）解析返回 `null` 并输出 `GD.PushWarning`；`GodotMapRepository.SaveMap` 已加空地形保护（顺带缓解 `MAP-09`） |
 | D5 | `ITerrainData` 新增 `Passable`/`UnlockTech`，通行判定改用 `Passable` | 消除 `MoveCost == 0 即不可通行` 的魔法值语义；水域默认不可通行（解锁交由 `WP-4.11`） |
 | D6 | 表现层未接线（`MapCellView` 仍按 `{TerrainId}.png` 找图） | 新地形 Id（`plain` 等）暂无贴图 → 该路径返回 null 贴图并输出错误，不影响核心；外观数据驱动由 `WP-5.3` 处理 |
+| D7 | 组合根入参改为 **`MapRepositoryFactory`**（`Func<ITerrainConfigRepository, IMapRepository>`）而非直接注入仓库实例 | 地图仓库需要地形配置来解析地形 Id，而地形配置由组合根本身产出 → 直接注入构成构造循环；工厂是打断循环的最小手段 |
+| D8 | `MapAppService` 构造函数由 `(IMapGenerator, IMapRepository)` 改为 `(IMapGenerator, MapSession)` | 会话缓存承担读写边界，应用服务不再直接触仓储（更贴近"Map 是聚合根"的既定设计） |
+| D9 | `VoronoiMapGenerator` 的生成器配置**可空**（`IConfigLoader` 传 null → 回退 `GeneratorConfigDto`，Density=4） | 让核心可无头运行；Godot 侧仍读 `Config/Generator/Generator.tres` |
+| D10 | **待办风险**：`Config/*.json` 必须在 Godot 导出设置中加入"非资源文件过滤"（`*.json`） | 否则导出包内不含 JSON → 启动期 `CoreBootstrap` 快速失败；编辑器内运行不受影响（`WP-1.4` / M1 处理） |
 
 
 ### 17.3 P0 收敛判定（v0.3）

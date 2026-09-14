@@ -16,7 +16,7 @@ namespace SciencePotato.Scripts.Map.Infrastructure
 		private readonly ITerrainConfigRepository _terrainRepo;
 		private readonly string generatorConfigPath;
 
-		public VoronoiMapGenerator(ITerrainConfigRepository terrainRepository, string generatorConfigPath, IConfigLoader config)
+		public VoronoiMapGenerator(ITerrainConfigRepository terrainRepository, IConfigLoader config, string generatorConfigPath)
 		{
 			this._config = config;
 			this._terrainRepo = terrainRepository;
@@ -27,7 +27,10 @@ namespace SciencePotato.Scripts.Map.Infrastructure
 		{
 			// reload config
 			_terrainConfig = _terrainRepo.GetAll();
-			_mapGeneratorConfig = _config.Load<IMapGeneratorConfig>($"{generatorConfigPath}/Generator.tres");
+
+			// v0.3 / WP-1.3：无头环境没有 Godot 资源加载器时回退默认生成器配置
+			_mapGeneratorConfig = _config?.Load<IMapGeneratorConfig>($"{generatorConfigPath}/Generator.tres")
+				?? new GeneratorConfigDto();
 
 			// generate blank map
 			Domain.Map map = GetBlankMap(width, height, seed, Id);

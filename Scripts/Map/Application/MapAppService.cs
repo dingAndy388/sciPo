@@ -5,106 +5,115 @@ using System.Collections.Generic;
 
 namespace SciencePotato.Scripts.Map.Application
 {
-	public class MapAppService(IMapGenerator generator, IMapRepository repo)
+	public class MapAppService(IMapGenerator generator, MapSession session)
 	{
 		private readonly IMapGenerator _mapGenerator = generator;
-		private readonly IMapRepository _mapRepo = repo;
+		private readonly MapSession _session = session;
 
 		private const byte FogUnexplored = 0;
 
 		public void GenerateMap(int seed, int width, int height, string Id)
 		{
 			Domain.Map map = _mapGenerator.Generate(width, height, seed, Id);
-			_mapRepo.SaveMap(map);
+
+			// v0.3 / WP-3.1：新生成的地图放入会话缓存，并在存档点落盘
+			_session.Set(Id, map);
+			_session.MarkDirty(Id);
+			_session.Flush(Id);
 		}
 
 		public MapCell GetMapCell(string mapId, HexCubePosition position)
 		{
-			return _mapRepo.LoadMap(mapId).GetCell(position);
+			return _session.Get(mapId).GetCell(position);
 		}
 
 		public IEnumerable<MapCell> GetAllCells(string MapId)
 		{
-			return _mapRepo.LoadMap(MapId).GetAllCells();
+			return _session.Get(MapId).GetAllCells();
 		}
 
 		public void SetTerrain(string MapId, HexCubePosition position, ITerrainData terrain)
 		{
-			var map = _mapRepo.LoadMap(MapId);
+			var map = _session.Get(MapId);
 			map.SetTerrain(position, terrain);
-			_mapRepo.SaveMap(map);
+			_session.MarkDirty(map.Id);
 		}
 
 		public bool IsClear(string mapId, HexCubePosition position)
 		{
-			var map = _mapRepo.LoadMap(mapId);
+			var map = _session.Get(mapId);
 			return map.GetOccupantInfo(position) == null;
 		}
 
 		public MapOccupantInfo? GetOccupantInfo(string mapId, HexCubePosition position)
 		{
-			var map = _mapRepo.LoadMap(mapId);
+			var map = _session.Get(mapId);
 			return map.GetOccupantInfo(position);
 		}
 
 		public IMapOccupant GetOccupantByUId(string mapId, string uid)
 		{
-			var map = _mapRepo.LoadMap(mapId);
+			var map = _session.Get(mapId);
 			return map.GetOccupantByUId(uid);
 		}
 
 		public void SetOccupant(string MapId, HexCubePosition position, IMapOccupant occupant)
 		{
-			var map = _mapRepo.LoadMap(MapId);
+			var map = _session.Get(MapId);
 			map.AddOccupant(occupant, position);
+			_session.MarkDirty(MapId);
 		}
 
 		public TerrainRequirement GetTerrainRequirement(string mapId, HexCubePosition position, string targetTerrain)
 		{
-			var map = _mapRepo.LoadMap(mapId);
+			var map = _session.Get(mapId);
 			return new TerrainRequirement(map, position, targetTerrain);
 		}
 
 		public void RemoveOccupantByPosition(string mapId, HexCubePosition position, IMapOccupant occupant)
 		{
-			var map = _mapRepo.LoadMap(mapId);
+			var map = _session.Get(mapId);
 			map.RemoveOccupantByPosition(position);
+			_session.MarkDirty(mapId);
 		}
 
 		public void RemoveBuilding(string mapId, HexCubePosition position)
 		{
-			var map = _mapRepo.LoadMap(mapId);
+			var map = _session.Get(mapId);
 			map.RemoveBuilding(position);
+			_session.MarkDirty(mapId);
 		}
 
 		public MapOccupantInfo? GetBuildingInfo(string mapId, HexCubePosition position)
 		{
-			var map = _mapRepo.LoadMap(mapId);
+			var map = _session.Get(mapId);
 			return map.GetBuildingInfo(position);
 		}
 
 		public void SetInvader(string mapId, HexCubePosition position, IMapOccupant invader)
 		{
-			var map = _mapRepo.LoadMap(mapId);
+			var map = _session.Get(mapId);
 			map.SetInvader(position, invader);
+			_session.MarkDirty(mapId);
 		}
 
 		public void RemoveInvader(string mapId, HexCubePosition position)
 		{
-			var map = _mapRepo.LoadMap(mapId);
+			var map = _session.Get(mapId);
 			map.RemoveInvader(position);
+			_session.MarkDirty(mapId);
 		}
 
 		public IConsumable CreatePopulationConsumption(string mapId, HexCubePosition position, int amount)
 		{
-			var map = _mapRepo.LoadMap(mapId);
+			var map = _session.Get(mapId);
 			var cell = map.GetCell(position);
 			return new PopulationConsumption(cell, amount);
 		}
 
 		public List<HexCubePosition> FindPath(string mapId, HexCubePosition start, HexCubePosition end, FogAppService fog)
 		{
-			var map = _mapRepo.LoadMap(mapId);
+			var map = _session.Get(mapId);
 
 			if (start == end)
 				return new List<HexCubePosition> { start };
