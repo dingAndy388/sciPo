@@ -117,6 +117,10 @@ namespace SciencePotato.Scripts.Construction.Application
 				_map.RemoveBuilding(mapId, position);
 				_fog.ResetArea(position, buildingConfig?.VisionRadius ?? 0);
 				_modifier.RemoveModifiersBySourceId(mapId, info.Value.OwnerId, uid);
+
+				// 范围注销（v0.3 / WP-2.2）：建筑消失后，它名下的建造任务与人口增长任务都必须停止，
+				// 否则会永久留在时间总线里空转，并把"已拆建筑"的快照一直写回任务文件（`TIME-02` / `CON-06`）。
+				_time.UnregisterByUId(uid);
 			}
 		}
 

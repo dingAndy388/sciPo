@@ -151,7 +151,8 @@ namespace SciencePotato.Scripts.Units.Application
 
 		private void MoveTick(string mapId, string uid)
 		{
-			var occupant = _map.GetOccupantByUId(mapId, uid);
+			// v0.3 / WP-2.2：宿主消失时用空安全查询（任务可能比实体多活一帧，见 UnregisterByUId）
+			var occupant = _map.FindOccupantByUId(mapId, uid);
 			if (occupant is not Unit unit) return;
 
 			// Recharge MP (capped at MoveRechargePerTick when idle)
@@ -296,30 +297,46 @@ namespace SciencePotato.Scripts.Units.Application
 		private void RegisterAttackTask(string mapId, string attackerUid, string targetUid)
 		{
 			// 口径（v0.3 / WP-1.5）：每 1 游戏日结算一次伤害（原为 1 秒）
-			var task = new IntervalTask(0, TimeConstants.UnitAttackDays, $"atk_{attackerUid}_{targetUid}", "UnitAttack", "none", mapId, 0);
-			task.OnCompleted += () => AttackTick(mapId, attackerUid, targetUid);
+			// 生命周期（v0.3 / WP-2.2）：交战循环的终结状态是"目标消失 / 脱离射程 / 已是尸体"，
+			// 由 AttackTick 自行注销 —— 否则循环任务会永久留在时间总线里空转（`TIME-02`）。
+			IntervalTask task = null;
+			task = new IntervalTask(0, TimeConstants.UnitAttackDays, $"atk_{attackerUid}_{targetUid}", "UnitAttack", "none", mapId, 0);
+			task.OnCompleted += () => AttackTick(mapId, attackerUid, targetUid, task);
 			_time.Register(task);
 		}
 
-		private void AttackTick(string mapId, string attackerUid, string targetUid)
+		private void AttackTick(string mapId, string attackerUid, string targetUid, IntervalTask task)
 		{
-			var attacker = _map.GetOccupantByUId(mapId, attackerUid);
-			var target = _map.GetOccupantByUId(mapId, targetUid);
+			var attacker = _map.FindOccupantByUId(mapId, attackerUid);
+			var target = _map.FindOccupantByUId(mapId, targetUid);
 
-			if (attacker is not Unit atkUnit || target is not Unit defUnit) return;
-			if (defUnit.HP <= 0) return;
+			// 任一方已从地图上消失 → 交战结束（注销本任务）
+			if (attacker is not Unit atkUnit || target is not Unit defUnit)
+			{
+				_time.Unregister(task);
+				return;
+			}
+
+			// 目标已是尸体（等 `WP-3.4` 修好"僵尸索引"后不会再走到这里，此处保留兜底）
+			if (defUnit.HP <= 0)
+			{
+				_time.Unregister(task);
+				return;
+			}
 
 			// Target moved out of range → stop attacking, no pursuit
 			if (atkUnit.AttackRadius > 0 && atkUnit.Position.DistenceTo(defUnit.Position) > atkUnit.AttackRadius)
 			{
 				atkUnit.IsIdle = true;
 				atkUnit.AttackTargetUid = null;
+				_time.Unregister(task);
 				return;
 			}
 			if (atkUnit.AttackRadius == 0 && atkUnit.Position != defUnit.Position)
 			{
 				atkUnit.IsIdle = true;
 				atkUnit.AttackTargetUid = null;
+				_time.Unregister(task);
 				return;
 			}
 
@@ -332,6 +349,10 @@ namespace SciencePotato.Scripts.Units.Application
 				_fog.ResetArea(pos, _repo.GetUnitConfig(defUnit.GetInfo().Id)?.VisionRadius ?? 0);
 				atkUnit.IsIdle = true;
 				atkUnit.AttackTargetUid = null;
+
+				// 范围注销（v0.3 / WP-2.2）：阵亡单位名下的移动/训练任务一并回收，避免"已死对象"继续空转
+				_time.UnregisterByUId(targetUid);
+				_time.Unregister(task);
 			}
 		}
 	}

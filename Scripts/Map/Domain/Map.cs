@@ -76,6 +76,22 @@ namespace SciencePotato.Scripts.Map.Domain
 			return _occupants[uid];
 		}	
 
+		/// <summary>
+		/// （v0.3 / WP-2.2）**空安全**的按 uid 查询：给"任务回调里核对实体是否还在"用
+		/// （攻击/移动循环在宿主消失后要自行注销，不能因为查不到就抛异常把整个日派发打断）。
+		/// <para>注意：这只是**查询**侧的安全网，不改占用权威 —— "僵尸索引"（移除后仍留在 `_occupants` 里）
+		/// 由 `WP-3.4` 统一修（`MAP-03` / `UNIT-05`）。</para>
+		/// </summary>
+		public bool TryGetOccupantByUId(string uid, out IMapOccupant occupant)
+		{
+			if (string.IsNullOrEmpty(uid))
+			{
+				occupant = null;
+				return false;
+			}
+			return _occupants.TryGetValue(uid, out occupant);
+		}
+
 		public void AddOccupant(IMapOccupant occupant,HexCubePosition position)
 		{
 			if (_cells.TryGetValue(position, out _))

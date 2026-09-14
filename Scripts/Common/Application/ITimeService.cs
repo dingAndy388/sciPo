@@ -23,5 +23,13 @@ namespace SciencePotato.Scripts.Common.Application
 
 		/// <summary>注销周期任务（同时从任务仓储移除快照）。</summary>
 		void Unregister(ITickable tickable);
+
+		/// <summary>
+		/// （v0.3 / WP-2.2）**按实体 uid 批量注销**该实体名下的所有周期任务 —— 建筑被拆（`CON-06`）、单位阵亡时调用。
+		/// <para>匹配规则：任务的 <see cref="IProgressTask.UId"/> 等于 uid，或（历史用法）任务的
+		/// <see cref="IProgressTask.Id"/> 直接就是该实体的 uid（人口增长写在建筑 uid 上、单位移动写在单位 uid 上）。</para>
+		/// </summary>
+		/// <returns>被注销的任务数量。</returns>
+		int UnregisterByUId(string uid);
 	}
 }

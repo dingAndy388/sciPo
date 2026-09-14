@@ -322,6 +322,7 @@
 - **影响**：① 纯 IO 灾难（每帧 N 个任务 × JSON 全量序列化 + 文件覆盖）；② 同一文件高频读写，存档随时可能是半写状态；③ 与 `TIME-02` 叠加后任务数只增不减，性能持续劣化。
 - **修复方向**：① 任务快照改为**内存态 + 定期/按需存盘**（每 N 秒或存档点）；② 若必须高频持久化，改为"追加日志 + 定期压缩"；③ 把持久化职责从 `_Process` 里彻底剥离。
 - **关联**：`TIME-02`、`TIME-03`、`TIME-04`、`MAP-07`
+> ◐ **部分修复（v0.3.8 / WP-2.2）**：写入早已由 `WP-1.5` 从「每帧」收敛到**日边界**（每任务每日一次同步，标准档 1/60 频率），本轮再修掉「注销后仍被写回」的孪生缺陷（见 `TIME-04`/`TIME-09`）；剩下的「任务内存态 + 统一存档点」归 `WP-3.3`。
 
 #### `TIME-02` `IntervalTask` 永不注销 —— 【P0｜逻辑层缺口】
 > ⚠️ **v0.3 降级（P0 → P1）**：循环任务不注销是泄漏；M0-2 的单次流程（建造/训练/事件）仍能完成。级别收敛依据见 §17.3。
@@ -331,6 +332,7 @@
 - **影响**：① 单位死亡、建筑拆除后，相关循环任务仍在 `_subscribers` 里空转（引用被持有 → 无法 GC）；② 每次 tick 都写任务文件（`TIME-01`），于是**已死对象的任务文件永久存在**；③ 长期游玩必然卡顿。
 - **修复方向**：给 `ITickable` 增加"已终结/可回收"语义（或引入 `TaskScope`/`Owner` 概念），让时间服务在 tick 后自动清理；并在建筑/单位被移除时统一注销其名下所有任务（见 `CON-06`）。
 - **关联**：`CON-06`、`UNIT-04`、`TIME-09`、`TIME-01`
+> ✅ **已修复（v0.3.8 / WP-2.2）**：新增 `ITimeService.UnregisterByUId(uid)` **范围注销** —— 建筑被拆（`ConstructionAppService.RemoveBuildingByPosition`）与单位阵亡（`UnitsAppService.AttackTick`）时清掉宿主名下全部任务（建造+人口增长 / 移动+训练），攻击循环在「目标消失·脱离射程」时自注销。用例断言「一次注销两条 + 不误伤同类型其它实例 + 重复注销幂等」。
 
 #### `TIME-03` 任务快照以 `Id` 为键互相覆盖 —— 【P1｜逻辑层缺口】
 - **现象**：`TaskRepository` 把快照存进 `Dictionary<string, TaskSnapshot>`，键是 `task.Id`。
@@ -339,6 +341,7 @@
 - **影响**：**同类型任务互相覆盖**——同时造两座 `house`，第二座的快照覆盖第一座；同时训练两个 `worker` 同理。读档时只能恢复一个，另一座建筑永远停在"未就绪"。
 - **修复方向**：明确 `Id`（业务模板 Id）/`UId`（实例唯一 Id）/`Type`（任务类型）的语义，并**统一以 UId 作为存储键**；对"以模板 Id 为键"的历史用法做兼容迁移。
 - **关联**：`TIME-08`、`CON-03`、`UNIT-09`、`TECH-04`
+> ✅ **已修复（v0.3.8 / WP-2.2）**：`TaskSnapshot.Key = Type:UId:Id`（`Type`=任务类型 / `UId`=实例唯一 / `Id`=业务模板，语义见类型注释），`TaskRepository` 全部改按 `Key` 存取；历史「以 Id 为键」的文件由 `Reindex` **迁移**（进度值不动、null 项剔除），不做静默丢弃。
 
 #### `TIME-04` `RemoveTask` 把 null 写进文件 —— 【P2｜逻辑层缺口】
 - **现象**：`RemoveTask` 用 `base.AddOrUpdate(task.Id, null, path)` 把值置为 null 后保存；`GetCurrentTasks` 直接 `GetAll()` 返回列表。
@@ -347,6 +350,7 @@
 - **影响**：任务文件里堆积 `"id": null`；回读后 `List<TaskSnapshot>` 含 null 项，任何不做 null 判断的 `foreach` 都会 NRE。
 - **修复方向**：给 `GenericJsonRepository` 增加 `Remove(id)`；或保存前剔除 null 项。
 - **关联**：`TIME-01`、`TIME-03`
+> ✅ **已修复（v0.3.8 / WP-2.2）**：`GenericJsonRepository.Remove`/`RemoveWhere` 提供**真删除**，`TaskRepository.RemoveTask` 不再用写 null 代替删除；`Reindex` 顺带丢弃历史 null 项，`GetCurrentTasks` 仍过滤一道兜底。
 
 #### `TIME-05` 时间只有"秒"，无游戏日/回合，`Scale` 无入口 —— 【P1｜架构层缺陷】
 - **现象**：`ITickable.OnTick(float delta)` 的 delta 是真实秒（乘 `Scale`）；`Scale` 默认 1 且**全仓库没有任何地方设置它**；没有任何"游戏日/回合/季节"抽象。
@@ -389,6 +393,7 @@
 - **影响**：任何忘记 `Unregister` 的任务都会永久占用每帧 tick 与写盘（`TIME-01`）。
 - **修复方向**：时间服务在 tick 后自动移除 `IsCompleted` 的任务（或引入任务终结回调），调用方不再承担注销职责。
 - **关联**：`TIME-02`、`TIME-01`
+> ✅ **已修复（v0.3.8 / WP-2.2）**：`GameTimeService.OnDayElapsed` 在 tick 后自动摘除 `IsCompleted` 的任务（连同快照），调用方不再承担注销职责；`UnitsAppService` 训练任务的漏注销随之消失。
 
 #### `TIME-10` 任务仓储无查询能力 —— 【P3｜整洁性】
 - **现象**：`ITaskRepository` 只有 `GetCurrentTasks/AddTask/RemoveTask`，且每次查询都要 `Load` 整个文件。
@@ -1120,6 +1125,7 @@
 | **v0.3.5** | 2026-09-14 | **WP-2.1 跨树前置修复（`TECH-07`，M0-2 ①）**：`TechPrerequisite{TreeId,NodeId}` + JSON 兼容层（旧 `"nodeId"` 表不破）；`TechTree.CanResearch` 支持跨树（解析器由应用层注入，未注入 = fail closed）；`HydrateConfigs` 补入"存档后新增"的节点；`TechTreesAppService` 新增 `CanResearch` 并给 `Research` 补前置闸门（不再"先扣 Idea 再静默丢弃"）；`ConfigValidator` 把跨树前置缺树/缺节点与**跨树成环**判 error（全局 DFS）；`Config/TechTrees.json` 新增 `science/counting`（0 idea / 0 日）与最小 `physics` 树（`simple_machine_intuition` ← `science:counting`）；`ConfigTableGuide` 升 v1.2。无头验收 **49/49 通过、退出码 0**（真实配置 0 error / 1 条预期 warning）。新增决策 D23~D25 与 §18.4 回归看板 |
 | **v0.3.6** | 2026-09-14 | **WP-2.7 建筑产出接线（M0-2 ②）**：建筑 Id 收敛为设计稿口径（营地 `camp` / 工坊 `workshop` / 学院 `school` / 军营 `military_camp`，旧的 `house`/`library`/`barracks` 废弃），数值取自设计稿「建造时间 / 效果」列（营地 90 日·人口上限 9·半径 1·间隔 300；工坊 90 日；学院 240 日·`IdeaGrowth` +250/月；军营 60 日）；`ConfigTableGuide` 升 v1.3。**顺带修**：`Map.GetBuildingInfo` 在空格子上抛 NRE（与 `GetOccupantInfo` 对齐后返回 null）。**新增断言**：建成学院后 6 个月恰好 +1500 idea、回收修正器即停，并把 `MAP-04`（建筑只写 `cell.Occupant` → 拆除对自建建筑失效）固定成断言防止悄悄改动。无头验收 **52/52 通过、退出码 0**。新增决策 D26~D28 |
 | **v0.3.7** | 2026-09-14 | **WP-2.8 事件按日掷骰 + 字段改名（M0-2 ⑤）**：`TriggerChance` → `TriggerChancePerDay`（口径 = %/日；旧名不做静默迁移，由校验器提示改名）；事件引擎改为 `ActiveEvent` 逐日倒计时（触发日起算、0=永久）+ `GetActiveEvents`/`GetTriggerCounts`/`RollCount`，**生效中不重复触发**（`G8`）、`StartEventsEngine` 幂等（`EVT-03`）；`ConfigTableGuide` Events 段同步。无头验收 **58/58 通过、退出码 0**（固定种子 3 年触发次数 gold_rush=2 / plague=2，两次运行一致）。新增决策 D29~D30 |
+| **v0.3.8** | 2026-09-14 | **WP-2.2 任务体系最小修（`TIME-02/03/04/09`，`A7` 部分）**：`TaskSnapshot` 明确 `Type`（任务类型）/`UId`（实例唯一）/`Id`（业务模板）语义，**存储键改为 `Type:UId:Id`**（同名不同实例不再互相覆盖）+ 旧档自动重新编键（迁移不丢进度）；`GenericJsonRepository` 补 `Remove`/`RemoveWhere`/`Reindex`（**真删除**，不再写 `null` 占位）；`GameTimeService` **完成即回收**（一次性任务由总线兜底摘除，调用方不再负责）+ 日边界派发改为**迭代快照**（回调里注册/注销不打乱当日派发）+ 新增 **`UnregisterByUId` 范围注销**（建筑被拆 / 单位阵亡时清掉宿主名下所有任务；攻击循环在目标消失/脱离射程时自注销）；`Map`/`MapAppService` 补**空安全查询** `TryGetOccupantByUId`/`FindOccupantByUId`。无头验收 **64/64 通过、退出码 0**。新增决策 D31~D33 |
 
 
 ---
@@ -1632,7 +1638,7 @@
 | WP | 内容 | 覆盖 | 涉及文件/模块 | 新增类型/字段 | 量 | 性质 |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | WP-2.1 | **跨树前置修复**（P0 死锁） | `F2`、`TECH-07` | `ITechNodeConfig`、`TechTree.CanResearch`、`TechTreesRepository.HydrateConfigs` | `TechPrerequisite{TreeId,NodeId}` | 中 | 代码+填表 |
-| WP-2.2 | 任务体系最小修：**UId 作存储键 + 完成即回收** | `A7`（部分）、`TIME-03/04/09` | `TaskSnapshot`、`TaskRepository`、`GodotTimeDriver` | — | 中 | 代码 |
+| WP-2.2 | 任务体系最小修：**UId 作存储键 + 完成即回收** | `A7`（部分）、`TIME-03/04/09` | `TaskSnapshot`、`TaskRepository`、`GodotTimeDriver` | — | 中 | 代码 | → **✅ 完成（v0.3.8）** |
 | WP-2.3 | **人口任务修 bug**：OwnerId、注销、人口落盘 | `D11`、`CON-04/05/06` | `ConstructionAppService.cs:141`、`MapCell`、存档层 | — | 中 | 代码 |
 | WP-2.4 | **建造者校验**：必须由建造者单位建造、每建筑同时 1 个、可在相邻格建造 | `D6` | `ConstructionAppService.StartConstruction`、`UnitsAppService.Build` | `BuilderBinding` | 中 | 代码 |
 | WP-2.5 | **训练绑定建筑 + 队列**（可训练单位、建筑等级校验、上限 5、完成时人口 −1、落位） | `D10`、`E2/E3/E4`、`UNIT-11` | `UnitsAppService`、`IBuildingConfig`、`Building` | `TrainingQueue`、`TrainableUnits` | 中 | 代码+填表 |
@@ -1850,7 +1856,7 @@ WP-0.4 ─→ WP-3.5 / WP-3.8 / WP-5.3
 | 里程碑 | 组成 | **退出条件（可自动验证）** |
 | :--- | :--- | :--- |
 | **M0-1 · 无头骨架** | 批次 0 + 批次 1（`WP-0.1~0.4`、`WP-1.1~1.5`） | ① xUnit 中 `clock.Advance(1080)` 后 `CurrentDay == 1080` 且 `DayElapsed` **恰好派发 1080 次**；② 7 张配置表全部解析成功并通过引用完整性校验；③ 三档流速切换后，"每 10 日 / 每 30 日"节拍在**游戏日维度**保持不变 |
-| **M0-2 · 单玩家可玩** | 批次 2（`WP-2.1~2.10`） | ① **物理树根节点（简单机械直觉）可研究** → 证明 `TECH-07` 死锁解除；② 建成 School 后 6 个月内存出 250 idea/月；③ 营地 90 日建成 → 人口上限与视野生效；④ 工坊训练工人 30 日后单位出现且人口 −1；⑤ 固定种子下 3 年事件触发次数落在期望区间 | **① ✅ WP-2.1；② ✅ WP-2.7（检查 52/52）；③④ ⏳ 待做；⑤ ✅ `WP-2.8`** |
+| **M0-2 · 单玩家可玩** | 批次 2（`WP-2.1~2.10`） | ① **物理树根节点（简单机械直觉）可研究** → 证明 `TECH-07` 死锁解除；② 建成 School 后 6 个月内存出 250 idea/月；③ 营地 90 日建成 → 人口上限与视野生效；④ 工坊训练工人 30 日后单位出现且人口 −1；⑤ 固定种子下 3 年事件触发次数落在期望区间 | **① ✅ WP-2.1；② ✅ WP-2.7；③④ ⏳ 待做（前置「任务体系」已由 `WP-2.2` 就绪：同名任务不再互相覆盖、完成即回收、宿主消失可范围注销）；⑤ ✅ `WP-2.8`（检查 64/64）** |
 | **M0-3 · 世界可存续** | 批次 3（`WP-3.1~3.10`） | ① 存档 → 读档 → `Advance(360)` 后，建筑/单位/人口/任务/迷雾/时间**逐项等价**；② 工人（M=10）跨平原（5）10 日走 2 格、跨山地（25）需 30 日（与设计示例一致）；③ 同格交战 N 日后一方 HP 归零、单位移除、掉落进池；④ 敌方单位封锁格不可建造 |
 | **M1 · 可感知调试版** | `WP-5.1/5.2/5.3` | 人能在地图上看到地形/建筑/单位/资源变化，并手动推进 1 月，用于手感与数值校验 |
 | **M2 · 正式表现层** | `WP-5.4` + 美术资源 | 正式 UI 与美术；表现层只消费"查询 / 事件 / 意图"三契约，不改核心 |
@@ -1987,12 +1993,12 @@ WP-0.4 ─→ WP-3.5 / WP-3.8 / WP-5.3
 | WIRE-01 | 不做则无法构造会话，M0-1 ② 与 M0-2 全项不可执行 | WP-1.3 | ✅ 已验收 |
 | WIRE-03 | M0-1 ② 要求 7 张表全部可加载 | WP-0.3 / 1.4 | ✅ 已验收 |
 | MAP-17 | M0-1 ② 含 Terrains 表；M0-2 ③ 建造需地形可通行 | WP-0.4 | ✅ 已验收 |
-| EVT-01 | 事件表为裸数组，EventsConfigDto 解析必失败 → M0-1 ② 直接不过 | WP-2.8 | ⏳ 待做 |
+| EVT-01 | 事件表为裸数组，EventsConfigDto 解析必失败 → M0-1 ② 直接不过 | WP-2.8 | ✅ 已修复（`WP-2.8`） |
 | DEP-07 | M0-1 ①②③、M0-2 ①~⑤ 的**验收载具**（xUnit + 内存实现） | WP-0.2 | ✅ 已验收 |
 | MAP-01 | **代码复核**：每次操作 LoadMap 而存档不存占据物/人口 → 完成回调 GetOccupantByUId 抛 KeyNotFoundException、人口永远为 0 → M0-2 ③④ 不可能通过（需前移） | WP-3.1 | ✅ 已验收 |
 | TECH-07 | M0-2 ① 直接验收跨树前置 | WP-2.1 | ✅ 已修复（M0-2 ① 通过） |
 
-**降级 P1（8 条）**：WIRE-02、MAP-02、TIME-01、TIME-02、TIME-14、CON-09、MAP-16、UNIT-10 —— 逐条理由见第 12 节各条目顶部的 v0.3 标注，回归条件见 §18.4。
+**降级 P1（8 条）**：WIRE-02、MAP-02、TIME-01、TIME-02、TIME-14、CON-09、MAP-16、UNIT-10 —— 逐条理由见第 12 节各条目顶部的 v0.3 标注，回归条件见 §18.4。（**`TIME-02` 已由 `WP-2.2` 修复**：范围注销 + 完成即回收，见 §18.3 D31~D33）
 
 
 ---
@@ -2032,6 +2038,7 @@ WP-0.4 ─→ WP-3.5 / WP-3.8 / WP-5.3
 | 2026-09-14 | WP-2.1 **跨树前置修复**（`TECH-07` 死锁） | ✅ 完成 | ① **类型**：新增 `TechPrerequisite{TreeId,NodeId}` + `TechPrerequisiteJsonConverter`（兼容层：`"nodeId"` 旧写法 / `"treeId:nodeId"` 紧凑写法 / `{TreeId,NodeId}` 结构体），`ITechNodeConfig.Prerequisites` 由 `List<string>` 改为 `List<TechPrerequisite>`；② **判定**：`TechTree.CanResearch` 逐条走新 `IsPrerequisiteMet`（本树查本树集合、跨树走 `AttachResearchLookup` 注入的只读解析器；未挂解析器 = **fail closed**），新增 `GetPrerequisites`/`AttachResearchLookup`；③ **装配**：`TechTreesAppService.GetOrCreateTechTree` 每次挂解析器（跨树走 `_repo.GetTreeById` **只读**载入兄弟树，不用 `GetOrCreate` 以免"查询"变成"建档"），新增 `CanResearch(mapId,ownerId,treeId,nodeId)`；**顺带修**：`Research` 此前不校验前置 → 会"先扣 Idea、再在完成回调里被 `Tree.Research` 静默丢弃"，现前置未满足直接返回；④ **Hydrate**：`HydrateConfigs` 由"只 hydrate 已存在节点"改为**同时补入表里新增的节点**（否则先有存档、后加表时新科技永远看不见 —— 跨树前置正是"按表增量开放"的模式）；⑤ **填表**：`Config/TechTrees.json` 新增 `science/counting`（设计 0 idea / 0 日，根节点）+ 最小 `physics` 树（`simple_machine_intuition` ← `science:counting`，2000 idea / 30 日），93 节点规模差 → §18.4 债务项；⑥ **校验**：`ConfigValidator` 前置校验升级 —— 跨树前置的**树 Id 与节点 Id 必须存在**（error，`D13` 的升级点）、成环检测改为**跨树统一建边后的全局 DFS**（逐树 DFS 抓不到跨树环），建筑/单位/事件的 `TechRequirements` 仍保持 warning；⑦ **指南**：`ConfigTableGuide` 升 v1.2（三种写法 + 样板 + 附录 C 的 error/warning 清单同步）。检查 **+6 项**（总计 **49/49**、退出码 0），含 **M0-2 ① 门槛**：真实配置下 `physics/simple_machine_intuition` 在「计数」研究前不可研究、研究后可研究、30 日后真正完成、重开存档仍成立 |
 | 2026-09-14 | WP-2.7 **建筑产出接线**（建筑 Id 收敛 + Modifier → 月结） | ✅ 完成 | ① **填表**：`Config/Buildings.json` 改为设计稿口径的 4 条 —— `camp`（营地 90 日 / 人口上限 9·半径 1·间隔 300 日 / 视野 1）、`workshop`（工坊 90 日 / 视野 2 / 无产出）、`school`（学院 240 日 / `IdeaGrowth` **+250 Absolute** / `CanResearch`）、`military_camp`（军营 60 日 / 视野 3），旧的 `house`/`library`/`barracks` 全部废弃（并用断言锁死"旧 Id 不存在"）；`Duration` 与人口三件套逐项对齐设计稿"建造时间/效果"列；② **接线**：产出链路本身已由 `ConstructionAppService` 完工回调 → `ModifierAppService` → `ResourcesAppService` 月结（`GrowInterval=30`）构成，本轮**用端到端断言把它钉住**：真实地图 + 真实仓储（临时目录）+ 真实时间总线，施工期 239 日 Idea 恒为 0 → 第 240 日完工 → 之后每 30 日 +250（6 个月恰好 +1500）→ 按 sourceId 回收修正器后立即不再产出；③ **顺带修**：`Map.GetBuildingInfo` 在**空格子**上抛 NRE（与 `GetOccupantInfo` 对齐后返回 null）—— 任何"查询任意格"的调用方都会踩到（`MAP-03` 家族）；④ **固定已知缺陷**：`MAP-04`（建造只写 `cell.Occupant`，`cell.Building` 恒空 → `RemoveBuildingByPosition` 对自建建筑整体失效：既不拆地块也不回收修正器）加了一条"缺陷仍在"的断言，`WP-3.4` 修好时它会失败并提醒改成正向断言；⑤ **指南**：`ConfigTableGuide` 升 v1.3（Id 口径 + 设计数值来源 + 产出写法）。检查 **+3 项**（总计 **52/52**、退出码 0），**M0-2 ② 通过** |
 | 2026-09-14 | WP-2.8 **事件按日掷骰 + 字段改名**（`TriggerChancePerDay`） | ✅ 完成 | ① **字段**：`TriggerChance` → `TriggerChancePerDay`（口径 = design/events.md 的「%/日」，0.2%/日 = 0.002），表/接口/DTO/校验器/指南同步；**不做静默迁移** —— 旧表会静默变 0（事件永不触发），故校验器对 0 值给出"请改名"提示（并新增"旧名提示"断言）；② **引擎重写**：持续期由"再注册一个 LinearTask"改为 `ActiveEvent` 逐日倒计时（触发日起算、共 Duration 日、0 = 永久），新增 `GetActiveEvents`/`GetTriggerCounts`/`RollCount`；**生效中不再重复触发**（`G8`）；`StartEventsEngine` 幂等（`EVT-03`）；③ **验收**：**M0-2 ⑤** 固定种子 3 年（1080 日）触发次数落在 均值±3.5σ 且两次运行完全一致（实测 gold_rush=2 / plague=2）；另加"每日恰好一次判定"（`RollCount == 1080`）、"5%/日 的实际频率 ∈ [3.5%,6.5%]"、"资源/科技前置门控"、"到期回收 + 永久只触发一次"四条断言；④ **发现**：`D25`（消耗不落盘）也让**事件前置资源反复可用**（扣了等于没扣），用例中已注明并挂 §18.4。检查 **+6 项**（总计 **58/58**、退出码 0），**M0-2 ⑤ 通过** |
+| 2026-09-14 | WP-2.2 **任务体系最小修**（`TIME-02/03/04/09`，`A7` 部分） | ✅ 完成 | ① **存储键**：`TaskSnapshot` 明确 `Type`=任务类型 / `UId`=实例唯一（实体 uid，无实体填 `none`）/ `Id`=业务模板（BuildingId·UnitId·节点·事件·资源名），**键 = `Type:UId:Id`**（`[JsonIgnore]` 派生、不落盘）—— 旧实现只用 `Id` 作键，"同时造两座同名建筑""同时训练两个同种单位"会静默互相覆盖（`TIME-03`：读档只能恢复一个）；② **真删除**：`GenericJsonRepository` 新增 `Remove`/`RemoveWhere`/`Reindex`，`TaskRepository.RemoveTask` 不再用"写 null"代替删除（`TIME-04`：文件里不再堆积 `"key": null`、读回不再含 null 项），并**迁移**历史"以 Id 为键"的文件（`Reindex` 只在不一致时写盘一次，进度值不动）；③ **完成即回收**：`GameTimeService.OnDayElapsed` 在 tick 后检查 `IsCompleted`，由总线兜底摘除订阅 + 快照（`TIME-09`：不再需要每个调用方自己 `Unregister`）；同时把日派发改为**迭代快照 + 注册表复核** —— 旧实现"回调里注销自己 → 再写回快照"会留下已完成任务的残影，且列表当场变化会漏派发/重复派发；④ **范围注销**：`ITimeService.UnregisterByUId(uid)`（匹配 `UId`，兼容历史里"`Id` 即实体 uid"的人口增长/单位移动任务）→ `RemoveBuildingByPosition` 拆建筑时清掉建造+人口增长任务（`CON-06`）；单位阵亡时清掉其移动/训练任务、攻击循环在"目标消失/脱离射程"时自注销（`TIME-02`：不再空转、不再把已死对象的快照写回文件）；⑤ **顺带**：`TaskRepository` 每次改动前先读盘（旧实现 `AddTask` 只写内存字典 → 进程重启后的首次写入会用"只含一个新任务"的文件覆盖全部旧任务）；`Map`/`MapAppService` 补 `TryGetOccupantByUId`/`FindOccupantByUId` 空安全查询（任务回调里核对实体是否还在时不再抛 `KeyNotFoundException`）。检查 **+6 项**（总计 **64/64**、退出码 0） |
 
 ### 18.1.1 里程碑验收对照
 
@@ -2053,7 +2060,7 @@ dotnet build 'Science Potato.csproj'
 dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessChecks.csproj'
 ```
 
-当前验收结果（2026-09-14，**58/58 通过、退出码 0**）：M0-1 组 43 项 + M0-2 组 15 项。
+当前验收结果（2026-09-14，**64/64 通过、退出码 0**）：M0-1 组 43 项 + M0-2 组 21 项。
 
 | 分组 | 数量 | 覆盖 |
 | :--- | :--- | :--- |
@@ -2065,6 +2072,7 @@ dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessC
 | 跨树前置（WP-2.1） | 6 | 三种前置写法（本树 / `tree:node` / 结构体）都能解析且写出口径一致 / 跨树前置 **fail closed**（未挂解析器不可研究）且**同树前置不走跨树查询** / **M0-2 ①**：真实配置下「计数」研究前物理树根节点不可研究 → 研究后可研究 → 30 日后完成 → 重开存档仍成立 / 存档后**新增**节点可被 `HydrateConfigs` 带出 / 校验器对跨树前置缺树·缺节点·跨树成环判 error 且合法跨树不误报 / 真实配置 warning 白名单（仅 `science/counting` 的 0 日，防"白名单空转"） |
 | 建筑产出（WP-2.7） | 3 | 建筑表 4 条与设计口径一致（Id/时间/人口/School 250 idea/月）/ 旧原型 Id 已不存在 / **M0-2 ②**：施工 239 日 Idea 恒 0 → 240 日完工 → 每 30 日 +250（6 个月 +1500）→ 回收修正器即停（并固定 `MAP-04` 拆除失效） |
 | 事件引擎（WP-2.8） | 6 | `TriggerChancePerDay` 与设计 %/日 一致且旧名有提示 / **M0-2 ⑤**：固定种子 3 年触发次数落区间且可复现 / 每日恰好一次判定（`RollCount==1080`）/ 5%/日 频率 ∈ [3.5%,6.5%] / 资源与科技前置门控 / 到期回收·永久只触发一次·生效中不重复触发·引擎幂等 |
+| 任务生命周期（WP-2.2） | 6 | 存储键 `Type:UId:Id`：同名不同实例不再互相覆盖（旧实现只剩 1 条）/ **完成即回收**：一次性任务完成后自动离开订阅列表与任务文件（旧实现常驻 + 留下 `IsCompleted=true` 残影）/ **真删除**：注销后文件里不再出现 `null` 占位、注销过的任务不被写回 / **旧档迁移**：以 `Id` 为键的历史文件被重新编键、`null` 项被丢弃且进度不动 / **范围注销**：`UnregisterByUId` 一次清掉宿主名下全部任务且幂等、不误伤同类型其它实例 / **日边界一致性**：文件条目数 == 活跃任务数（无残影、无丢失） |
 
 
 
@@ -2102,6 +2110,10 @@ dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessC
 | D28 | **无头验收必须放开"单帧最多派发 30 日"（`D2`）**：`GameClock.MaxDaysPerAdvance` 默认 30 是给真机防卡顿用的，测试里 `AdvanceDays(239)` 只会派发 30 日、其余记入欠账 —— 症状是"用例跑完但时间只走了 60 日"（本轮 M0-2 ② 因此卡在 `day=60`） | 约定：**凡是一次推进 > 30 日的用例，先 `Session.Clock.MaxDaysPerAdvance = int.MaxValue`**（`WP-1.1` 的 `D2` 已经写明，本轮把它落到用法上）。同时给 `Check.Run` 补了失败时的"第一帧堆栈"输出，避免以后靠猜定位 |
 | D29 | **字段改名不做静默迁移**：`TriggerChance` → `TriggerChancePerDay` 后，旧表里的 `TriggerChance` 会被 Newtonsoft 静默忽略 → 概率 0 → 事件永不触发 | 两种做法：① 兼容层把旧名映射到新名（静默迁移）；② 不映射，让启动期校验器报"TriggerChancePerDay=0：该事件永远不会触发（若旧表仍写 TriggerChance，请改名）"。取 ②：迁移会掩盖"表没更新"这一事实，而原型期最怕静默降级（`MOD-05` 同类教训）；改名只影响 3 条样例，代价极低 |
 | D30 | **事件持续期口径 = 触发当日起算，共 `Duration` 个游戏日**：倒计时在**当日结算之后**推进（`AdvanceActiveEvents` 放在 `TickEvents` 末尾），因此 `Duration=10` 覆盖第 1~10 日、第 11 日才重新触发 | 首次实现把推进放在掷骰之前，导致"触发当天就被扣 1 天"的错位；两者在同一天里必须明确先后。另：事件的"生效中状态 + 触发计数"**只在内存**（`EventAppService` 字段）→ 读档即丢，归 `WP-3.2` |
+| D31 | **任务存储键 = `Type:UId:Id`**（由三个字段派生，`[JsonIgnore]` 不落盘）；语义分工：`Type`=任务类型、`UId`=实例唯一 Id（实体 uid，无实体填 `none`）、`Id`=业务模板/业务键 | 备选：① 只加一个 `Key` 字段由调用方填（易漏填、仍是两处真相）；② 用自增序号（读档后无法稳定重建，`Resume*` 会打空）。取派生键：**重建同一任务必得同一个键**，而「同名不同实例」（不同 uid）天然隔离。附带：`TaskRepository.GetCurrentTasks` 会 `Reindex` 历史「以 Id 为键」的文件（迁移一次、进度值不动），不做静默丢弃 —— 旧的 null 占位项则直接剔除（`TIME-04`） |
+| D32 | **完成/消失的回收责任在总线，不在调用方**：`GameTimeService` 在每次 `OnTick` 之后 ① 复核订阅仍在 ② `IsCompleted` 则连同快照摘除；循环任务（`IntervalTask` 永不置 `IsCompleted`）只能靠**宿主消失**终结 → 新增 `ITimeService.UnregisterByUId(uid)` | 备选：保留「调用方自行 `Unregister`」的老口径 —— 但 `UnitsAppService` 的训练任务就是漏注销的实例（`TIME-09` 证据），说明这个契约必然被违反。范围注销的匹配规则取「`UId == uid` 或 `Id == uid`」以兼容历史里把实体 uid 填在 `Id` 的人口增长/单位移动任务；**注意**：实体 uid 现在是 `Guid`，与建筑/单位模板 Id（`camp` 等）不可能碰撞，故规则安全。攻击循环额外在「目标消失/脱离射程」时自注销（它没有宿主 uid 可匹配） |
+| D33 | 日边界派发改为**迭代快照 + 注册表复核**（`_subscribers.ToArray()` + `Contains` 复核） | 旧实现按索引遍历：① 回调里注销自己会导致「同一日后续订阅者漏派发」（旧注释已承认，靠倒序勉强规避）；② 回调里注销**别的**任务（`UnregisterByUId` 会这样）会让某个已派发过的订阅者被**重复派发**。快照的代价是每日一次数组分配（可忽略），换来「同一日每个活跃任务恰好派发一次」的硬保证（与 `A3` 的逐日派发同一动机） |
+
 
 
 ## 18.4 降级项与未修缺陷回归看板（v0.3.5 新增）
@@ -2114,7 +2126,7 @@ dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessC
 | :--- | :--- | :--- | :--- | :--- |
 | `WIRE-02` 引擎耦合点又被绕过 | 调用点已收敛到 `IFileSystem` / `GameTimeService`，无头断言不受影响 | 出现任何"直接 `FileAccess` 读盘 / 用秒计时"的新代码；或 M1 真实运行出现存档路径不一致 | WP-1.2 / 5.x | 部分已修（`GodotTimeDriver`） |
 | `MAP-02` 每帧写盘 | 性能/IO 缺陷，不改变 headless 断言的正确性 | M1 手测卡顿/掉帧；或 `WP-3.2` / `WP-3.3` 落地统一存档点时一并收口 | WP-3.2 / 3.3 | 未修 |
-| `TIME-01` / `TIME-02` 秒制残留与节拍失衡 | `WP-1.5` 口径重标定 + 校验器单位自检已覆盖断言面 | 校验器报"疑似仍是秒口径"；或 M1 手感与设计明显不符 | WP-1.5 / 2.2 | 部分已修 |
+| `TIME-01` / `TIME-02` 秒制残留与节拍失衡 | `WP-1.5` 口径重标定 + 校验器单位自检已覆盖断言面 | 校验器报"疑似仍是秒口径"；或 M1 手感与设计明显不符 | WP-1.5 / 2.2 | 部分已修（`WP-2.2` 已落地**范围注销** —— 宿主消失即回收；「每帧写盘」已由 `WP-1.5` 的日边界同步收敛，剩余「内存态 + 存档点」归 `WP-3.3`） |
 | `TIME-14` 月结未成体系 | `GrowInterval=30` 逐日派发已通过断言，差的只是"结算器汇总 → 需求 → 扣减" | M0-3 ① 月度经济结算器（`WP-3.9`） | WP-3.9 | 未修 |
 | `CON-09` 没有建筑升级 | M0-2 ②③④ 只用 lv.I 建筑（School lv.I / 营地 / 工坊 lv.I） | 科技树里 16 条"解锁 XX 升级"要落地时 | WP-2.6 | 未修 |
 | `MAP-16` 建筑 HP 与易主 | 城市攻防属批次 4，M0-1/2/3 验收均不涉及 | 需要"摧毁/夺取建筑"作为胜负条件时 | WP-4.8 | 未修 |
@@ -2137,4 +2149,5 @@ dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessC
 | 事件内容规模 | 设计稿 20 条事件 vs 当前样例 3 条（淘金热 / 瘟疫 / 启蒙时代，概率与持续期均取自设计稿） | "按日掷骰 + 前置 + 修正器"链路已通，缺的只是填表与文案 | 填表（批次 4 起，配 `WP-4.12` 决策 UI） |
 | 事件状态不落盘 | `EventAppService` 的"生效中事件 + 触发计数"是内存字段，读档即丢；永久事件的修正器也没有"发生过什么"的记录 | 读档后玩家看到数值变了却不知原因（`EVT-04`） | WP-3.2 / WP-3.3 |
 | 事件暂停与决策（`EVT-06`） | 事件仍是"触发即结算"的全自动流程，没有暂停 / 选项 / 确认（设计稿要求"事件发生时暂停直到确认"） | 叙事与决策体验缺失；`GameClock.Paused` 已有能力，缺的是待处理队列 + UI | WP-4.12 |
-
+| 任务恢复**未接线**（v0.3.8 新发现） | `ConstructionAppService.ResumeConstruction` / `UnitsAppService.ResumeTrainingTask` 已存在但**全仓库无调用方** —— 任务文件现在能正确读写，却没有任何「读档 → 重建任务 → 重新注册」的路径（`TIME-08` / `CON-03` 的另一半） | 读档后施工/训练进度无法续跑（虽不再出现「有任务无实体」的错位，因为实体本身也还没落盘） | WP-3.2 / 3.3 |
+| 任务写入频率仍为「每次改动读一次盘」（v0.3.8） | `TaskRepository` 为保证正确性（不被半写/旧内存态覆盖）采用「读 — 改 — 写」，写入本身已收敛到日边界，但仍是整文件覆盖 | 任务数变多后写放大明显（每任务每日一次全文件序列化） | WP-3.3（统一存档点 + 脏标记） |

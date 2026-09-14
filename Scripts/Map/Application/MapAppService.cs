@@ -57,6 +57,16 @@ namespace SciencePotato.Scripts.Map.Application
 			return map.GetOccupantByUId(uid);
 		}
 
+		/// <summary>
+		/// （v0.3 / WP-2.2）**空安全**查询：任务回调里核对"实体是否还在"时必须用它
+		/// （查不到的 uid 返回 <c>null</c>，而不是抛 <see cref="System.Collections.Generic.KeyNotFoundException"/>）。
+		/// </summary>
+		public IMapOccupant FindOccupantByUId(string mapId, string uid)
+		{
+			var map = _session.Get(mapId);
+			return map != null && map.TryGetOccupantByUId(uid, out IMapOccupant occupant) ? occupant : null;
+		}
+
 		public void SetOccupant(string MapId, HexCubePosition position, IMapOccupant occupant)
 		{
 			var map = _session.Get(MapId);
