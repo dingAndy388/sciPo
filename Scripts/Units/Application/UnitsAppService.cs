@@ -92,7 +92,7 @@ namespace SciencePotato.Scripts.Units.Application
 
 				LinearTask trainingTask = new(0, config.Duration, config.UnitId, "Training", false, uid, mapId, ownerId);
 
-				_map.SetOccupant(mapId, position, unit);
+				_map.SetOccupant(mapId, position, unit); // v0.3 / WP-3.4：唯一入口起效（占位冲突会被拒绝）
 
 				trainingTask.OnCompleted += () =>
 				{
@@ -214,7 +214,7 @@ namespace SciencePotato.Scripts.Units.Application
 			if (unit == null) return;
 
 			unit.IsReady = true;
-			_map.SetOccupant(mapId, spawn.Value, unit);
+			_map.SetOccupant(mapId, spawn.Value, unit); // v0.3 / WP-3.4：唯一入口（占位冲突会被拒绝）
 
 			_fog.RevealArea(spawn.Value, unitConfig.VisionRadius);
 			RegisterMoveTask(mapId, order.UId);

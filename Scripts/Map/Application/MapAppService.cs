@@ -105,6 +105,21 @@ namespace SciencePotato.Scripts.Map.Application
 			return consumed;
 		}
 
+		/// <summary>
+		/// （v0.3 / WP-3.4）**放置建筑**：同时写 `cell.Building` 与占据物槽位（修 `MAP-04`：旧实现只写后者，
+		/// 于是 `GetBuildingInfo`/拆除全部失效）。目标格已被别的实体占用时拒绝。
+		/// </summary>
+		public bool PlaceBuilding(string mapId, HexCubePosition position, IMapOccupant building)
+		{
+			var map = _session.Get(mapId);
+			if (map == null) return false;
+
+			if (!map.PlaceBuilding(building, position)) return false;
+
+			_session.MarkDirty(mapId);
+			return true;
+		}
+
 		public void SetOccupant(string MapId, HexCubePosition position, IMapOccupant occupant)
 		{
 			var map = _session.Get(MapId);

@@ -83,7 +83,8 @@ namespace SciencePotato.Scripts.Construction.Application
 
 				LinearTask buildTask = new(0, config.Duration, config.BuildingId, "Construction", false, uid, mapId, ownerId);
 
-				_map.SetOccupant(mapId, position, building);
+				// v0.3 / WP-3.4：建筑落位走统一入口（同时写 cell.Building 与占据物槽位 → 修 MAP-04）
+				_map.PlaceBuilding(mapId, position, building);
 
 				buildTask.OnCompleted += () => CompleteConstruction(mapId, uid, ownerId, position, config, null, buildTask);
 

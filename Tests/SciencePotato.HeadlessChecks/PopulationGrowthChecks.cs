@@ -156,16 +156,8 @@ namespace SciencePotato.HeadlessChecks
 				h.Clock.AdvanceDays(90 + 3);
 				int before = Population(h);
 				Check.AssertEqual(1, before, "拆除前应有 1 人");
-
-				string uid = h.Map.GetOccupantInfo(MapId, h.Site).Value.UId;
-
-				// `MAP-04` 现状：建造只写 `cell.Occupant`，`cell.Building` 恒空 → `RemoveBuildingByPosition`
-				// 走 `GetBuildingInfo` 会整体失效。这里在 **domain 层预置权威建筑**，用来验证 `CON-06` 的接线：
-				// 一旦 `WP-3.4` 把占用模型统一，这条路径就会自然生效。
-				h.MapSession.Get(MapId).SetBuilding(h.Site, h.Map.FindOccupantByUId(MapId, uid));
-
+				// v0.3 / WP-3.4：建造同时写 cell.Building 与占据物槽位（MAP-04 已修）→ 真实拆除路径即可验证 CON-06。
 				h.Construction.RemoveBuildingByPosition(MapId, h.Site);
-
 				Check.Assert(GrowthTask(h) == null, "拆除后人口任务应被范围注销（`CON-06`）");
 				h.Clock.AdvanceDays(3 * 20);
 				Check.AssertEqual(before, Population(h), "拆除后人口不应继续增长");

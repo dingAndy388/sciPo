@@ -228,6 +228,7 @@
 - **影响**：单位死亡/建筑被拆除后，仍在跑的任务会按已失效的 uid 取 occupant → `KeyNotFoundException` 崩溃（配合 `UNIT-04`、`CON-06` 极易触发）。
 - **修复方向**：`Map` 统一向外提供"找不到返回 null/`false`"的安全 API（或抛**语义明确的业务异常**），并在任务回调入口统一做"实体仍存在"校验。
 - **关联**：`UNIT-04`、`CON-06`、`MAP-13`
+> ✅ **已修复（v0.3.16 / WP-3.4）**：`Map.RemoveOccupant`/`RemoveBuildingAt` 成为唯一出口，同时清格子与 `_occupants` 索引 → 阵亡/拆除后按 uid 查不到；用例断言「阵亡单位不可再按 uid 查到、格子变空地」。
 
 #### `MAP-04` 三种"写槽位"入口并存，`Building` 槽位成了死数据 —— 【P1｜架构层缺陷】
 - **现象**：`Map` 同时提供 `AddOccupant`（写 `cell.Occupant` + `_occupants` 索引）、`SetBuilding`（写 `cell.Building`）、`SetInvader`（写 `cell.Invader`）；`AddOccupant` 里的 `if (_cells.TryGetValue(position, out _))` 判断**没有任何效果**（后续照样写 `_occupants`）。
@@ -236,6 +237,7 @@
 - **影响**：① `MapCell.Building` 永远是 null，但 `Map.GetBuildingInfo`（`Map.cs:115-121`；v0.3.6 / WP-2.7 起补 null 保护，空格子返回 null 而不是 NRE）与 `RemoveBuilding`（`Map.cs:99-105`）在读/写它 → 建筑移除逻辑实际不生效（`ConstructionAppService.cs:110-121` 依赖它）；② `_occupants` 索引只在 `AddOccupant` 维护，`RemoveOccupantByPosition` 不清理索引 → **单位/建筑被删除后仍能按 uid 查到**（僵尸引用），与 `MAP-03` 组合就是崩溃源。
 - **修复方向**：明确"一格一占据物"或"一格多槽位"的**唯一模型**，废弃其余入口；新增/移除占据物必须**同时**维护格子的槽位与 uid 索引（建议由 Map 统一封装成单一方法对）。
 - **关联**：`MAP-03`、`MAP-12`、`CON-06`、`UNIT-05`
+> ✅ **已修复（v0.3.16 / WP-3.4）**：建造落位改走 `Map.PlaceBuilding`，`cell.Building` 与占据物槽位**同时**有值 → `GetBuildingInfo` 可见、`RemoveBuildingByPosition` 真正生效（地块清空 + 修正器回收 + 任务按 uid 注销）；`WP-2.7` 的「缺陷仍在」固定断言已翻成正向断言。
 
 > 🔎 **已确认（v0.3.6 / WP-2.7 验收）**：本条在无头用例里被实测复现 —— 建造走的 `MapAppService.SetOccupant` 只写 `cell.Occupant`，`cell.Building` 恒为 null，因此 `RemoveBuildingByPosition`（`ConstructionAppService.cs:110-121`）对自建建筑**完全无效**（既不拆地块、也不回收产出修正器）。同时发现同族的 `Map.GetBuildingInfo` 在空格子上会抛 NRE（已补 null 保护，见 `D26`）。本轮**不修**（占用模型归 `WP-3.4`），但已把"缺陷仍在"固定成断言（`D27`），修好时用例会失败并提醒改成正向断言。
 
@@ -584,6 +586,7 @@
 - **影响**：① 玩家可以往"显示为空但实际有敌人"的格子建造/移动（`IsClear` 误判）；② `Map.GetOccupantByUId` 是索引查询（能查到），而 `GetOccupantInfo(position)` 是格子查询（返回过期），两张视图彻底不一致 → AI/战斗判定随时出错；③ 存档若按格子写（`MAP-02` 的修复方向）会写出错误的占用关系。
 - **修复方向**：确立"格子槽位是唯一权威 + 移动必须原子地迁移槽位"或"格子槽位仅作缓存、由位置索引统一派生"，二者择一并写进 `Map` 的 API 约束。
 - **关联**：`MAP-04`、`CON-01`、`UNIT-04`、`MAP-03`
+> ✅ **已修复（v0.3.16 / WP-3.4）**：`Map.RemoveOccupant`/`RemoveBuildingAt` 成为唯一出口，同时清格子与 `_occupants` 索引 → 阵亡/拆除后按 uid 查不到；用例断言「阵亡单位不可再按 uid 查到、格子变空地」。
 
 #### `UNIT-06` 停火线用 `VisionRadius`，与 `AttackRadius` 混淆 —— 【P2｜逻辑层缺口】
 - **现象**：移动节拍里用**视野半径**判断"附近是否有敌人"并据此停下；而攻击判定用的是 `AttackRadius`（0 表示近战、>0 表示远程）。两个半径语义不同却被用于相似的"距离判断"。
@@ -1145,6 +1148,7 @@
 | **v0.3.14** | 2026-09-14 | **WP-2.10 最小领域事件总线（`F10`、`TECH-05`、`UNIT-08`、`EVT-04`、`ROOT-4`）**：新增 `IDomainEventBus`/`DomainEventBus`（类型即频道：`Subscribe/Publish/Unsubscribe`、**快照派发**、**订阅者异常隔离**（记入 `Failures` 不打断玩法）、重复订阅幂等）与 6 类事件（建造完成 / 建筑升级 / 单位训练完成 / 单位阵亡 / 研究完成 / 事件触发）；建造-升级-研究-事件四条链路的发布点就位（`CompleteConstruction`/`CompleteTraining`/攻击阵亡分支/研究完成/`TickEvents` 触发瞬间），四个应用服务以可选构造参数接收总线；`CoreServices.DomainEvents` 由组合根提供**全进程一份**。无头验收 **103/103 通过、退出码 0**。新增决策 D44~D45 |
 | **v0.4.0** | 2026-09-14 | 🏁 **M0-2（单玩家可玩）达成**：批次 2 的 **10 个 WP 全部完成**（WP-2.1 跨树前置 → 2.2 任务体系 → 2.3 人口 → 2.4 建造者 → 2.5 训练队列 → 2.6 建筑升级 → 2.7 建筑产出 → 2.8 事件按日 → 2.9 科技并发 → 2.10 领域事件总线），5 条里程碑验收项 **①~⑤ 全部通过**，无头验收 **103/103 通过、退出码 0**（M0-1 组 43 + M0-2 组 60）。交付总结与批次 3 交接见 §18.5 |
 | **v0.3.15** | 2026-09-14 | **WP-3.2 实体持久化（`B10`、`MAP-02`，M0-3 ①）**：新增 `SaveMapper` + `MapSave.SaveVersion`（v2）+ `BuildingSaveDto`/`UnitSaveDto`/`TrainingOrderSave`/`CellSaveDto`（地形 + **人口 + 占据物**）；`GodotMapRepository` 与内存仓库共用同一套映射（读档用 `SaveRebuilder` 按 **uid 原样重建**建筑/单位，含 HP/MP/忙闲/攻击目标/训练队列/建造者绑定）；新增 `WorldSaveService`（存档点 + 读档编排：时钟 → 地图实体 → 建筑附加状态 → 迷雾 → 按类型重建周期任务 → 事件引擎）与 `IClockRepository`（游戏日）；`ITimeService.Reset()`（读档前作废旧订阅者，否则任务翻倍）；`BuildingFactory`/`UnitFactory` 支持显式 uid；**M0-3 ① 通过**：同一固定种子跑两个世界（其一在第 34 日存档→读档），第 360 日**建筑/单位/人口/任务/迷雾/时间逐项等价**。无头验收 **107/107 通过、退出码 0**。新增决策 D46~D48 |
+| **v0.3.16** | 2026-09-14 | **WP-3.4 地块占用权威一致（`MAP-03`、`MAP-04`、`UNIT-05`）**：`Map` 新增**进入/离开的唯一入口** —— `PlaceOccupant`/`PlaceBuilding`（同格冲突拒绝，且建筑同时写 `cell.Building` 与占据物槽位）/`RemoveOccupant`/`RemoveBuildingAt`（格子 + 建筑槽位 + `_occupants` 索引三处一起清）；旧方法（`AddOccupant`/`RemoveOccupantByPosition`/`SetBuilding`/`RemoveBuilding`）全部改为委托；建造落位改走 `PlaceBuilding` → **拆除真正生效**（`MAP-04` 的 `cell.Building` 恒空已修）；单位阵亡后不再留**僵尸索引**（`MAP-03`/`UNIT-05`）。无头验收 **111/111 通过、退出码 0**；`WP-2.3`/`WP-2.4` 的"domain 预置权威"用例已回到真实路径 |
 
 
 ---
@@ -1676,7 +1680,7 @@
 | WP-3.1 | **Map 常驻内存**（`MapSession` + 脏标记 + 存档点；`IMapRepository` 退为边界） | `B11`、`MAP-01/07` | `MapAppService` 拆 `MapQuery`/`MapCommand` | `MapSession`、`MapQueryService` | 大 | 代码 |
 | WP-3.2 | **实体持久化**：建筑/单位/人口/任务/迷雾/时间完整存档 | `B10`、`MAP-02` | 存档层 + Mapper | `BuildingSaveDto`、`UnitSaveDto`、`CellSaveDto`、`SaveMapper` | 大 | 代码 | → **✅ 完成（v0.3.15）** |
 | WP-3.3 | **统一存档单元**（单序列化器、原子写、`saveVersion` 迁移钩子） | `I3`、`DEP-06`、`TIME-08` | 5 个 `*Repository` 收敛 | `ISaveStore` | 中 | 代码 |
-| WP-3.4 | **地块占用权威一致**（统一进入/离开 API、修僵尸索引） | `B3`、`MAP-03/04`、`UNIT-05` | `Map`、`MapCell`、`UnitsAppService` | — | 中 | 代码 |
+| WP-3.4 | **地块占用权威一致**（统一进入/离开 API、修僵尸索引） | `B3`、`MAP-03/04`、`UNIT-05` | `Map`、`MapCell`、`UnitsAppService` | — | 中 | 代码 | → **✅ 完成（v0.3.16）** |
 | WP-3.5 | **单位移动模型重写**（R1~R7）+ 地形消耗与通行权限 | `E5/E6/E7/E8`、`UNIT-10`、`B1/B2`（部分） | 新增 `UnitMovementService` | — | 中 | 代码+填表 |
 | WP-3.6 | **同格战斗**（进入敌格即交战、一格一对）+ 按日结算 + 建筑衰减 50% + 建筑作为目标 | `E9/E10/E11/E12/E18`、`UNIT-12` | 新增 `UnitCombatService`、`Unit`（`MaxHP`） | 交战状态模型 | 大 | 代码 |
 | WP-3.7 | 单位死亡：移除 / 不返还 / 掉落入池 / 清理驻扎 | `E20/E21` | `UnitCombatService` | `Loot` 配置字段 | 中 | 代码 |
@@ -2073,6 +2077,7 @@ WP-0.4 ─→ WP-3.5 / WP-3.8 / WP-5.3
 | 日期 | WP | 状态 | 验证方式 / 产物 |
 | :--- | :--- | :--- | :--- |
 | 2026-09-14 | WP-3.2 **实体持久化**（`B10`、`MAP-02`） | ✅ 完成 | ① **DTO 与映射**：`MapSave`（+`SaveVersion`=2）+ `HexCubeCellSave`（地形 + 人口 + `Building`/`Unit` 两个具名槽位）+ `BuildingSaveDto`（uid/Id/Owner/IsReady/建造者 uid/训练队列）+ `UnitSaveDto`（+HP/MP/忙闲/攻击目标）+ `SaveMapper`（`ToSave`/`RebuildBuilding`/`RebuildUnit`）；具名槽位而非多态（System.Text.Json 不带派生类型元数据，且把"一格一个占据物"写进存档）；② **读档重建**：`SaveRebuilder` 由组合根用建筑/单位工厂构造（Map 模块只认 `IMapOccupant`），**uid 原样保留**；`GodotMapRepository` 与内存替身共用同一套映射（替身不再只存地形）；更高版本存档**拒绝加载**；③ **读档编排**：新增 `Scripts/Core/Save/WorldSaveService`（存档点 = 时钟 + 脏地图 + 迷雾；读档 = 时钟 → 驱逐重读地图 → 建筑附加状态 → 迷雾 → 按类型重建任务 → 事件引擎幂等启动）与 `IClockRepository`；④ **任务恢复接线**（此前 `Resume*` 无调用方）：`ResumeConstruction`/新 `ResumeUpgrade`/`ResumeTraining` + `RestoreGrowthTasks`/`RestoreHousingTasks`/`RestoreUnitTasks`（**按实体重建 + 回填进度**）；⑤ **配套修正**：`ITimeService.Reset()`（读档前作废旧订阅者，否则任务翻倍）、`FogAppService` 存档点显式写盘、远程攻击也记目标；⑥ **验收（M0-3 ①）**：同一固定种子两个世界（其一第 34 日存档→读档），第 360 日六类状态**逐项等价**。检查 **+4 项**（总计 **107/107**、退出码 0） |
+| 2026-09-14 | WP-3.4 **地块占用权威一致**（`MAP-03`、`MAP-04`、`UNIT-05`） | ✅ 完成 | ① **唯一入口**：`Map.PlaceOccupant`（占据物：写格子 + 索引，已被占用则**拒绝**）、`Map.PlaceBuilding`（建筑：`cell.Building` 与占据物槽位**同时**写 → 修 `MAP-04`）、`Map.RemoveOccupant`/`Map.RemoveBuildingAt`（格子 + 建筑槽位 + `_occupants` 索引**三处一起清** → 修 `MAP-03` 僵尸索引）；旧的 `AddOccupant`/`RemoveOccupantByPosition`/`SetBuilding`/`RemoveBuilding` 全部改为委托，**所有既有调用点自动获得一致语义**；② **接线**：`MapAppService.PlaceBuilding` 新增；`ConstructionAppService.StartConstruction` 落位改走它；两个地图仓库读档时建筑也用 `PlaceBuilding`（落盘/读回一致）；③ **效果**：拆除对**自建建筑**真正生效（地块清空、修正器回收、任务按 uid 注销），单位阵亡后按 uid 查不到尸体（任务/战斗回调不再对着尸体干活）；④ **用例回正**：`WP-2.7` 的"缺陷仍在"固定断言翻成"拆除生效"，`WP-2.3`/`WP-2.4` 的"domain 层预置权威"回到真实拆除路径；新增 4 条占用用例。检查 **+4 项**（总计 **111/111**、退出码 0） |
 
 ### 18.1.1 里程碑验收对照
 
@@ -2101,7 +2106,7 @@ dotnet build 'Science Potato.csproj'
 dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessChecks.csproj'
 ```
 
-当前验收结果（2026-09-14，**107/107 通过、退出码 0**）：M0-1 组 43 项 + M0-2 组 60 项 + M0-3 组 4 项。
+当前验收结果（2026-09-14，**111/111 通过、退出码 0**）：M0-1 组 43 项 + M0-2 组 60 项 + M0-3 组 8 项。
 
 | 分组 | 数量 | 覆盖 |
 | :--- | :--- | :--- |
@@ -2121,6 +2126,7 @@ dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessC
 | 科技树并发（WP-2.9） | 6 | 三棵树 `Concurrency=1` 且真实配置 0 error / 树内串行：同树第二个请求被拒（任务数不增）、完成后槽位释放、下一个才开工 / 三树并行：科学树 + 军事树两项并存并各自完成（互不阻塞）/ 并发可配：`Concurrency=2` 时同树两项并行且都完成 / 研究任务键：`UId`=树、`Id`=节点、键 = `Research:{tree}:{node}`；续跑按树恢复（不再把 nodeId 当 treeId）、旧口径快照拒绝续跑 / 校验器：`<1` error、`>1` warning |
 | 领域事件（WP-2.10） | 7 | 总线：快照派发 / 异常隔离（`Failures` 记录且不打断发布方）/ 重复订阅幂等 / 可退订 / 无订阅者不抛异常 / 建造完成事件（uid·Id·owner·位置）/ 升级完成事件（from→to，且不重复推送「建成」）/ 训练完成事件（uid 与落位单位一致）/ **单位阵亡事件**（`UNIT-08`：含阵亡方 owner 与凶手 uid）/ 研究完成事件（树+节点）/ 事件触发推送（`EVT-04`） |
 | 实体持久化（WP-3.2） | 4 | **M0-3 ①**：固定种子两个世界（其一第 34 日存档→读档），第 360 日**日期/人口/资源/建筑与单位/任务/迷雾逐项等价** / 单位运行时状态（HP/MP/忙闲/攻击目标）跨档保留且读档后战斗继续到击杀 / 施工中建筑（未完工 + 建造者忙 + 队列）跨档保留且完工时释放重建的建造者 / 更高 `SaveVersion` 的存档被拒绝加载 |
+| 地块占用（WP-3.4） | 4 | 建筑落位后 `cell.Building` 与占据物槽位指向同一对象且 `GetBuildingInfo` 可见（修 `MAP-04`）/ 拆除清空地块 + 索引 + 建筑槽位（修正器与任务一并回收）/ 单位阵亡后按 uid 查不到（修 `MAP-03`/`UNIT-05` 僵尸索引）且格子变空地 / 同格重复建造不覆盖原有建筑 |
 
 
 
@@ -2176,6 +2182,7 @@ dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessC
 | D46 | **任务恢复 = 按实体重建 + 回填进度**，而不是序列化任务对象 | 任务的闭包（改哪一格人口、瞄准谁、用哪份配置）都来自实体状态，委托不可序列化；直接存"任务对象"必然出现"任务与实体两处真相"（旧的 `Resume*` 就是手抄漏项才产生 `CON-03`）。恢复顺序也因此固定：**地图实体 → 建筑附加状态 → 周期任务**（任务找不到宿主就什么也做不了） |
 | D47 | **读档前必须 `ITimeService.Reset()`**（作废旧订阅者） | 订阅者持有的是读档前的旧实体副本；不清空则"恢复的新任务"与"旧任务"同时跑 —— 月结翻倍、人口翻倍（用例当场抓到：第 360 日人口差 32）。这条也说明"存档点 = 世界状态快照"必须包含"任务注册表"这一隐式状态 |
 | D48 | **占据物在存档里用两个具名槽位**（`Building` / `Unit`），不用多态基类 | System.Text.Json 不带派生类型元数据（多态要么失效要么引入 `$type` 黑魔法）；具名槽位还把"当前一格一个占据物"写进格式 —— `WP-3.4` 扩展占用模型时会显式改成集合（迁移点清晰，不靠猜） |
+| D49 | **占用权威 = 「一处索引 + 一格一占据物」**：`Map._occupants`（按 uid）与 `cell.Occupant`（按位置）必须由**唯一入口**同步维护；建筑额外有 `cell.Building` 槽位，也归同一个入口 | `MAP-03`/`MAP-04`/`UNIT-05` 三条缺陷同源：多处入口各写一半 → 索引与格子不一致（僵尸索引 / `cell.Building` 恒空）。彻底方案（`WP-4.9` 的「格内多占据物集合 + 区域建筑」）会改结构，本轮先把入口收窄到 4 个方法，并把「冲突拒绝」作为语义（而非静默覆盖） |
 
 
 
@@ -2209,7 +2216,7 @@ dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessC
 | `D25` | 资源消耗**不落盘**：`ResourcesConsumption.Consume()` 后无 `SaveResources` | 研发/建造的"已花掉"会在下次读盘时回滚 | WP-3.2 / 3.3 |
 | 内容规模 ①| 科技树 3 树 **93 节点** vs 当前最小样例 6 节点（military 3 / science 3 / physics 1） | 物理/化学树的 35 / 10 节点在 M1 手测里是空的（但**链路已通**：跨树前置 + 0 成本根节点均已验收） | 填表（批次 4 起，配 `WP-4.14` UI 门控） |
 | 内容规模 ②| 建筑 24 条 / 单位 5 类 vs 当前样例 3 / 3 | M0-2 ②~④ 只依赖 School / 营地 / 工坊三条 | `WP-2.5` / `WP-2.6` |
-| `MAP-04` 拆除失效（**已固定断言**） | 建造只写 `cell.Occupant`，`cell.Building` 恒空 → 拆除既不拆地块也不回收产出修正器（`D27`） | 玩家无法拆除建筑；建筑升级（`WP-2.6`）与易主（`WP-4.8`）都依赖同一占用模型 | WP-3.4 |
+| `MAP-04` 拆除失效（**已修复**） | ✅ **已修（v0.3.16 / WP-3.4）**：建造落位改走 `PlaceBuilding`，`cell.Building` 与占据物槽位一致 → 拆除真正生效（地块清空 + 修正器回收 + 任务注销）；`WP-2.7` 的固定断言已翻成正向断言 | 玩家可正常拆除建筑 | WP-3.4 | ✅ 已修 |
 | 资源词汇不一致 | 设计稿用「基础石材 / food / basic minerals」，原型表只有 Gold / Wood / Idea（建筑造价与矿场/农田产出因此无法照抄设计值） | 所有造价与产出的**数值映射**都是近似；`resources.md` 的 4~5 种基础资源落地时需一次性重填 | 填表（批次 4 起，配 `WP-3.9` 结算器） |
 | 建筑前置（附属 / 升级）未建模 | 设计稿的"前置"列既有科技也有**建筑**（如 日晷 ← School（建筑）），`IBuildingConfig` 只有 `TechRequirements`，没有"需要已有建筑"的字段 | 日晷、观星台等附属建筑无法表达；建筑升级（`WP-2.6`）也要用到 | `WP-2.6` / `WP-2.12+` |
 | `PopulationGrowth` 修正器接线（曾未接线） | ✅ **已接线（v0.3.9 / WP-2.3）**：`ModifierAppService.GetValue(mapId, ownerId, target, base)` = `(base + ΣAbsolute) × (1 + ΣPercent)`，人口增长是 `PopulationGrowth` 的**第一个消费点**（基数 1 人/间隔）+ 小数余量累加器（+50% → 两轮多 1 人）；用例断言 +1 Absolute → 每间隔 +2 人。**遗留**：`BuildingSpeed` / `UnitTrainingSpeed` / `ResearchSpeed` / `ResourceLimit` 等 target 仍无消费点（归 `WP-4.4`） | 科技/事件想「加快人口增长」现已生效；其余速率类 target 仍要等 `WP-4.4` 分批接线 | ✅ 人口已接线（WP-2.3）/ 其余 `WP-4.4` |
@@ -2278,3 +2285,4 @@ dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessC
 - 资源扣除的可观测性（`D25`）
 | 事件状态与触发计数仍不落盘（v0.3.15） | `EventAppService` 的 `_active`/`_triggerCounts` 是内存字段；读档后"生效中的事件"消失（修正器还在盘上，因此会留下"无期限的加成"） | 读档后事件计数归零、持续期丢失 → 数值解释不通 | `WP-3.3`（统一存档单元）—— 与"事件历史"一并落盘 |
 | `WorldSaveService` 仍是编排层而非存档单元（v0.3.15） | 存档点 = 时钟 + 脏地图 + 迷雾显式写；资源/修正器/科技/任务在各自写入点落盘（多文件、无原子性、无版本迁移） | 断电/崩溃可能得到半写状态；跨版本迁移只能逐个仓库处理 | `WP-3.3`：单一序列化器 + 原子写 + `saveVersion` 迁移钩子 |
+| 僵尸索引与「一格一占据物」的**弱约束**（v0.3.16） | `PlaceOccupant` 在格子已占用时**拒绝**（不再静默覆盖），但"拒绝"只在应用层被检查（`IsClear`/`TryEnqueue` 路径）；`MapCell` 仍只有单占据物槽位，区域建筑/格内多占据物（`WP-4.9`）需要改结构 | 直接调用 domain API（脚本/调试）时仍可能"放置失败但调用方没看返回值" | `WP-4.9`（区域建筑 + 附属建筑嵌套）/ 后续把返回值纳入调用契约 |

@@ -76,7 +76,7 @@ namespace SciencePotato.Scripts.Map.Infrastructure
 				if (cellSave.Building != null)
 				{
 					IMapOccupant building = _rebuilder?.RebuildBuilding(cellSave.Building, cellSave.position);
-					if (building != null) map.AddOccupant(building, cellSave.position);
+					if (building != null) map.PlaceBuilding(building, cellSave.position); // WP-3.4：建筑落位一致
 					else GD.PushWarning($"[GodotMapRepository] 建筑「{cellSave.Building.Id}」(uid={cellSave.Building.UId}) 无法重建：配置缺失？");
 				}
 				else if (cellSave.Unit != null)

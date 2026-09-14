@@ -165,10 +165,9 @@ namespace SciencePotato.HeadlessChecks
 				h.ExcuteBuild(worker, site, "workshop");
 				Check.Assert(!worker.IsIdle, "开工后忙碌");
 
-				string uid = h.Map.GetOccupantInfo(MapId, site).Value.UId;
 
-				// `MAP-04` 现状：建造只写 `cell.Occupant`、`cell.Building` 恒空 → 拆除需在 domain 层预置权威
-				h.MapSession.Get(MapId).SetBuilding(site, h.Map.FindOccupantByUId(MapId, uid));
+
+				// v0.3 / WP-3.4：建造同时写 cell.Building 与占据物槽位（MAP-04 已修）→ 真实拆除路径即可验证。
 				h.Construction.RemoveBuildingByPosition(MapId, site);
 
 				Check.Assert(worker.IsIdle, "拆除施工中的建筑应释放建造者");

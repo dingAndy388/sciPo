@@ -41,6 +41,75 @@ namespace SciencePotato.Scripts.Map.Domain
 			_cells[position].SetTerrain(terrain);
 		}
 
+		/// <summary>
+		/// （v0.3 / WP-3.4）**占据物进入的唯一入口**：写入 `cell.Occupant` 与 `_occupants` 索引，
+		/// 并在目标格已被占用时**拒绝**（旧实现直接覆盖 → 一格两实体、索引与格子不一致）。
+		/// </summary>
+		/// <returns>是否放置成功。</returns>
+		public bool PlaceOccupant(IMapOccupant occupant, HexCubePosition position)
+		{
+			if (occupant == null) return false;
+			if (!_cells.TryGetValue(position, out MapCell cell)) return false;
+			if (cell.Occupant != null) return false; // 一格一占据物（`MAP-03`：不再静默覆盖）
+
+			cell.SetOccupant(occupant);
+			_occupants[occupant.GetInfo().UId] = occupant;
+			return true;
+		}
+
+		/// <summary>
+		/// （v0.3 / WP-3.4）**建筑进入的唯一入口**：同时写 `cell.Building` 与占据物槽位。
+		/// <para>旧实现只有建造路径写 `cell.Occupant`、`cell.Building` 恒空（`MAP-04`）→ `GetBuildingInfo` 查不到、
+		/// 拆除整体失效；统一入口后两者从落位那一刻起就一致。</para>
+		/// </summary>
+		public bool PlaceBuilding(IMapOccupant building, HexCubePosition position)
+		{
+			if (building == null) return false;
+			if (!_cells.TryGetValue(position, out MapCell cell)) return false;
+			if (cell.Occupant != null && !ReferenceEquals(cell.Occupant, building)) return false;
+
+			cell.SetBuilding(building);
+			cell.SetOccupant(building);
+			_occupants[building.GetInfo().UId] = building;
+			return true;
+		}
+
+		/// <summary>
+		/// （v0.3 / WP-3.4）**占据物离开的唯一入口**：格子、建筑槽位、`_occupants` 索引三处一起清。
+		/// <para>旧实现只清 `cell.Occupant` → `_occupants` 里留下**僵尸索引**（`MAP-03`/`UNIT-05`）：
+		/// 已阵亡的单位仍能按 uid 查到，任务/战斗回调于是对着尸体干活。</para>
+		/// </summary>
+		/// <returns>被移除的占据物（无则 null）。</returns>
+		public IMapOccupant RemoveOccupant(HexCubePosition position)
+		{
+			if (!_cells.TryGetValue(position, out MapCell cell)) return null;
+
+			IMapOccupant occupant = cell.Occupant;
+			if (occupant == null) return null;
+
+			string uid = occupant.GetInfo().UId;
+			if (!string.IsNullOrEmpty(uid)) _occupants.Remove(uid);
+			if (ReferenceEquals(cell.Building, occupant)) cell.RemoveBuilding();
+			cell.RemoveOccupant();
+			return occupant;
+		}
+
+		/// <summary>（v0.3 / WP-3.4）**建筑离开的唯一入口**：清 `cell.Building` + 占据物槽位 + 索引。</summary>
+		/// <returns>被移除的建筑（无则 null）。</returns>
+		public IMapOccupant RemoveBuildingAt(HexCubePosition position)
+		{
+			if (!_cells.TryGetValue(position, out MapCell cell)) return null;
+
+			IMapOccupant building = cell.Building;
+			cell.RemoveBuilding();
+			if (building == null) return null;
+
+			string uid = building.GetInfo().UId;
+			if (!string.IsNullOrEmpty(uid)) _occupants.Remove(uid);
+			if (ReferenceEquals(cell.Occupant, building)) cell.RemoveOccupant();
+			return building;
+		}
+
 		public MapCell GetCell(HexCubePosition position)
 		{
 			return _cells[position];
@@ -147,31 +216,26 @@ namespace SciencePotato.Scripts.Map.Domain
 
 		public void AddOccupant(IMapOccupant occupant,HexCubePosition position)
 		{
-			if (_cells.TryGetValue(position, out _))
-				_cells[position].SetOccupant(occupant);
-			_occupants[occupant.GetInfo().UId] = occupant;
+			// v0.3 / WP-3.4：统一走"进入的唯一入口"（含占用冲突拒绝与索引一致）
+			PlaceOccupant(occupant, position);
 		}
 
 		public void RemoveOccupantByPosition(HexCubePosition position)
 		{
-			if (_cells.TryGetValue(position, out MapCell cell))
-				if (cell.Occupant!=null)
-					cell.RemoveOccupant();
+			// v0.3 / WP-3.4：统一走"离开的唯一入口"（含 `_occupants` 索引清理，修僵尸索引）
+			RemoveOccupant(position);
 		}
 
 		public void SetBuilding(HexCubePosition position, IMapOccupant building)
 		{
-			if (_cells.TryGetValue(position, out _))
-				_cells[position].SetBuilding(building);
+			// v0.3 / WP-3.4：建筑落位统一走 PlaceBuilding（同时写 cell.Building 与占据物槽位）
+			PlaceBuilding(building, position);
 		}
 
 		public void RemoveBuilding(HexCubePosition position)
 		{
-			if (_cells.TryGetValue(position, out MapCell cell)) 
-			{
-				cell.RemoveBuilding();
-            }
-        }
+			RemoveBuildingAt(position);
+		}
 
 		public bool VerifyTerrain(HexCubePosition position, string targetTerrain)
 		{

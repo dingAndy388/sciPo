@@ -26,6 +26,7 @@ namespace SciencePotato.HeadlessChecks
 			TechTreeConcurrencyChecks.RunAll();
 			DomainEventChecks.RunAll();
 			WorldPersistenceChecks.RunAll();
+			OccupancyChecks.RunAll();
 
 			return Check.Summary();
 		}

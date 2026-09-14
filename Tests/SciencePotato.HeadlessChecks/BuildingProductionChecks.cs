@@ -159,13 +159,14 @@ namespace SciencePotato.HeadlessChecks
 				core.Session.Clock.AdvanceDays(30);
 				Check.AssertEqual(beforeRemoval, IdeaOf(resources, mapId, ownerId), "修正器回收后不应再有 idea 产出");
 
-				// ⑤ **已知缺陷固定**（`MAP-03`/`MAP-04` → WP-3.4「地块占用权威一致」）：
-				//    `Map.AddOccupant` 只写 `cell.Occupant`，`cell.Building` 恒为 null，
-				//    于是 `GetBuildingInfo` 查不到建筑、`RemoveBuildingByPosition` 整体失效（既不拆地块也不回收修正器）。
-				//    本条断言"缺陷仍在"；WP-3.4 修好后这里会失败 —— 那时请把它改成"拆除生效"的正向断言。
+				// ⑤ **拆除生效**（v0.3 / WP-3.4 修复 `MAP-04`）：建造现在同时写 `cell.Building` 与占据物槽位，
+				// 因此 `RemoveBuildingByPosition` 能真正拆掉建筑、回收修正器，并注销它名下的任务。
+				float beforeDemolition = IdeaOf(resources, mapId, ownerId);
 				construction.RemoveBuildingByPosition(mapId, position);
-				Check.Assert(core.Map.GetOccupantInfo(mapId, position).HasValue,
-					"已知缺陷（WP-3.4 待修）：建造只写 cell.Occupant，拆除走 cell.Building → 拆除对自建建筑无效");
+				Check.Assert(!core.Map.GetOccupantInfo(mapId, position).HasValue,
+					"拆除后地块应被清空（旧实现因 `cell.Building` 恒空而整体失效）");
+				core.Session.Clock.AdvanceDays(30);
+				Check.AssertEqual(beforeDemolition, IdeaOf(resources, mapId, ownerId), "拆除后不应再产出 idea");
 			}
 			finally
 			{
