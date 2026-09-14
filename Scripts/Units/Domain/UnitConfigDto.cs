@@ -21,6 +21,9 @@ namespace SciencePotato.Scripts.Units.Domain
 		public float AttackDamage { get; set; }
 		public int PopulationCost { get; set; }
 
+		/// <summary>（v0.3 / WP-3.9 / `UNIT-19`）月度维护费：资源名 → 每月数量（空表 = 不维护）。</summary>
+		public Dictionary<string, float> Maintenance { get; set; }
+
 		/// <summary>（v0.3 / WP-3.8 / `UNIT-14`）敌方单位标记（分类 = 敌方单位）。</summary>
 		public bool IsHostile { get; set; }
 

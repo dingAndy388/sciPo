@@ -27,5 +27,9 @@
       "BaseLimit": 999999,
       "DependentModifiers": ["IdeaGrowth"]
     }
-  ]
+  ],
+  "Settlement": {
+    "DemandResource": "Gold",
+    "PopulationUpkeepPerMonth": 3
+  }
 }

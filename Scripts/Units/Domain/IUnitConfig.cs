@@ -22,6 +22,15 @@ namespace SciencePotato.Scripts.Units.Domain
 		int PopulationCost { get; }
 
 		/// <summary>
+		/// （v0.3 / WP-3.9 / `UNIT-19` / 设计稿漏项 L2）**月度维护费**：资源名 → 每月数量。
+		/// <para>设计稿口径是"每月消耗的食物"（默认值：工人 1 · 民兵 2 · 长矛兵 3 · 弓箭手 3 …），
+		/// 原型资源表还没有 Food，故按既有别名口径填 <c>{ "Gold": N }</c>（与 `ResourceCost`、
+		/// 敌方 `DropReward` 同一写法、同一别名），`RES-*` 资源填表统一时再一次性重映射。</para>
+		/// <para>空表 = 不维护（敌方单位一律为空：它们不参与月度结算）。消费方 = `MonthlySettlementService`。</para>
+		/// </summary>
+		Dictionary<string, float> Maintenance { get; }
+
+		/// <summary>
 		/// （v0.3 / WP-3.8 / `UNIT-14`）**是否敌方单位**（design/unit.md「敌方单位」表的「分类」列）。
 		/// <para>`true` 的行由地图生成后处理（`EnemySpawner`）按地形概率放置：不参与训练系统、不消耗资源、
 		/// 无移动力、不揭雾；`false` 的行是玩家单位，只走训练路径（`TrainUnit`）。</para>

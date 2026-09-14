@@ -2,6 +2,7 @@ using SciencePotato.Scripts.Common.Domain;
 using SciencePotato.Scripts.Fog.Application;
 using SciencePotato.Scripts.Map.Domain;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace SciencePotato.Scripts.Map.Application
 {
@@ -105,6 +106,30 @@ namespace SciencePotato.Scripts.Map.Application
 		{
 			var map = _session.Get(mapId);
 			return map?.GetPopulationWithin(center, radius) ?? 0;
+		}
+
+		/// <summary>
+		/// （v0.3 / WP-3.9 / `TIME-14`）**全图人口总计**（只读；月度结算器收"人口维护费"用）。
+		/// <para>地图不存在时返回 0 而不是抛（结算跑在日边界上，抛异常会打断整批派发）。</para>
+		/// </summary>
+		public int GetTotalPopulation(string mapId)
+		{
+			var map = _session.Get(mapId);
+			return map?.GetAllCells().Sum(cell => cell.Population) ?? 0;
+		}
+
+		/// <summary>
+		/// （v0.3 / WP-3.9）本图**全部占据物**（地图不存在 → 空集合，不抛）。
+		/// <para>占用权威（`WP-3.4`）保证 `cell.Occupant` 与 uid 索引一致，因此"按格取占据物"就是全量视图；
+		/// 经济结算需要它来统计"图上有哪些单位"（单位维护费），但**返回值是 <see cref="IMapOccupant"/>** ——
+		/// 地图模块不必认识 Units 模块的类型，判定留给消费方。</para>
+		/// </summary>
+		public IEnumerable<IMapOccupant> GetOccupants(string mapId)
+		{
+			var map = _session.Get(mapId);
+			if (map == null) return Enumerable.Empty<IMapOccupant>();
+
+			return map.GetAllCells().Where(cell => cell.Occupant != null).Select(cell => cell.Occupant);
 		}
 
 		/// <summary>

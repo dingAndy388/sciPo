@@ -1,5 +1,7 @@
 using SciencePotato.Scripts.Common.Domain;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace SciencePotato.Scripts.Common.Application
 {
@@ -53,11 +55,21 @@ namespace SciencePotato.Scripts.Common.Application
 		/// 其余（`BuildingSpeed` / `UnitTrainingSpeed` / `ResearchSpeed` 等）随 `WP-4.4` 分批接线。</para>
 		/// </summary>
 		public float GetValue(string mapId, int ownerId, string target, float baseValue = 1f)
+			=> GetValue(mapId, ownerId, new[] { target }, baseValue);
+
+		/// <summary>
+		/// （v0.3 / WP-3.9）**多 Target 读取**（与 `ModifierManager.GetValue` 同语义：按顺序取第一个已登记的 Target）。
+		/// <para>需求场景：资源表的 `DependentModifiers` 是一个列表（例如 `["IdeaGrowth"]`，未来可能写多个候选名），
+		/// 结算器要按与 `ResourceGrowth` 任务**完全一致**的公式汇总产出，因此必须能一次传入整列。
+		/// 缺省值与单 Target 重载完全一致（不含任何候选时返回 <paramref name="baseValue"/>）。</para>
+		/// </summary>
+		public float GetValue(string mapId, int ownerId, IEnumerable<string> targets, float baseValue)
 		{
-			if (string.IsNullOrWhiteSpace(target)) return baseValue;
+			string[] names = targets?.Where(t => !string.IsNullOrWhiteSpace(t)).ToArray() ?? Array.Empty<string>();
+			if (names.Length == 0) return baseValue;
 
 			var manager = new ModifierManager(_repo.LoadModifiers(mapId, ownerId));
-			return manager.GetValue(new[] { target }, baseValue);
+			return manager.GetValue(names, baseValue);
 		}
 	}
 }

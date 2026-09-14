@@ -13,7 +13,8 @@
       "VisionRadius": 3,
       "AttackRadius": 0,
       "AttackDamage": 0,
-      "PopulationCost": 1
+      "PopulationCost": 1,
+      "Maintenance": { "Gold": 1 }
     },
     "swordsman": {
       "UnitId": "swordsman",
@@ -28,7 +29,8 @@
       "VisionRadius": 4,
       "AttackRadius": 0,
       "AttackDamage": 8,
-      "PopulationCost": 1
+      "PopulationCost": 1,
+      "Maintenance": { "Gold": 2 }
     },
     "archer": {
       "UnitId": "archer",
@@ -43,7 +45,8 @@
       "VisionRadius": 5,
       "AttackRadius": 3,
       "AttackDamage": 6,
-      "PopulationCost": 1
+      "PopulationCost": 1,
+      "Maintenance": { "Gold": 3 }
     },
     "wolf": {
       "UnitId": "wolf",
@@ -62,7 +65,8 @@
       "VisionRadius": 0,
       "AttackRadius": 0,
       "AttackDamage": 6,
-      "PopulationCost": 0
+      "PopulationCost": 0,
+      "Maintenance": {}
     },
     "boar": {
       "UnitId": "boar",
@@ -81,7 +85,8 @@
       "VisionRadius": 0,
       "AttackRadius": 0,
       "AttackDamage": 10,
-      "PopulationCost": 0
+      "PopulationCost": 0,
+      "Maintenance": {}
     },
     "eagle": {
       "UnitId": "eagle",
@@ -100,7 +105,8 @@
       "VisionRadius": 0,
       "AttackRadius": 2,
       "AttackDamage": 8,
-      "PopulationCost": 0
+      "PopulationCost": 0,
+      "Maintenance": {}
     },
     "ibex": {
       "UnitId": "ibex",
@@ -119,7 +125,8 @@
       "VisionRadius": 0,
       "AttackRadius": 0,
       "AttackDamage": 12,
-      "PopulationCost": 0
+      "PopulationCost": 0,
+      "Maintenance": {}
     },
     "crocodile": {
       "UnitId": "crocodile",
@@ -138,7 +145,8 @@
       "VisionRadius": 0,
       "AttackRadius": 1,
       "AttackDamage": 14,
-      "PopulationCost": 0
+      "PopulationCost": 0,
+      "Maintenance": {}
     }
   }
 }

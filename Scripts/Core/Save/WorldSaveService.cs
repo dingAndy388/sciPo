@@ -40,6 +40,9 @@ namespace SciencePotato.Scripts.Core.Save
 		private readonly FogAppService _fog;
 		private readonly ISaveStore _store;
 
+		/// <summary>（v0.3 / WP-3.9）月度经济结算器（可空 = 本宿主不使用月度结算）。</summary>
+		private readonly MonthlySettlementService _settlement;
+
 		public WorldSaveService(
 			GameSession session,
 			MapAppService map,
@@ -52,7 +55,8 @@ namespace SciencePotato.Scripts.Core.Save
 			ResourcesAppService resources,
 			EventAppService events = null,
 			FogAppService fog = null,
-			ISaveStore store = null)
+			ISaveStore store = null,
+			MonthlySettlementService settlement = null)
 		{
 			_session = session ?? throw new ArgumentNullException(nameof(session));
 			_time = time ?? throw new ArgumentNullException(nameof(time));
@@ -66,6 +70,7 @@ namespace SciencePotato.Scripts.Core.Save
 			_events = events;
 			_fog = fog;
 			_store = store;
+			_settlement = settlement;
 		}
 
 		/// <summary>最近一次读档恢复的任务数（验收/调试用）。</summary>
@@ -98,6 +103,9 @@ namespace SciencePotato.Scripts.Core.Save
 
 			// 事件状态（v0.3 / WP-3.3）：生效中事件 + 触发计数 + 掷骰次数
 			if (mapId != null) _events?.SaveEvents(mapId);
+
+			// 月度结算状态（v0.3 / WP-3.9）：连续赤字月数（`WP-3.10` 的减员输入）—— 与事件状态同一套路
+			if (mapId != null) _settlement?.SaveSettlement(mapId);
 
 			// 统一落盘（原子写）：任务/资源/修正器/科技/迷雾/事件此前已经在各自写入点标脏
 			_store?.Commit();
@@ -144,6 +152,10 @@ namespace SciencePotato.Scripts.Core.Save
 
 			// ④.5 迷雾（`FogAppService` 是内存矩阵，读档必须显式加载，否则地图全黑 —— `WP-3.2` 补齐）
 			_fog?.Load(mapId);
+
+			// ④.6 月度结算状态（v0.3 / WP-3.9）：先恢复赤字月数并作废月结任务的幂等登记，
+			// 再由 ⑤ 按快照重建任务 —— 顺序反了会让"刚恢复的任务"被随后的恢复流程当成重复登记
+			_settlement?.RestoreSettlement(mapId, ownerId);
 
 			// ⑤ 周期任务
 			LastRestoredTaskCount = RestoreTasks(mapId, ownerId);
@@ -201,6 +213,9 @@ namespace SciencePotato.Scripts.Core.Save
 				restored += _resources?.RestoreGrowthTasks(mapId, ownerId, progress) ?? 0;
 				restored += _construction?.RestoreHousingTasks(mapId, ownerId, progress) ?? 0;
 				restored += _units?.RestoreUnitTasks(mapId, progress) ?? 0;
+
+				// 月度结算（v0.3 / WP-3.9）：与上面三类周期任务同一口径 —— 按实体重建 + 回填进度
+				restored += _settlement?.RestoreSettlementTask(mapId, ownerId, progress) ?? 0;
 			}
 
 			return restored;

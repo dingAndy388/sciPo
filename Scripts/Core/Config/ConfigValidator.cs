@@ -128,6 +128,32 @@ namespace SciencePotato.Scripts.Core.Config
 				if (resource.DependentModifiers == null || resource.DependentModifiers.Count == 0)
 					report.Warn("Resources", id, "DependentModifiers 为空：该资源不响应任何 modifier（指南要求留空也要写 []）");
 			}
+
+			// ── 月度经济结算参数（v0.3 / WP-3.9 / `TIME-14`）──
+			// 分级口径：**段缺失**只 warning（它等价于"不向人口收维护费"，是一种可解释的配置，不是错误），
+			// 但"写了却指不到资源"或"负数"一律 error —— 前者会让维护费永远扣不到东西（静默不生效，
+			// 与 `MOD-05`/`TriggerChance` 同一类教训），后者是确定的数值错误。
+			ISettlementConfig settlement = tables.Resources?.GetResourcesPoolConfig()?.Settlement;
+			if (settlement == null)
+			{
+				report.Warn("Resources", "Settlement",
+					"缺少 Settlement 段：月度经济结算器没有需求资源与人口维护率（不会扣维护费）。" +
+					"建议补 {\"Settlement\":{\"DemandResource\":\"Gold\",\"PopulationUpkeepPerMonth\":3}}");
+			}
+			else
+			{
+				if (!NotEmpty(settlement.DemandResource))
+					report.Warn("Resources", "Settlement",
+						"DemandResource 为空：人口维护费无处可扣（需求结算整体跳过）");
+				else if (!seen.Contains(settlement.DemandResource))
+					report.Error("Resources", "Settlement",
+						$"DemandResource=\"{settlement.DemandResource}\" 不是 Resources 段里的资源名" +
+						$"（费永远扣不到东西）：{string.Join(", ", seen)}");
+
+				if (settlement.PopulationUpkeepPerMonth < 0f)
+					report.Error("Resources", "Settlement",
+						$"PopulationUpkeepPerMonth={settlement.PopulationUpkeepPerMonth} 不能为负（0 = 不向人口收维护费）");
+			}
 		}
 
 		// ────────────────────────── Buildings ──────────────────────────
@@ -305,6 +331,12 @@ namespace SciencePotato.Scripts.Core.Config
 				if (unit.Duration < 0f) report.Error("Units", key, $"Duration={unit.Duration} 不能为负");
 				else if (unit.Duration == 0f && !hostile) report.Warn("Units", key, "Duration=0：瞬间训练完成");
 				else if (unit.Duration > 0f) ValidateDayUnit(report, "Units", key, "Duration", unit.Duration);
+
+				// 单位维护（v0.3 / WP-3.9 / `UNIT-19`、设计稿漏项 L2「维护」列）：与 ResourceCost **完全同一口径**
+				// （未知资源名 warning、负值 error、留空合法 = 不维护）。消费方 = `MonthlySettlementService`。
+				ValidateResourceCosts(report, "Units", key, unit.Maintenance, resourceIds, "Maintenance", warnWhenEmpty: false);
+				if (hostile && unit.Maintenance != null && unit.Maintenance.Count > 0)
+					report.Warn("Units", key, "敌方单位填了 Maintenance：敌方不参与月度维护扣费，该值不会被使用（设计稿的维护费只针对玩家单位）");
 
 				ValidateEnemySpawn(report, key, unit, terrainIds, resourceIds);
 			}
