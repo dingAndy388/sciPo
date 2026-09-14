@@ -10,17 +10,28 @@ namespace SciencePotato.Scripts.Map.Infrastructure
 	public class VoronoiMapGenerator : IMapGenerator
 	{
 		private IRandom _random;
-		private IConfigLoader _config;
+		private readonly IConfigLoader _resourceConfigLoader;
 		private IEnumerable<ITerrainData> _terrainConfig;
 		private IMapGeneratorConfig _mapGeneratorConfig;
 		private readonly ITerrainConfigRepository _terrainRepo;
-		private readonly string generatorConfigPath;
+		private readonly IMapGeneratorConfig _jsonGeneratorConfig;
+		private readonly string _generatorConfigPath;
 
-		public VoronoiMapGenerator(ITerrainConfigRepository terrainRepository, IConfigLoader config, string generatorConfigPath)
+		/// <param name="terrainRepository">地形配置表（<c>Config/Terrains.json</c>）。</param>
+		/// <param name="generatorConfig">生成器配置表（<c>Config/Generator.json</c>，v0.3 / WP-1.4 起通电）。</param>
+		/// <param name="resourceConfigLoader">可选的 Godot 资源加载器：仅当它非空且 <paramref name="generatorConfigPath"/> 有效时，
+		/// 才尝试用 <c>Config/Generator/Generator.tres</c> 覆写配置表（方便在编辑器里调参）；无头环境传 null。</param>
+		/// <param name="generatorConfigPath">.tres 覆写目录（如 <c>res://Config/Generator</c>）。</param>
+		public VoronoiMapGenerator(
+			ITerrainConfigRepository terrainRepository,
+			IMapGeneratorConfig generatorConfig,
+			IConfigLoader resourceConfigLoader = null,
+			string generatorConfigPath = null)
 		{
-			this._config = config;
 			this._terrainRepo = terrainRepository;
-			this.generatorConfigPath = generatorConfigPath;
+			this._jsonGeneratorConfig = generatorConfig;
+			this._resourceConfigLoader = resourceConfigLoader;
+			this._generatorConfigPath = generatorConfigPath;
 		}
 
 		public Domain.Map Generate(int width, int height, int seed, string Id)
@@ -28,9 +39,8 @@ namespace SciencePotato.Scripts.Map.Infrastructure
 			// reload config
 			_terrainConfig = _terrainRepo.GetAll();
 
-			// v0.3 / WP-1.3：无头环境没有 Godot 资源加载器时回退默认生成器配置
-			_mapGeneratorConfig = _config?.Load<IMapGeneratorConfig>($"{generatorConfigPath}/Generator.tres")
-				?? new GeneratorConfigDto();
+			// v0.3 / WP-1.4：生成器配置的权威来源是配置表（JSON），.tres 仅作编辑器覆写
+			_mapGeneratorConfig = ResolveGeneratorConfig();
 
 			// generate blank map
 			Domain.Map map = GetBlankMap(width, height, seed, Id);
@@ -38,6 +48,21 @@ namespace SciencePotato.Scripts.Map.Infrastructure
 			// distribute terrains
 			map = DistributeTerrain(map, seed);
 			return map;
+		}
+
+		/// <summary>
+		/// 取值顺序：Godot <c>.tres</c>（存在资源加载器时）→ JSON 配置表 → 代码默认值。
+		/// 无头环境（测试 / 离线结算）没有资源加载器，走 JSON 表，与其余 6 张表一致（`DEP-07`）。
+		/// </summary>
+		private IMapGeneratorConfig ResolveGeneratorConfig()
+		{
+			if (_resourceConfigLoader != null && !string.IsNullOrWhiteSpace(_generatorConfigPath))
+			{
+				IMapGeneratorConfig fromResource = _resourceConfigLoader.Load<IMapGeneratorConfig>($"{_generatorConfigPath}/Generator.tres");
+				if (fromResource != null) return fromResource;
+			}
+
+			return _jsonGeneratorConfig ?? new GeneratorConfigDto();
 		}
 
 		private Domain.Map DistributeTerrain(Domain.Map map, int seed)

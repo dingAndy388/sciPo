@@ -54,7 +54,7 @@
   二、资源池配置 (Resources)
 ================================================================================
 
-  文件名建议: ResourcesConfig.json
+  文件名建议: Config/Resources.json
   根元素: { "Resources": [ ... ] }
 
   [字段说明]
@@ -116,7 +116,7 @@
   三、建筑配置 (Buildings)
 ================================================================================
 
-  文件名建议: BuildingsConfig.json
+  文件名建议: Config/Buildings.json
   根元素: { "Buildings": { "building_id": {...}, ... } }
 
   [字段说明]
@@ -204,7 +204,7 @@
   四、单位配置 (Units)
 ================================================================================
 
-  文件名建议: UnitsConfig.json
+  文件名建议: Config/Units.json
   根元素: { "Units": { "unit_id": {...}, ... } }
 
   [字段说明]
@@ -296,7 +296,7 @@
   五、科技树配置 (TechTrees)
 ================================================================================
 
-  文件名建议: TechTreesConfig.json
+  文件名建议: Config/TechTrees.json
   根元素: { "TechTrees": { "tree_id": {...}, ... } }
 
   [字段说明]
@@ -382,7 +382,7 @@
   六、事件配置 (Events)
 ================================================================================
 
-  文件名建议: EventsConfig.json
+  文件名建议: Config/Events.json
   根元素: { "Events": [ ... ] }
 
   [字段说明]
@@ -455,8 +455,10 @@
   附录A、地形配置 (Terrains)
 ================================================================================
 
-  地形使用 Godot 的 .tres 资源文件，存放于 Config/Terrains/ 目录。
-  不使用 JSON。每个地形一个 .tres 文件。
+  地形配置已改为 JSON（v0.3 / WP-0.4）：权威来源是 Config/Terrains.json，
+  请勿再新增 .tres。Config/Terrains/*.tres 仅作为编辑器可视化/历史遗留保留，运行时不读取。
+  字段见 Config/Terrains.json：Id / Name / Weight / MoveCost / Passable / UnlockTech
+  （Passable 取代了旧口径「MoveCost=0 即不可通行」）。
 
   [字段说明]
 
@@ -495,6 +497,41 @@
   | Attack          | 攻击力         | Absolute 5 = +5 |
   | 单位ID+Attack    | 特定单位攻击力 | swordsmanAttack |
   | 单位ID+HP        | 特定单位生命   | swordsmanHP |
+
+================================================================================
+  附录C、配置表校验（v0.3 / WP-1.4 起，启动期自动执行）
+================================================================================
+
+  7 张表（Config/{表名}.json）：Terrains / Resources / Buildings / Units / TechTrees / Events / Generator
+  装载（能不能解析）与内容校验（对不对）都在 CoreBootstrap 装配时执行，结论：
+    - 打到 Godot 控制台（ServiceContainer._Ready）
+    - 随 CoreServices.ConfigReport 暴露给表现层与无头检查
+
+  [分级]
+  error   → 阻断启动；异常消息内含逐条问题清单（[ERROR] 表/Id: 说明）
+  warning → 只提示，不阻断
+
+  [error 清单]
+  - 表文件缺失 / JSON 解析失败 / 根对象形状与 DTO 不符（如 Events 写成裸数组）
+  - 表为空（每张表至少 1 条）
+  - Id 为空、Id 重复、字典 key 与条目 Id 不一致
+  - Terrains：Weight<=0、MoveCost<0
+  - Resources：GrowInterval<0、BaseGrowth<0、BaseLimit<=0、BaseValue<0 或 > BaseLimit
+  - Buildings/Units：Duration<0、ResourceCost 负值、HP<=0，以及攻击/移动/视野/人口相关字段为负
+  - TechTrees：Cost<0、Duration<0、前置指向自己、前置成环、前置不在同一棵树内
+  - Events：TriggerChance 不在 [0,1]、Duration<0
+  - Modifier：Type 不是 "Percent" / "Absolute"（其余拼写会被静默当成 Absolute，见 MOD-05）
+  - 跨表：TechRequirements / TechPrerequisites 引用了不存在的科技树
+  - Generator：Density<=0
+
+  [warning 清单]
+  - 未知地形 Id、未知资源名、树内不存在的科技节点（跨表引用先降级，WP-2.1 收敛）
+  - Modifier.Target 不在登记表内
+    （登记表 = 固定名 ∪ 资源派生 {资源名}Growth ∪ 单位派生 {单位ID}Attack / {单位ID}HP）
+  - Modifier.Value=0、Name 为空、TerrainRequirements 为空、ResourceCost 为空（免费）
+  - Duration=0（瞬间完成）、MoveRechargePerTick=0、PopulationCost=0
+  - 住房字段与 IsHousing 不一致（IsHousing=true 但 Cap/Radius<=0；非住房却填了人口字段）
+  - Terrains 的 Weight 总和不等于 1；Generator.Density>50
 
 ================================================================================
   END OF DOCUMENT

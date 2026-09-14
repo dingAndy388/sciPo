@@ -1107,6 +1107,7 @@
 | **v0.3** | 2026-09-14 | **P0 收敛与依赖补全**：按「M0-1/M0-2 验收是否需要」重新判定 18 条 P0 → **保留 10 条、8 条降为 P1**（`WIRE-02`/`MAP-02`/`TIME-01`/`TIME-02`/`TIME-14`/`CON-09`/`MAP-16`/`UNIT-10`，理由见 §17.3）；新增 **§13.z**（49 个 WP 的级别 / 全部依赖边 / 大项风险与降级方案 / 依赖主干图 / 批次重排）；统计 P0 18→10、P1 35→43（总数仍 97）。 |
 | v0.3.1 | 2026-09-14 | **M0-1 首批实现落地**：WP-0.1 清理、WP-0.2 验收载具（离线降级为可执行检查，12/12 通过、退出码 0）、WP-0.3 IO/配置抽象、WP-0.4 地形转 JSON（Config/Terrains.json）、WP-1.1 GameClock（逐日派发 / 三档 / 暂停 / 单帧上限）；dotnet build 通过。详见 §18。 |
 | v0.3.2 | 2026-09-14 | **M0-1 续推**：WP-1.3 组合根（`CoreBootstrap`/`GameSession`/`CoreServices`/`CoreDependencies`）与 WP-3.1 Map 常驻内存（`MapSession`）落地；`MapAppService` 改走会话缓存（解除 M0-2 ③④ 的阻塞点）；无头验收从 12 项扩到 **20 项全部通过**。新增决策 D7~D10（含"导出需包含 `*.json`"的待办风险）。 |
+| v0.3.3 | 2026-09-14 | **WP-1.4 完成（M0-1 ② 通关）**：7 张配置表统一为 `Config/{表名}.json` 并全部通电（`ConfigTables`）+ 启动期分级校验（`ConfigValidator`/`ConfigReport`，error 阻断 / warning 放行）；新增 `ModifierTargetRegistry`（Target 名登记表，由资源/单位表派生）。**校验器当场抓出两个真实缺陷**：`UnitsConfigDto` 缺 `[JsonProperty("Units")]` 导致整张单位表静默解析为 0 条；`Events` 表为裸数组（与 `EventsConfigDto` 根对象不符）→ 均修复。无头验收 **33/33 通过、退出码 0**，真实配置 **0 error / 0 warning**。新增决策 D11~D17。 |
 
 ---
 
@@ -1972,7 +1973,7 @@ WP-0.4 ─→ WP-3.5 / WP-3.8 / WP-5.3
 | ⬜ | WP-1.2 `GodotTimeDriver` | 待做 | 依赖 WP-1.1/1.3 |
 | 2026-09-14 | WP-1.3 `CoreBootstrap` + `GameSession` | ✅ 完成 | 新增 `Scripts/Core/`（`CoreDependencies`/`CoreServices`/`CoreBootstrap`/`GameSession`）：唯一组合根、显式顺序装配、配置缺失快速失败；`ServiceContainer` 薄化为"Godot 适配器 + 调 Bootstrap"；`VoronoiMapGenerator` 生成器配置改为可空（无头回退 `GeneratorConfigDto`）。检查 3 项通过 |
 | 2026-09-14 | WP-3.1 Map 常驻内存（前移） | ✅ 完成 | 新增 `Scripts/Map/Domain/MapSession.cs`（内存缓存 + 脏标记 + 存档点 `Flush`）；`MapAppService` 由"每方法 Load/Save"改为走会话缓存（15 处 Load→Get、2 处 Save→MarkDirty、5 处补脏标记），构造函数改为 `(IMapGenerator, MapSession)`。检查 5 项通过（含"占据物/人口跨调用不丢失"） |
-| ⬜ | WP-1.4 7 张配置表通电 + 启动期校验 | 待做 | 依赖 WP-0.3/0.4/1.3 |
+| 2026-09-14 | WP-1.4 7 张配置表通电 + 启动期校验 | ✅ 完成 | **7 张表统一为 `Config/{表名}.json`**（Terrains/Resources/Buildings/Units/TechTrees/Events/Generator；`Document/*Config.json` 经 `git mv` 迁入，Events 由裸数组改为 `{ "Events": [...] }`，Generator 新增 JSON 表）；新增 `Scripts/Core/ConfigTables.cs` + `Scripts/Core/Config/`（`ConfigTableLoader`/`ConfigValidator`/`ConfigReport`/`ConfigIssue`/`ModifierTargetRegistry`）：装载"能不能解析"+ 校验"内容对不对"写入同一份报告，**error 阻断启动 / warning 仅提示**（`CoreDependencies.FailOnConfigErrors` 可关）；`ServiceContainer` 启动时把报告打到 Godot 控制台。**顺带修复两处真实缺陷**：`UnitsConfigDto` 缺 `[JsonProperty("Units")]`（单位表原本整表解析为 0 条）、`Events` 表根对象不符。检查 13 项通过（总计 **33/33**） |
 | ⬜ | WP-1.5 口径重标定（秒 → 日） | 待做 | 依赖 WP-1.1/1.4 |
 
 ## 18.2 复现命令
@@ -1985,8 +1986,15 @@ dotnet build 'Science Potato.csproj'
 dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessChecks.csproj'
 ```
 
-当前 M0-1 验收结果（2026-09-14，**20/20 通过、退出码 0**）：`M0-1 ① 逐日派发 1080 次` ✅ ｜ `M0-1 ① 长跑无漏算` ✅ ｜ `M0-1 ③ 三档节拍在游戏日维度一致` ✅ ｜ `日期换算` ✅ ｜ `暂停冻结` ✅ ｜ `单帧上限欠账` ✅ ｜ `内存替身` ✅ ｜ `M0-1 ② 地形表可解析/量级/未知名返回 null` ✅ ｜ `WP-3.1 缓存与脏标记` ✅ ｜ `WP-3.1 占据物/人口跨调用不丢失（M0-2 前置）` ✅ ｜ `WP-1.3 组合根装配` ✅ ｜ `WP-1.3 配置缺失快速失败` ✅
-`M0-1 ① 逐日派发 1080 次` ✅ ｜ `M0-1 ① 长跑无漏算` ✅ ｜ `M0-1 ③ 三档节拍在游戏日维度一致（每 10 日 6 次）` ✅ ｜ `日期换算` ✅ ｜ `暂停冻结` ✅ ｜ `单帧上限欠账` ✅ ｜ `内存替身` ✅ ｜ `M0-1 ② 地形表可解析/量级/未知名返回 null` ✅
+当前 M0-1 验收结果（2026-09-14，**33/33 通过、退出码 0**）：
+
+| 分组 | 数量 | 覆盖 |
+| :--- | :--- | :--- |
+| 时间与替身（WP-0.2 / WP-1.1） | 9 | 逐日派发 1080 次 / 长跑无漏算（`CurrentDay`/`PendingDays` 收敛）/ 三档在游戏日维度一致 / 「每 10 日」节拍三档均 6 次 / 日期换算 / 暂停冻结 / 单帧上限欠账 / `ManualTimeDriver` / `InMemoryFileSystem` |
+| 配置表（WP-0.4 / WP-1.4） | 16 | Terrains 可解析·量级·未知 Id 返回 null / 7 张表文件齐全 / 7 张表全部通电（`LoadedCount=7`）/ 真实配置 **0 error** / Target 登记表覆盖派生名 / 非法 `Modifier.Type` 判 error / 科技前置同表闭合（缺失·自环·成环）/ key≠Id 判 error / 空表与缺表判 error / 跨表引用分级（未知树 error、未知节点 warning）/ 事件根对象拒绝裸数组 / `FailOnConfigErrors=false` 放行并取回报告 / 全表视图与 JSON 条目数一致 / 报告行可读 |
+| 组合根（WP-1.3） | 3 | 装配后可生成地图且常驻内存 / 配置缺失快速失败（消息指明表名）/ 会话时钟可推进 |
+| Map 常驻内存（WP-3.1） | 5 | 只读盘一次 / 占据物跨调用不丢失（可按 uid 取回）/ 人口不被读盘重置 / `Flush` 只写脏地图 / 落盘后新会话仍读不到占据物（WP-3.2 待补） |
+
 
 ## 18.3 实施期决策与偏差记录
 
@@ -2001,7 +2009,15 @@ dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessC
 | D7 | 组合根入参改为 **`MapRepositoryFactory`**（`Func<ITerrainConfigRepository, IMapRepository>`）而非直接注入仓库实例 | 地图仓库需要地形配置来解析地形 Id，而地形配置由组合根本身产出 → 直接注入构成构造循环；工厂是打断循环的最小手段 |
 | D8 | `MapAppService` 构造函数由 `(IMapGenerator, IMapRepository)` 改为 `(IMapGenerator, MapSession)` | 会话缓存承担读写边界，应用服务不再直接触仓储（更贴近"Map 是聚合根"的既定设计） |
 | D9 | `VoronoiMapGenerator` 的生成器配置**可空**（`IConfigLoader` 传 null → 回退 `GeneratorConfigDto`，Density=4） | 让核心可无头运行；Godot 侧仍读 `Config/Generator/Generator.tres` |
-| D10 | **待办风险**：`Config/*.json` 必须在 Godot 导出设置中加入"非资源文件过滤"（`*.json`） | 否则导出包内不含 JSON → 启动期 `CoreBootstrap` 快速失败；编辑器内运行不受影响（`WP-1.4` / M1 处理） |
+| D10 | **待办风险**：`Config/*.json` 必须在 Godot 导出设置中加入"非资源文件过滤"（`*.json`） | 否则导出包内不含 JSON → 启动期 `CoreBootstrap` 快速失败；编辑器内运行不受影响（`WP-1.4` / M1 处理）。⚠️ 本批次复查：仓库内暂无 `export_presets.cfg`，导出前必须新建预设并勾选该过滤 |
+| D11 | 配置表**位置与命名统一**为 `Config/{表名}.json`（`Terrains`/`Resources`/`Buildings`/`Units`/`TechTrees`/`Events`/`Generator`） | 原 `Document/*Config.json` 经 `git mv` 迁入（保留历史），文件名去 `Config` 后缀以与 `IConfigSource.LoadText(name)` 的 `<name>.json` 约定对齐；`Document/ConfigTableGuide.txt` 同步（文件名 + 新增附录 C 校验清单）；仍支持 `user://Config/{表名}.json` 覆写 |
+| D12 | 校验**分级**：error 阻断启动、warning 只提示；`CoreDependencies.FailOnConfigErrors`（默认 true）可关闭 | §13.z 风险 3 的落地：原型数据与设计规模差距大，若一上来就全量强校验则 M0-1 ② 必然失败。error 清单/ warning 清单写入指南附录 C；测试用 `false` 取完整报告而不必断言异常消息 |
+| D13 | 跨表引用完整性**先降级为 warning**，只有两处判 error：同表内前置闭合（科技树内）与"科技树 Id 不存在" | 与 §13.z「引用完整性先只校验同表内闭合」一致；WP-2.1 收敛跨树前置后再升级 |
+| D14 | `Modifier.Target` 登记表**由配置派生**：固定名 ∪ `{资源名}Growth` ∪ `{单位ID}Attack`/`{单位ID}HP` | 既覆盖指南附录 B 的命名约定（`GoldGrowth`/`swordsmanAttack`），又能在填表者另造词时报警；`Type` 字面量白名单仅 `Percent`/`Absolute`，其余判 **error**（`ModifierAppService` 会把未知拼写静默当成 Absolute，即 `MOD-05` 的静默降级） |
+| D15 | **发现并修复**：`UnitsConfigDto.UnitsData` 缺 `[JsonProperty("Units")]` | 属性名与 JSON 键不匹配 → 单位表**整表静默解析为 0 条**（M0-1 ② 的真实阻塞点，被"表为空"error 抓出）。同时 `Events` 表原为裸数组、与 `EventsConfigDto` 根对象不符 → 改为 `{ "Events": [...] }`；`WP-2.8` 只余 `TriggerChance`→`TriggerChancePerDay` 改名与 DTO 增字段 |
+| D16 | Generator 表通电（`Config/Generator.json`），`.tres` 降级为**可选编辑器覆写** | 取值顺序：`.tres`（仅 Godot，存在资源加载器时）→ JSON 表 → 代码默认值（`Density=4`）。无头/CI 走 JSON 表，与其余 6 张表同源；`CoreDependencies.ResourceConfigLoader`/`GeneratorConfigPath` 遂变成纯可选 |
+| D17 | 三个配置仓库补**全表视图**：`IBuildingConfigRepository.GetAll`、`IUnitsRepository.GetAll`、`ITechTreesConfigRepository.GetTreeIds` | 启动期校验需要"全表"而非"按 Id 单查"；同时给 `TechTreesConfigRepository.GetTechTreeConfig` 补空值保护（原来 `_techTreesConfig` 为 null 时会 NRE）。单条检索接口保持向后兼容 |
+
 
 
 ### 17.3 P0 收敛判定（v0.3）

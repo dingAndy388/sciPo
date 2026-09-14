@@ -27,14 +27,23 @@ namespace SciencePotato.Scripts.Core
 		public IRandom Random { get; init; }
 
 		/// <summary>
-		/// 生成器配置（<c>Config/Generator/Generator.tres</c>）的资源加载器。
-		/// 无头环境可留空 —— 此时生成器回退到 <see cref="Map.Domain.GeneratorConfigDto"/> 的默认值。
+		/// 生成器配置（<c>Config/Generator/Generator.tres</c>）的资源加载器：**可选**。
+		/// <para>v0.3 / WP-1.4 起生成器配置的权威来源是配置表 <c>Config/Generator.json</c>；
+		/// 本加载器只保留"编辑器里用 .tres 临时覆写"的能力，无头环境留空即可。</para>
 		/// </summary>
 		public IConfigLoader ResourceConfigLoader { get; init; }
 
-		/// <summary>生成器配置目录（Godot 资源路径）。</summary>
+		/// <summary>生成器 .tres 覆写目录（Godot 资源路径）；仅在 <see cref="ResourceConfigLoader"/> 非空时生效。</summary>
 		public string GeneratorConfigPath { get; init; } = "res://Config/Generator";
+
+		/// <summary>
+		/// （v0.3 / WP-1.4）配置校验发现 **error** 时是否快速失败（默认 true，`WIRE-04`）。
+		/// <para>测试/工具把它设为 false 即可在"配置有错"的前提下检查完整校验报告，
+		/// 而不用去断言异常消息。</para>
+		/// </summary>
+		public bool FailOnConfigErrors { get; init; } = true;
 
 		public string SessionId { get; init; } = "session";
 	}
 }
+

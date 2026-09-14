@@ -1,10 +1,8 @@
 using SciencePotato.Scripts.Common.Domain;
-using SciencePotato.Scripts.Common.Infrastructure;
 using SciencePotato.Scripts.Core;
 using SciencePotato.Scripts.Core.Time;
 using SciencePotato.Scripts.Map.Domain;
 using System;
-using System.IO;
 
 namespace SciencePotato.HeadlessChecks
 {
@@ -18,31 +16,9 @@ namespace SciencePotato.HeadlessChecks
 			Check.Run("WP-1.3 CoreBootstrap：会话持有的时钟可推进（日边界可用）", SessionClockAdvances);
 		}
 
-		private static CoreServices BuildCore(InMemoryConfigSource configSource)
-		{
-			var repo = new InMemoryMapRepository();
-			return CoreBootstrap.Build(new CoreDependencies
-			{
-				FileSystem = new InMemoryFileSystem(),
-				ConfigSource = configSource,
-				Random = new SystemRandom(1234),
-				ResourceConfigLoader = null, // 无头环境：生成器回退默认配置
-				MapRepositoryFactory = _ => repo,
-				SessionId = "test",
-			});
-		}
-
-		private static InMemoryConfigSource RealTerrainConfig()
-		{
-			string path = Path.Combine(Check.FindRepoRoot(), "Config", "Terrains.json");
-			var source = new InMemoryConfigSource();
-			source.Inject("Terrains", File.ReadAllText(path));
-			return source;
-		}
-
 		private static void WiresMapService()
 		{
-			CoreServices core = BuildCore(RealTerrainConfig());
+			CoreServices core = ConfigFixtures.BuildRealCore();
 
 			Check.Assert(core.Map != null, "应装配出 MapAppService");
 			Check.Assert(core.Session != null, "应装配出 GameSession");
@@ -67,7 +43,7 @@ namespace SciencePotato.HeadlessChecks
 			string message = null;
 			try
 			{
-				BuildCore(new InMemoryConfigSource());
+				ConfigFixtures.BuildCore(new InMemoryConfigSource());
 			}
 			catch (InvalidOperationException ex)
 			{
@@ -81,7 +57,7 @@ namespace SciencePotato.HeadlessChecks
 
 		private static void SessionClockAdvances()
 		{
-			CoreServices core = BuildCore(RealTerrainConfig());
+			CoreServices core = ConfigFixtures.BuildRealCore();
 			int days = 0;
 			core.Session.Clock.DayElapsed += _ => days++;
 

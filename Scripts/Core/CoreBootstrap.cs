@@ -1,9 +1,9 @@
+using SciencePotato.Scripts.Core.Config;
 using SciencePotato.Scripts.Core.Time;
 using SciencePotato.Scripts.Map.Application;
 using SciencePotato.Scripts.Map.Domain;
 using SciencePotato.Scripts.Map.Infrastructure;
 using System;
-using System.Linq;
 
 namespace SciencePotato.Scripts.Core
 {
@@ -25,55 +25,44 @@ namespace SciencePotato.Scripts.Core
 			if (dependencies.ConfigSource == null) throw new ArgumentNullException(nameof(dependencies.ConfigSource), "缺少 IConfigSource");
 			if (dependencies.MapRepositoryFactory == null) throw new ArgumentNullException(nameof(dependencies.MapRepositoryFactory), "缺少 MapRepositoryFactory");
 
-			// 1) 配置表：当前已通电的只有 Terrains（其余 6 张由 WP-1.4 接入）
-			ITerrainConfigRepository terrainConfig = BuildTerrainConfig(dependencies.ConfigSource);
+			// 1) 7 张配置表（v0.3 / WP-1.4）：装载「能不能解析」+ 校验「内容对不对」，两者结论合并在同一份报告里
+			var report = new ConfigReport();
+			ConfigTables tables = ConfigTableLoader.Load(dependencies.ConfigSource, report);
+			ConfigValidator.Validate(tables, report);
 
-			// 2) 时间（纯 C#，可手动推进）
+			// 2) 分级处置：error 快速失败（默认），warning 只随报告带出、不阻断启动
+			if (report.HasErrors && dependencies.FailOnConfigErrors)
+				throw new InvalidOperationException(
+					$"[CoreBootstrap] 配置表校验未通过（{report.Summary()}）：\n{report.ToLines()}");
+
+			// 3) 时间（纯 C#，可手动推进）
 			var clock = new GameClock();
 
-			// 3) 会话状态（Map 常驻内存）：地图仓库由宿主工厂按地形配置构造
-			var mapRepository = dependencies.MapRepositoryFactory(terrainConfig);
+			// 4) 会话状态（Map 常驻内存）：地图仓库由宿主工厂按地形配置构造
+			var mapRepository = dependencies.MapRepositoryFactory(tables.Terrains);
 			var maps = new MapSession(mapRepository);
 			var session = new GameSession(maps, clock, dependencies.SessionId);
 
-			// 4) 地图生成器（Godot 的 .tres 配置可选，缺失时回退默认值）
-			IMapGenerator mapGenerator = BuildMapGenerator(dependencies, terrainConfig);
+			// 5) 地图生成器：地形表 + 生成器表（可选的 .tres 覆写只服务于编辑器调参）
+			var mapGenerator = new VoronoiMapGenerator(
+				tables.Terrains,
+				tables.Generator,
+				dependencies.ResourceConfigLoader,
+				dependencies.GeneratorConfigPath);
 
-			// 5) 应用服务
+			// 6) 应用服务
 			var mapService = new MapAppService(mapGenerator, maps);
 
 			return new CoreServices
 			{
 				Session = session,
 				ConfigSource = dependencies.ConfigSource,
-				TerrainConfig = terrainConfig,
+				Tables = tables,
+				ConfigReport = report,
 				MapGenerator = mapGenerator,
 				Map = mapService,
 			};
 		}
-
-		private static ITerrainConfigRepository BuildTerrainConfig(Common.Domain.IConfigSource configSource)
-		{
-			string json = configSource.LoadText("Terrains");
-			if (string.IsNullOrWhiteSpace(json))
-				throw new InvalidOperationException(
-					"[CoreBootstrap] 缺少地形配置表 Config/Terrains.json（v0.3 / WP-0.4 起地形由 JSON 提供：" +
-					"编辑器中为 res://Config/Terrains.json，热更时为 user://Config/Terrains.json）");
-
-			var repository = new TerrainsConfigRepository(json);
-			if (!repository.GetAll().Any())
-				throw new InvalidOperationException("[CoreBootstrap] 地形配置表解析成功但没有任何条目（Terrains 数组为空）");
-
-			return repository;
-		}
-
-		private static IMapGenerator BuildMapGenerator(CoreDependencies dependencies, ITerrainConfigRepository terrainConfig)
-		{
-			// 生成器配置路径仅在有 Godot 资源加载器时使用；无头环境传 null 即可（生成器内部回退默认值）
-			return new VoronoiMapGenerator(
-				terrainConfig,
-				dependencies.ResourceConfigLoader,
-				dependencies.GeneratorConfigPath);
-		}
 	}
 }
+

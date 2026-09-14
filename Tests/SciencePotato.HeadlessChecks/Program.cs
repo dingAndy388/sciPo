@@ -13,6 +13,7 @@ namespace SciencePotato.HeadlessChecks
 			ConfigChecks.RunAll();
 			MapSessionChecks.RunAll();
 			CoreBootstrapChecks.RunAll();
+			ConfigTableChecks.RunAll();
 
 			return Check.Summary();
 		}
