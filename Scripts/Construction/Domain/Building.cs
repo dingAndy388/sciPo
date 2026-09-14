@@ -17,11 +17,11 @@ namespace SciencePotato.Scripts.Construction.Domain
 		private MapOccupantInfo info;
 
 		private readonly HexCubePosition _pos = coord;
-		private readonly string _id = id;
 		private readonly string _uid = uid;
 		private readonly int _ownerId = ownerId;
-		private readonly string _name = name;
 		private readonly List<TrainingOrder> _trainingQueue = new();
+		private string _id = id;
+		private string _name = name;
 
 		public bool IsReady { get; set; } = false;
 
@@ -58,6 +58,18 @@ namespace SciencePotato.Scripts.Construction.Domain
 		{
 			BuilderBinding?.Release();
 			BuilderBinding = null;
+		}
+
+		/// <summary>
+		/// （v0.3 / WP-2.6）**升级**：把建筑换成目标等级的配置。
+		/// <para>**uid 不变** —— 修正器/迷雾/任务/易主（`WP-4.8`）都以 uid 为锚，换 uid 会让这些引用全部失联；
+		/// 升级只改 Id/Name，等级参数（人口三件套、产出、视野、可训练名单）由新配置在读侧生效。</para>
+		/// </summary>
+		public void ApplyUpgrade(string buildingId, string name)
+		{
+			_id = buildingId;
+			_name = name;
+			info = new MapOccupantInfo(_pos, _id, _uid, _ownerId, _name, IsReady, -1f, OccupantType.Building);
 		}
 
 		public MapOccupantInfo GetInfo()

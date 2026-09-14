@@ -36,5 +36,20 @@ namespace SciencePotato.Scripts.Construction.Domain
 		/// 缺省 = <see cref="BuildingConfigDto.DefaultTrainingQueueLimit"/>。
 		/// </summary>
 		int TrainingQueueLimit { get; }
+
+		/// <summary>
+		/// （v0.3 / WP-2.6）**升级目标建筑 Id**（设计稿 buildings.md 的"晋级"列；空 = 已是最高等级）。
+		/// <para>升级是"同一栋建筑换配置"：uid 不变（修正器/迷雾/任务/易主都绑 uid），只换 Id/Name/参数。</para>
+		/// </summary>
+		string UpgradeTo { get; }
+
+		/// <summary>（v0.3 / WP-2.6）升级消耗（空 = 免费）。</summary>
+		Dictionary<string, float> UpgradeCost { get; }
+
+		/// <summary>（v0.3 / WP-2.6）升级耗时（**游戏日**）。</summary>
+		float UpgradeDuration { get; }
+
+		/// <summary>（v0.3 / WP-2.6）升级的科技前置（设计稿"升级条件"列 = 已解锁某科技节点）。</summary>
+		Dictionary<string, List<string>> UpgradeTechRequirements { get; }
 	}
 }

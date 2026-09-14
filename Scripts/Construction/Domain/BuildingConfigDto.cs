@@ -27,5 +27,17 @@ namespace SciencePotato.Scripts.Construction.Domain
 
 		/// <summary>（v0.3 / WP-2.5）训练队列上限；表里省略时取 <see cref="DefaultTrainingQueueLimit"/>。</summary>
 		public int TrainingQueueLimit { get; set; } = DefaultTrainingQueueLimit;
+
+		/// <summary>（v0.3 / WP-2.6）升级目标建筑 Id；空 = 已是最高等级。</summary>
+		public string UpgradeTo { get; set; } = "";
+
+		/// <summary>（v0.3 / WP-2.6）升级消耗；表里省略时为空（免费）。</summary>
+		public Dictionary<string, float> UpgradeCost { get; set; } = new Dictionary<string, float>();
+
+		/// <summary>（v0.3 / WP-2.6）升级耗时（游戏日）；0 = 无升级。</summary>
+		public float UpgradeDuration { get; set; }
+
+		/// <summary>（v0.3 / WP-2.6）升级科技前置；表里省略时为空。</summary>
+		public Dictionary<string, List<string>> UpgradeTechRequirements { get; set; } = new Dictionary<string, List<string>>();
 	}
 }

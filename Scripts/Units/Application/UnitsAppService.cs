@@ -242,26 +242,69 @@ namespace SciencePotato.Scripts.Units.Application
 			return task;
 		}
 
-		public void ExcuteAction(string mapId, string uid, HexCubePosition targetPosition, string targetParam, string action)
+		/// <summary>
+		/// （v0.3 / WP-2.4 / WP-2.6）单位动作入口。返回**是否成功执行**（`CON-01`：调用方需要知道成败，
+		/// 而不是只能看结果反推）—— 建造/升级返回"是否开工"，移动/攻击返回"是否接受指令"。
+		/// </summary>
+		public bool ExcuteAction(string mapId, string uid, HexCubePosition targetPosition, string targetParam, string action)
 		{
 			var occupant = _map.GetOccupantByUId(mapId, uid);
-			if (occupant is not Unit unit) return;
+			if (occupant is not Unit unit) return false;
 
 			var config = _repo.GetUnitConfig(unit.GetInfo().Id);
-			if (!config.Actions.Contains(action)) return;
+			if (config == null) return false;
+
+			// 能力门控（v0.3 / WP-2.4 + WP-2.6）：与 config.Actions 对齐；`CanUpgrade` 由"建造者"角色派生
+			// （设计稿没有单独的升级单位 —— 谁建得起就谁升得起），因此建造者（CanBuild）自动获得升级能力。
+			bool actionAllowed = config.Actions?.Contains(action) ?? false;
+			if (!actionAllowed && action == "CanUpgrade")
+				actionAllowed = config.Actions?.Contains("CanBuild") ?? false;
+			if (!actionAllowed) return false;
 
 			switch (action)
 			{
 				case "CanBuild":
-					Build(mapId, unit, targetParam, targetPosition);
-					break;
+					return Build(mapId, unit, targetParam, targetPosition);
+				case "CanUpgrade":
+					return Upgrade(mapId, unit, targetParam, targetPosition);
 				case "CanAttack":
 					Attack(mapId, unit, targetParam);
-					break;
+					return true;
 				case "CanMove":
 					Move(mapId, unit, targetPosition);
-					break;
+					return true;
 			}
+
+			return false;
+		}
+
+		/// <summary>
+		/// （v0.3 / WP-2.6）**由建造者升级建筑**：与 <see cref="Build"/> 同一套门（能力 / 忙闲 / 距离），
+		/// 目标格是**建筑所在格**（因此距离恒为 1：自己那格被自己占着）。
+		/// </summary>
+		private bool Upgrade(string mapId, Unit unit, string buildingUid, HexCubePosition position)
+		{
+			var config = _repo.GetUnitConfig(unit.GetInfo().Id);
+			if (config == null || !(config.Actions?.Contains("CanBuild") ?? false)) return false;
+			if (!unit.IsIdle) return false;
+
+			var target = _map.FindOccupantByUId(mapId, buildingUid);
+			if (target is not Building) return false;
+			if (unit.Position.DistenceTo(target.GetInfo().Position) > 1) return false;
+
+			var binding = new BuilderBinding
+			{
+				BuilderUId = unit.GetInfo().UId,
+				BuilderPosition = unit.Position,
+				TargetPosition = target.GetInfo().Position,
+				OnRelease = () => unit.IsIdle = true,
+			};
+
+			if (!_construction.StartUpgrade(mapId, buildingUid, unit.GetInfo().OwnerId, binding)) return false;
+
+			unit.IsIdle = false;
+			unit.MoveTarget = null;
+			return true;
 		}
 
 		/// <summary>
@@ -271,21 +314,21 @@ namespace SciencePotato.Scripts.Units.Application
 		/// <para>旧实现的两处错：① 只校验 <c>unit.Position == position</c>（要求建筑盖在**自己脚下**，
 		/// 而该格被自己占着 → 建造永远失败）；② 无论成功与否都把 <c>IsIdle</c> 置为 false（单位永久卡死）。</para>
 		/// </summary>
-		private void Build(string mapId, Unit unit, string building, HexCubePosition position)
+		private bool Build(string mapId, Unit unit, string building, HexCubePosition position)
 		{
 			var config = _repo.GetUnitConfig(unit.GetInfo().Id);
 
 			// ① 能力：只有 CanBuild 的单位才是建造者（设计稿：工人 CanBuild；民兵/弓箭手不行）
-			if (config == null || !(config.Actions?.Contains("CanBuild") ?? false)) return;
+			if (config == null || !(config.Actions?.Contains("CanBuild") ?? false)) return false;
 
 			// ② 忙闲：每个建造者同时只干一件事（开工后 IsIdle=false，完工/被拆时释放）
-			if (!unit.IsIdle) return;
+			if (!unit.IsIdle) return false;
 
 			// ③ 距离：只能在本格或相邻格建造（设计稿"可在相邻格建造"）
-			if (unit.Position.DistenceTo(position) > 1) return;
+			if (unit.Position.DistenceTo(position) > 1) return false;
 
 			// ④ 目标格必须为空（自己的格子被自己占着，所以"同格建造"会在这里被拒）
-			if (!_map.IsClear(mapId, position)) return;
+			if (!_map.IsClear(mapId, position)) return false;
 
 			var binding = new BuilderBinding
 			{
@@ -295,10 +338,11 @@ namespace SciencePotato.Scripts.Units.Application
 				OnRelease = () => unit.IsIdle = true, // 释放动作留在 Units 层（构造模块不认识 Unit 类型）
 			};
 
-			if (!_construction.StartConstruction(mapId, building, position, unit.GetInfo().OwnerId, binding)) return;
+			if (!_construction.StartConstruction(mapId, building, position, unit.GetInfo().OwnerId, binding)) return false;
 
 			unit.IsIdle = false; // 只在真正开工后占用建造者
 			unit.MoveTarget = null;
+			return true;
 		}
 
 		// ==================== MOVE ENGINE ====================

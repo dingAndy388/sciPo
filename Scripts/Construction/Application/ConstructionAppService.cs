@@ -62,8 +62,6 @@ namespace SciencePotato.Scripts.Construction.Application
 			var techRequirements = (from item in config.TechRequirements
 									select _tech.GetTechTreeRequirement(mapId, ownerId, item.Key, item.Value.ToList()));
 
-			var modifiers = config.Modifiers;
-
 			if (contracts.All(c => c.IsConsumable())
 				&& _map.IsClear(mapId, position)
 				&& terrainRequirements.All(c => c.IsMet())
@@ -82,20 +80,7 @@ namespace SciencePotato.Scripts.Construction.Application
 
 				_map.SetOccupant(mapId, position, building);
 
-				buildTask.OnCompleted += () =>
-				{
-					_map.GetOccupantByUId(mapId, uid).IsReady = true;
-					_modifier.AddModifiers(mapId, ownerId, uid, modifiers);
-					_fog.RevealArea(position, config.VisionRadius);
-
-					if (config.IsHousing && config.PopulationCap > 0 && config.PopulationGrowthInterval > 0)
-						RegisterHousingTask(mapId, ownerId, uid, position, config);
-
-					// 完工 → 释放建造者（`D6`）：旧实现把单位永久留在"忙"状态
-					building.ReleaseBuilder();
-
-					_time.Unregister(buildTask);
-				};
+				buildTask.OnCompleted += () => CompleteConstruction(mapId, uid, ownerId, position, config, null, buildTask);
 
 				_time.Register(buildTask);
 				return true;
@@ -104,16 +89,113 @@ namespace SciencePotato.Scripts.Construction.Application
 			return false;
 		}
 
+		/// <summary>
+		/// （v0.3 / WP-2.6 / `CON-03`）**建造/升级完成的唯一落地方法**：首次建造完成、升级完成、读档续跑完成
+		/// 三条路径都调用它 —— 旧实现是"照抄一遍"，续跑那份漏掉了开视野与人口任务（读档后玩法静默降级）。
+		/// <list type="number">
+		/// <item>建筑就绪；</item>
+		/// <item>修正器：升级时先按 uid 回收旧等级的修正器，再挂新等级的（否则两层产出叠加）；</item>
+		/// <item>视野：升级时先 <c>ResetArea</c> 旧半径，再按新半径 <c>RevealArea</c>；</item>
+		/// <item>人口任务：先按 uid 范围注销旧任务再按新配置注册（同一建筑只允许一条人口增长任务，`WP-2.2`/`WP-2.3`）；</item>
+		/// <item>释放建造者（`WP-2.4`）；</item>
+		/// <item>注销本任务（`WP-2.2` 的完成即回收也会兜底）。</item>
+		/// </list>
+		/// </summary>
+		/// <param name="previousConfig">升级前的配置（首次建造传 null）：用来回收旧修正器与旧视野半径。</param>
+		private void CompleteConstruction(string mapId, string uid, int ownerId, HexCubePosition position,
+			IBuildingConfig config, IBuildingConfig previousConfig, IProgressTask task)
+		{
+			var occupant = _map.FindOccupantByUId(mapId, uid);
+			if (occupant == null) return; // 建筑已被拆（`CON-06` 的竞态）：什么都不做
+
+			occupant.IsReady = true;
+
+			if (previousConfig != null)
+			{
+				_modifier.RemoveModifiersBySourceId(mapId, ownerId, uid);
+				_fog.ResetArea(position, previousConfig.VisionRadius);
+			}
+
+			_modifier.AddModifiers(mapId, ownerId, uid, config.Modifiers);
+			_fog.RevealArea(position, config.VisionRadius);
+
+			// 人口任务：同一建筑同时只允许一条（升级会换间隔/上限，必须先把旧任务摘掉）
+			_time.UnregisterByUId(uid);
+			if (config.IsHousing && config.PopulationCap > 0 && config.PopulationGrowthInterval > 0)
+				RegisterHousingTask(mapId, ownerId, uid, position, config);
+
+			if (occupant is Building building) building.ReleaseBuilder();
+
+			_time.Unregister(task);
+		}
+
+		/// <summary>
+		/// （v0.3 / WP-2.6 / `CON-09` / `D4`）**升级建筑**：校验等级链 / 科技前置 / 消耗 / 建造者绑定，然后注册升级任务。
+		/// <para>升级期间建筑置为**未就绪**（`IsReady=false`）：训练/研究等门控自动失效，直到升级完成 ——
+		/// 这是"升级中"语义的最小实现（不需要额外的状态字段）。</para>
+		/// </summary>
+		/// <returns>是否成功开工。</returns>
+		public bool StartUpgrade(string mapId, string buildingUid, int ownerId, BuilderBinding builder = null)
+		{
+			var occupant = _map.FindOccupantByUId(mapId, buildingUid);
+			if (occupant is not Building building || !building.IsReady) return false;
+
+			var config = _buildingRepo.GetBuildingConfig(building.GetInfo().Id);
+			if (config == null || string.IsNullOrWhiteSpace(config.UpgradeTo)) return false;
+
+			var target = _buildingRepo.GetBuildingConfig(config.UpgradeTo);
+			if (target == null) return false;
+
+			var consumptions = (from item in (config.UpgradeCost ?? new Dictionary<string, float>())
+								select new Consumption(item.Key, item.Value)).ToList();
+			List<IConsumable> contracts =
+			[
+				.. from item in consumptions select _resource.CreateResourceConsumption(item, mapId, ownerId),
+			];
+
+			var techRequirements = (from item in (config.UpgradeTechRequirements ?? new Dictionary<string, List<string>>())
+									select _tech.GetTechTreeRequirement(mapId, ownerId, item.Key, item.Value.ToList()));
+
+			if (!contracts.All(c => c.IsConsumable()) || !techRequirements.All(c => c.IsMet())) return false;
+			if (!building.TryBindBuilder(builder)) return false;
+
+			contracts.ForEach(c => c.Consume());
+
+			building.IsReady = false; // 升级中
+			HexCubePosition position = building.GetInfo().Position;
+
+			// 任务类型 `Upgrade`、业务键 = 目标建筑 Id：键 = `Upgrade:{buildingUid}:{targetId}`（`WP-2.2`）
+			LinearTask upgradeTask = new(0, config.UpgradeDuration, config.UpgradeTo, "Upgrade", false, buildingUid, mapId, ownerId);
+
+			upgradeTask.OnCompleted += () =>
+			{
+				building.ApplyUpgrade(target.BuildingId, target.Name);
+				CompleteConstruction(mapId, buildingUid, ownerId, position, target, config, upgradeTask);
+			};
+
+			_time.Register(upgradeTask);
+			return true;
+		}
+
+		/// <summary>
+		/// （v0.3 / WP-2.6 / `CON-03`）读档续跑：用快照重建建造任务。完成时走**同一个**
+		/// <see cref="CompleteConstruction"/>（旧实现手抄了一份、漏了开视野与人口任务）。
+		/// </summary>
 		public LinearTask ResumeConstruction(string mapId, TaskSnapshot snapshot)
 		{
 			LinearTask buildTask = new(snapshot.Progress, snapshot.Target, snapshot.Id, snapshot.Type, snapshot.IsCompleted, snapshot.UId, mapId, snapshot.OwnerId);
+
 			buildTask.OnCompleted += () =>
 			{
-				var building = _map.GetOccupantByUId(mapId, snapshot.UId);
-				building.IsReady = true;
-				_modifier.AddModifiers(mapId, snapshot.OwnerId, snapshot.UId, _buildingRepo.GetBuildingConfig(building.GetInfo().Id).Modifiers);
-				_time.Unregister(buildTask);
+				var occupant = _map.FindOccupantByUId(mapId, snapshot.UId);
+				if (occupant == null) return;
+
+				var config = _buildingRepo.GetBuildingConfig(occupant.GetInfo().Id);
+				if (config == null) return;
+
+				CompleteConstruction(mapId, snapshot.UId, snapshot.OwnerId, occupant.GetInfo().Position, config, null, buildTask);
 			};
+
 			return buildTask;
 		}
 
@@ -151,6 +233,16 @@ namespace SciencePotato.Scripts.Construction.Application
 			{
 				case "CanResearch":
 					Research(mapId, building, targetParam);
+					break;
+				case "CanUpgrade":
+					// 升级请求：targetParam = 建造者单位 uid（空 = 无建造者，脚本/测试路径）
+					StartUpgrade(mapId, uid, building.GetInfo().OwnerId,
+						string.IsNullOrWhiteSpace(targetParam) ? null : new BuilderBinding
+						{
+							BuilderUId = targetParam,
+							BuilderPosition = building.GetInfo().Position,
+							TargetPosition = building.GetInfo().Position,
+						});
 					break;
 			}
 		}

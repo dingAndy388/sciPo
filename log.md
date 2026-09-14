@@ -496,6 +496,7 @@
 - **影响**：**读档后，所有在建造中的建筑即使建成也不会开视野、不会产生人口增长**——玩家会看到"建筑好了但地图还是黑的、人口不涨"。这是"读档后玩法静默降级"的典型问题。
 - **修复方向**：把"建造完成"收敛为**单一领域方法**（`CompleteConstruction(...)`），首次完成与续跑都调用它；快照里保存必要上下文（配置 Id、Owner、位置）。
 - **关联**：`TIME-03`、`TIME-08`、`CON-05`、`UNIT-09`
+> ✅ **已修复（v0.3.12 / WP-2.6）**："建造完成"收敛为单一 `CompleteConstruction`（首次 / 升级 / 续跑三路径共用），续跑完成现在也会开视野 + 注册人口任务；用例直接构造一份 `TaskSnapshot` 走 `ResumeConstruction` 验证（旧实现这两步缺失）。
 
 #### `CON-04` 人口任务 `OwnerId` 写成 0 —— 【P1｜逻辑层缺口】
 - **现象**：注册人口增长任务时，`IntervalTask` 的 `ownerId` 参数被**硬编码为 0**，而快照里显然应该是建筑所有者的 Id。
@@ -1131,7 +1132,8 @@
 | **v0.3.8** | 2026-09-14 | **WP-2.2 任务体系最小修（`TIME-02/03/04/09`，`A7` 部分）**：`TaskSnapshot` 明确 `Type`（任务类型）/`UId`（实例唯一）/`Id`（业务模板）语义，**存储键改为 `Type:UId:Id`**（同名不同实例不再互相覆盖）+ 旧档自动重新编键（迁移不丢进度）；`GenericJsonRepository` 补 `Remove`/`RemoveWhere`/`Reindex`（**真删除**，不再写 `null` 占位）；`GameTimeService` **完成即回收**（一次性任务由总线兜底摘除，调用方不再负责）+ 日边界派发改为**迭代快照**（回调里注册/注销不打乱当日派发）+ 新增 **`UnregisterByUId` 范围注销**（建筑被拆 / 单位阵亡时清掉宿主名下所有任务；攻击循环在目标消失/脱离射程时自注销）；`Map`/`MapAppService` 补**空安全查询** `TryGetOccupantByUId`/`FindOccupantByUId`。无头验收 **64/64 通过、退出码 0**。新增决策 D31~D33 |
 | **v0.3.9** | 2026-09-14 | **WP-2.3 人口任务修 bug（`D11`、`CON-04/05/06`，M0-2 ③）**：人口任务带上建筑所有者（旧实现硬编码 0）；上限改为**半径内总计**（设计稿「半径 1 格内总计 9 人」；旧实现每格 9 → 最多 63），增长落在聚落中心格；人口写入收敛为唯一入口 `MapAppService.AddPopulation`（+脏标记 → 进入存档点，序列化归 `WP-3.2`）；`PopulationGrowth` 修正器接线（`ModifierAppService.GetValue` + 小数余量累加）；`HexCubePosition.InRadius` 单点定义半径展开；拆除路径的**任务范围注销**接线就位（`CON-06`；真实拆除仍受 `MAP-04` 阻塞，用例以 domain 层预置权威验证）。**顺带收紧**：`TaskRepository` 改为「首次触碰地图时读一次盘 + 内存字典改动 + 整文件写回」（`WP-2.2` 首版是每次改动都读盘 → 长跑用例 IO 翻倍）。无头验收 **71/71 通过、退出码 0**。新增决策 D34~D35 |
 | **v0.3.10** | 2026-09-14 | **WP-2.5 训练绑定建筑 + 队列（`UNIT-11`、`D10`、`E2/E3/E4`，M0-2 ④）**：`IBuildingConfig` 新增 `TrainableUnits` / `TrainingQueueLimit`（默认 5），表里工坊→worker、军营→swordsman/archer 且 Actions 补 `CanTrain`；`Building` 新增**训练队列**（上限 5、**同时只训练 1 个**）；`UnitsAppService.TrainUnit(mapId, buildingUid, unitId)` 走「建筑已完工 → 名单校验 → 队列未满 → 资源足够（入队即扣）→ 人口足够（按已占用的队列预留）」五道门，完成时**落位到建筑相邻格 + 人口 −1**（`E2`/`E4`）；`MapAppService.ConsumePopulation` 补齐人口扣减（唯一写入点 + 脏标记）；校验器新增 TrainableUnits 引用完整性与「单位没有任何建筑可训练」的反向检查。无头验收 **77/77 通过、退出码 0**，**M0-2 ④ 通过**。新增决策 D36~D38 |
-| **v0.3.11** | 2026-09-14 | **WP-2.4 建造者校验（`D6`）**：`BuilderBinding` 把在建建筑与建造者单位绑定（`Building.TryBindBuilder` = 每建筑同时仅 1 个 / `ReleaseBuilder` = 完工或被拆时释放）；`UnitsAppService.Build` 四道门（`CanBuild` 能力 / 单位空闲 / 距离 ≤1 / 目标格为空）后经 `StartConstruction(mapId, buildingId, position, ownerId, builder)` 开工，**失败即无副作用**；修掉两个硬伤 —— 旧实现要求"盖在自己脚下"（该格被自己占着 → 建造永远失败）与"无论成败都置忙"（单位永久卡死）。无头验收 **83/83 通过、退出码 0**。新增决策 D38~D39 |
+| **v0.3.11** | 2026-09-14 | **WP-2.4 建造者校验（`D6`）**：`BuilderBinding` 把在建建筑与建造者单位绑定（`Building.TryBindBuilder` = 每建筑同时仅 1 个 / `ReleaseBuilder` = 完工或被拆时释放）；`UnitsAppService.Build` 四道门（`CanBuild` 能力 / 单位空闲 / 距离 ≤1 / 目标格为空）后经 `StartConstruction(mapId, buildingId, position, ownerId, builder)` 开工，**失败即无副作用**；修掉两个硬伤 —— 旧实现要求"盖在自己脚下"（该格被自己占着 → 建造永远失败）与"无论成败都置忙"（单位永久卡死）。无头验收 **90/90 通过、退出码 0**。新增决策 D38~D39 |
+| **v0.3.12** | 2026-09-14 | **WP-2.6 建筑升级 + 完成逻辑收敛（`CON-09`、`CON-03`、`D4/D5/D14`）**：`IBuildingConfig` 新增 `UpgradeTo/UpgradeCost/UpgradeDuration/UpgradeTechRequirements`，`Config/Buildings.json` 补齐 **4 条 lv.I→II→III 链（12 条）**（数值取自设计稿 buildings.md）；`Building.ApplyUpgrade` 换级**保持 uid 不变**；`ConstructionAppService.StartUpgrade` 校验等级链/科技前置/消耗/建造者绑定，升级期间建筑未就绪；**完成路径收敛为单一 `CompleteConstruction`**（首次建造/升级/续跑三条路径共用 → 修 `CON-03`：续跑完成也会开视野与注册人口任务），升级时按 uid 回收旧修正器与旧人口任务（不叠加、不重复）；校验器新增升级链校验（悬空/自环 error）。无头验收 **90/90 通过、退出码 0**。新增决策 D40~D41 |
 
 
 ---
@@ -1478,6 +1480,7 @@
 - **影响**：建筑系统成长线缺失；科技树中 16 条"解锁 XX 升级"无处落地；"附属建筑随区域建筑升级保留"也无从实现。
 - **修复方向**：新增 `CanUpgrade` 动作 + `UpgradeTask`；把"建造完成"收敛为单一方法 `CompleteConstruction`（同时修 `CON-03`）；配置加 `UpgradeTo/UpgradeCost/UpgradeDuration/UpgradeTechRequirements`。
 - **关联**：`D4/D5/D14/D15`、`WP-2.6`
+> ✅ **已修复（v0.3.12 / WP-2.6）**：`CanUpgrade` 动作 + `UpgradeTask` + `UpgradeTo/UpgradeCost/UpgradeDuration/UpgradeTechRequirements` 落地；4 条原型建筑补齐 lv.I~III 链（共 12 条，数值取自设计稿）；升级保持 uid 不变并重挂修正器/人口任务。**遗留**：其余 17 个建筑的成长线仍是填表债务（§18.4.2）。
 
 #### `MAP-16` 建筑 HP 与所有权变更（夺取易主）缺失 —— 【P0｜逻辑层 + 架构层缺口】
 > ⚠️ **v0.3 降级（P0 → P1）**：建筑 HP 与易主属城市攻防（批次 4），M0-1/M0-2/M0-3 验收均不涉及。级别收敛依据见 §17.3。
@@ -2049,6 +2052,7 @@ WP-0.4 ─→ WP-3.5 / WP-3.8 / WP-5.3
 | 2026-09-14 | WP-2.3 **人口任务修 bug**（`D11`、`CON-04/05/06`） | ✅ 完成 | ① **归属**（`CON-04`）：`RegisterHousingTask` 改为传建筑所有者 + 收成 `(mapId, ownerId, buildingUid, center, config)`（旧实现第 7 个参数硬编码 `0` → 多玩家下人口增长会挂到玩家 0 名下）；② **上限口径**（`CON-05`）：新增 `Map.AddPopulationWithin/GetPopulationWithin` 与 `MapAppService.AddPopulation/GetPopulationWithin`，上限按**半径内总计**判定（设计稿营地「半径 1 格内总计 9 人」；旧实现是每格各自到 9 → 半径 1 的 7 格可达 63），增长落在住房所在格，并在真正变化时 `MarkDirty`（人口改动进入存档点；实体序列化归 `WP-3.2`）；③ **修正器接线**：`ModifierAppService.GetValue(mapId, ownerId, target, base)` 读 `(base + ΣAbsolute) × (1 + ΣPercent)`，人口增长是 `PopulationGrowth` 的第一个消费点（此前该 target 只登记不消费），并用**小数累加器**保留不足 1 人的余量（+50% → 两轮多 1 人）；④ **半径展开单点化**：`HexCubePosition.InRadius(radius)`（旧实现两处各写一份），删除 `ConstructionAppService` 的私有副本；⑤ **拆除回收**（`CON-06`）：接线（`RemoveBuildingByPosition` → `UnregisterByUId`）已就位，但真实路径仍被 `MAP-04`（`cell.Building` 恒空）挡住 → 用例在 **domain 层预置权威建筑** 验证「拆除 → 人口任务注销 → 人口不再增长」，`WP-3.4` 修好占用模型后自然生效。检查 **+7 项**（总计 **71/71**、退出码 0），**M0-2 ③ 通过**（真实配置：营地 90 日完工 → 视野半径 1 可见；完工后 299 日仍 0 人、第 300 日 +1 人） |
 | 2026-09-14 | WP-2.5 **训练绑定建筑 + 队列**（`UNIT-11`、`D10`、`E2/E3/E4`） | ✅ 完成 | ① **配置**（`D10`）：`IBuildingConfig` 新增 `TrainableUnits`（可训练单位名单）+ `TrainingQueueLimit`（默认 5，`BuildingConfigDto.DefaultTrainingQueueLimit`），`Config/Buildings.json` 填 工坊→[worker] / 军营→[swordsman,archer] / 营地·学院→[]，训练建筑补 `CanTrain`；② **队列**（`E3`）：`Building` 持 `TrainingQueue`（入队即锁定单位 uid、上限 5、`HasActiveTraining` 保证**同时只训练 1 个**），`UnitsAppService.TrainUnit(mapId, buildingUid, unitId)` → `StartNextTraining`（完成回调里推进队头）；③ **门控**：建筑存在且已完工 / 单位在 `TrainableUnits` 内 / 队列未满 / 资源足够（**入队时扣**，`D36`）/ 人口足够（`半径 1 内人口 − 队列已占用 ≥ PopulationCost`）—— 五道门任一不过即返回 false 且无副作用；**等级校验按计划跳过**（配置无等级字段，见 §18.4.2）；④ **完工**（`E2`/`E4`）：落位到**建筑相邻空格**（建筑自己占着它的格）→ 单位就绪 → **人口 −1**（`MapAppService.ConsumePopulation`，与新增口径同源）→ 视野与移动任务；⑤ **校验器**：`TrainableUnits` 引用不存在的单位判 **error**，`CanTrain` ↔ `TrainableUnits` 不匹配与「某个单位没有任何建筑可训练」判 warning（真实配置 0 error / 训练字段 0 warning）；⑥ **指南**：Buildings 段补两个字段与训练口径说明。检查 **+6 项**（总计 **77/77**、退出码 0），**M0-2 ④ 通过**（真实配置：工坊 90 日完工 → 训练工人 30 日 → 单位落在相邻格、人口 −1） |
 | 2026-09-14 | WP-2.4 **建造者校验**（`D6`） | ✅ 完成 | ① **绑定**：新增 `BuilderBinding{BuilderUId, BuilderPosition, TargetPosition, OnRelease}`（`Construction.Domain`），`Building.TryBindBuilder` 保证**每建筑同时仅 1 建造者**、`ReleaseBuilder` 在**完工与被拆**两条路径上释放（释放动作由 Units 层以回调形式注入 → 构造模块不认识 `Unit` 类型，避免模块环）；② **订单校验**：`UnitsAppService.Build` 四道门 —— `CanBuild` 能力（民兵等非建造者被拒）/ 单位空闲（每建造者同时 1 座）/ 距离 ≤ 1（相邻格）/ 目标格为空；`StartConstruction` 改为 `bool` 并接受可选 <c>builder</c>（无建造者的脚本/测试路径保持兼容），绑定失败时**不消耗任何资源**；③ **修硬伤**：旧实现要求"建筑盖在自己脚下"（而该格被自己占着 → 建造永远失败）且无论成败都置 `IsIdle=false`（单位永久卡死），现在只在真正开工后占用、完工/被拆自动释放；④ **副作用**：被拒请求不留建筑、不留任务、不占用单位（资源维度因 `D25` 不可观测，用例改以三个状态面判定）。检查 **+6 项**（总计 **83/83**、退出码 0） |
+| 2026-09-14 | WP-2.6 **建筑升级 lv.I→II→III + 完成逻辑收敛**（`CON-09`、`CON-03`、`D4/D5/D14`） | ✅ 完成 | ① **配置**（`D4`/`D5`/`D14`）：`IBuildingConfig` 新增 `UpgradeTo`（晋级目标）/`UpgradeCost`（升级消耗）/`UpgradeDuration`（游戏日）/`UpgradeTechRequirements`（升级条件 = 已解锁科技节点），`Config/Buildings.json` 由 4 条扩到 **12 条**（营地/工坊/学院/军营 各 lv.I~III），数值取自设计稿 buildings.md（营地人口 9/1/300 → 18/1/240 → 36/2/180；学院 250 → 1000 → 3000 idea/月；工坊·军营训练速度 +20%/+50%），资源词汇按原型表映射（基础石材→Wood、food→Gold，量级缩放）；② **域**：`Building.ApplyUpgrade` **换 Id/Name 但保持 uid** —— 修正器/迷雾/任务/易主都以 uid 为锚；③ **服务**：`StartUpgrade(mapId, buildingUid, ownerId, builder)` 校验「已就绪 + 有 UpgradeTo + 目标建筑存在 + 科技前置 + 消耗可付 + 建造者绑定」，升级期间 `IsReady=false`（训练/研究门控自动失效）；`UnitsAppService` 新增 `CanUpgrade` 动作（由 `CanBuild` 角色派生，无需新单位字段）且 `ExcuteAction` 改为**返回 bool**（`CON-01` 的最小闭合：调用方能拿到成败）；④ **完成逻辑收敛**（修 `CON-03`）：首次建造 / 升级 / 读档续跑三条路径统一走 `CompleteConstruction`，升级时按 uid **回收旧修正器与旧人口任务**（不叠加、不重复），续跑完成现在也会开视野 + 注册人口任务（旧实现手抄漏项）；⑤ **校验器**：升级链校验 —— `UpgradeTo` 悬空/自环判 **error**、缺 `UpgradeDuration` 判 warning、升级消耗与科技前置沿用建造口径。检查 **+7 项**（总计 **90/90**、退出码 0） |
 
 ### 18.1.1 里程碑验收对照
 
@@ -2056,9 +2060,9 @@ WP-0.4 ─→ WP-3.5 / WP-3.8 / WP-5.3
 | :--- | :--- | :--- |
 | M0-2 | ① 物理树根节点（简单机械直觉）可研究 | ✅ `WP-2.1`（检查 49/49） |
 | M0-2 | ② 建成 School 后 6 个月内存出 250 idea/月 | ✅ `WP-2.7`（检查 52/52） |
-| M0-2 | ③ 营地 90 日建成 → 人口上限与视野生效 | ✅ `WP-2.3`（检查 71/71） |
-| M0-2 | ④ 工坊训练工人 30 日后单位出现且人口 −1 | ✅ `WP-2.5`（检查 77/77） |
-| M0-2 | ⑤ 固定种子下 3 年事件触发次数落在期望区间 | ✅ `WP-2.8`（检查 58/58） |
+| M0-2 | ③ 营地 90 日建成 → 人口上限与视野生效 | ✅ `WP-2.3` |
+| M0-2 | ④ 工坊训练工人 30 日后单位出现且人口 −1 | ✅ `WP-2.5` |
+| M0-2 | ⑤ 固定种子下 3 年事件触发次数落在期望区间 | ✅ `WP-2.8`（检查 90/90） |
 
 ## 18.2 复现命令
 
@@ -2070,7 +2074,7 @@ dotnet build 'Science Potato.csproj'
 dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessChecks.csproj'
 ```
 
-当前验收结果（2026-09-14，**77/77 通过、退出码 0**）：M0-1 组 43 项 + M0-2 组 34 项。
+当前验收结果（2026-09-14，**90/90 通过、退出码 0**）：M0-1 组 43 项 + M0-2 组 47 项。
 
 | 分组 | 数量 | 覆盖 |
 | :--- | :--- | :--- |
@@ -2086,6 +2090,7 @@ dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessC
 | 人口与住房（WP-2.3） | 7 | 真实配置下营地 90 日完工 → 视野半径 1 可见 + 完工后第 300 日出现第 1 人（**M0-2 ③**）/ 人口任务带正确 OwnerId 且只有一条 / 上限 = 半径 1 格内**总计** 9（旧实现每格 9 → 最多 63）且增长落在中心格 / `PopulationGrowth` +1 Absolute → 每间隔 +2 人 / +50% → 两轮 +3 人（小数余量不丢）/ 拆除住房 → 人口任务范围注销且人口停止增长（domain 预置权威，绕开 `MAP-04`）/ 人口改动打脏标记、存档点只写一次 |
 | 训练与队列（WP-2.5） | 6 | 建筑表口径：工坊→worker（队列 5、CanTrain）、军营→swordsman/archer、营地/学院不可训练、每个单位至少有一个建筑可训练（真实配置 0 error / 训练字段 0 warning）/ **M0-2 ④**：工坊 90 日完工 → 训练工人 30 日 → 单位落在建筑相邻格且人口 −1 / 队列：上限 5（第 6 个被拒）、同时只训练 1 个（只有 1 条任务）、完成后自动推进队头 / 门控：未完工·名单外单位·非训练建筑·不存在单位/建筑·资源不足·人口不足全部拒绝且无副作用 / 同名不同实例（两座工坊造 worker）保留两条独立任务快照 / 入队不扣人口、**完成时**扣（`E2`）+ 落位可取回（`E4`） |
 | 建造者绑定（WP-2.4） | 6 | 非建造者（民兵）不能下令建造且不占用单位（`D6`）/ 相邻空格可建、隔 2 格与脚下同格被拒（旧实现只能盖脚下 → 永远失败）/ 每建造者同时只建 1 座：施工中再下令被拒、完工后自动释放并能接新工地 / 被拒的建造不留建筑·不留任务·不占用建造者（资源维度受 `D25` 限制）/ 施工中的建筑被拆 → 建造者回到空闲 + 建造任务被注销 / 域内 `TryBindBuilder` 拒绝第二个建造者、释放后可重绑 |
+| 建筑升级（WP-2.6） | 7 | 升级链完整且参数取自设计稿（4 链 × 3 级 = 12 条；营地 9/1/300 → 18/1/240 → 36/2/180；学院 250/1000/3000；工坊·军营 +20%/+50%）/ 门控：科技未解锁·资源不足·已最高级·未完工 全部拒绝 / 升级成功：Id 与名称换级、**uid 不变**、升级中未就绪、完成释放建造者 / 修正器换级不叠加（lv.II 1000 × 1.3 科技加成 = 1300，若残留旧 250 则为 1625）/ 人口任务换级不重复（仍 1 条、Target 300 → 240）/ **`CON-03`**：续跑完成也开视野 + 注册人口任务 / 校验器守卫升级链（悬空/自环 error、缺时长 warning、负消耗 error） |
 
 
 
@@ -2132,6 +2137,8 @@ dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessC
 | D37 | **落位规则 = 建筑格优先 → 相邻空格；找不到格子则订单作废且不退资源** | 当前占用模型是"一格一个 `Occupant`"，建筑自己占着它的格子，所以实际总是落在相邻格（与设计稿"建筑格或相邻格"一致）；`WP-3.4`/`WP-4.9` 允许格内多占据物后自动回到"建筑格优先"。「找不到格子就作废」是最小可判定行为：不引入"等待队列"状态机（那需要与 `WP-3.6` 的占位模型一起设计），并把"资源不退"记入 §18.4.2 待评 |
 | D38 | **建造者绑定的生命周期由两条路径释放**：完工（`StartConstruction` 的完成回调）与拆除（`RemoveBuildingByPosition`）；释放动作以 `Action` 回调形式由 Units 层注入 `BuilderBinding` | 备选：① Construction 直接引用 `Units.Domain.Unit` 调 `IsIdle`（引入构造 ↔ 单位模块环）；② 建造者忙闲由 Units 侧单独维护一张表（状态两处真相，拆除路径容易漏）。回调方案让"谁拥有单位对象谁负责改它的状态"，且不落盘（`OnRelease` 是运行时字段，`WP-3.2` 读档后由恢复流程重新绑定） |
 | D39 | **建造地点口径：只能在本格或相邻格（距离 ≤ 1），且目标格必须为空** —— 因此"同格建造"被拒 | 设计稿要求"可在相邻格建造"（`D6` 的修正方向）；同格建造在当前"一格一个 `Occupant`"模型下必然失败（格子被建造者自己占着）。距离判定用 `DistenceTo <= 1`（含自身格），目标格判定用 `IMapAppService.IsClear`，两条都是可断言的口径；`WP-4.9`（建筑嵌套）允许格内多占据物后，同格建造会自动变为合法 |
+| D40 | **升级 = 同一栋建筑换配置（uid 不变）**，而不是"拆了重建" | 依据：修正器按 `sourceId`（`WP-2.7` 起 = 建筑 uid）、迷雾视野计数、人口任务、未来的易主（`WP-4.8`）与附属建筑（`WP-4.9`）全都以 uid 为锚。换 uid 会让这些引用全部失联（且需要"迁移"逻辑）。实现上只换 Id/Name，等级参数（人口三件套/产出/视野/可训练名单）在读数时按新配置生效 |
+| D41 | **升级中的最小语义 = `IsReady = false`**（不引入新状态字段） | 训练门控（`WP-2.5`）、研究门控（`ExcuteAction`）都已经在检查 `IsReady`，复用它即可让"升级中"建筑自然停止工作；副作用是 UI 需要把"未就绪"渲染成"施工中/升级中"两态，归 `WP-5.1` 调试层。备选是加 `IsUpgrading` 字段 —— 会多出一处状态同步（拆除/完工/读档都要清），当前收益不足 |
 
 
 
@@ -2177,3 +2184,5 @@ dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessC
 | `UnitsAppService` 与 `ConstructionAppService` 仍未进组合根（v0.3.10） | 两个应用服务都需要"按玩家的地图/资源/迷雾"装配，`CoreBootstrap`/`ServiceContainer` 目前只装配到 `MapAppService` 与时间总线 —— 无头用例是手工装配的 | 真实 Godot 运行时玩家点不动建造/训练（M1 的第一道坎） | `WP-5.1`（M1 调试层）前必须补装配 |
 | 建造者绑定不落盘（v0.3.11） | `BuilderBinding` 只在内存（建筑对象上），`OnRelease` 回调更是运行时对象 → 读档后无人「占着」工人：施工中的建筑恢复后不会再把工人置为忙，也不会有"工人卡在别的工地"的错觉 | `WP-3.2` 的实体持久化要同时决定"施工中的建筑如何重新占用工人"（否则同一工人可被派去两个工地） | `WP-3.2`（实体/任务持久化） |
 | 建造资源扣除的可观测性（`D25` 关联，v0.3.11） | 建造/训练/研发都调 `contracts.Consume()`，但 `ResourcesPool` 不写回 → 运行时"扣了等于没扣"，测试也无法用资源池断言副作用（`WP-2.4` 的用例因此改用建筑/任务/单位状态判定） | 经济系统的所有"花费"目前在读档后回滚；`WP-3.9` 月度结算器落地前必须修 | `WP-3.2` / `WP-3.3`（已在 §18.4.2 `D25` 行登记，此处补注"可观测性"这一面） |
+| 升级链只填了 4 条原型建筑（v0.3.12） | 设计稿 24 个建筑中 21 个有 lv.II/III 链，原型表只有营地/工坊/学院/军营 4 条（各三级，共 12 条）；且设计稿的 math 树节点（基础几何/初步测量…）尚未填入科技表，升级条件暂映射到 `science/mathematics` 与 `physics/simple_machine_intuition` | 其余 17 条建筑的成长线在 M1 手测里是空的 | 填表（批次 4 起，配 `WP-4.14` UI 门控）/ `WP-2.9` 补数学树节点 |
+| 升级/建造的"完成"只在内存（v0.3.12） | `CompleteConstruction` 会重挂修正器、重开视野、重注册人口任务，但这些**派生状态**没有落盘（`ModifierRepository` 有盘、迷雾有盘、任务有盘，建筑等级只在 `Building` 对象上） | 读档后建筑等级丢失 → 修正器/人口任务与等级不一致（"lv.I 的产出但名字是 lv.III"） | `WP-3.2`（实体持久化）必须把建筑等级 + 建造者绑定 + 训练队列一起存 |

@@ -182,6 +182,7 @@ namespace SciencePotato.Scripts.Core.Config
 
 				ValidateActionList(report, "Buildings", key, building.Actions);
 				ValidateTrainableUnits(report, key, building, unitIds);
+				ValidateUpgrade(report, tables, key, building, resourceIds, techNodes);
 			}
 		}
 
@@ -215,6 +216,35 @@ namespace SciencePotato.Scripts.Core.Config
 			if (building.TrainingQueueLimit < 0) report.Error("Buildings", key, $"TrainingQueueLimit={building.TrainingQueueLimit} 不能为负");
 			else if (building.TrainingQueueLimit == 0 && trainable.Count > 0)
 				report.Warn("Buildings", key, "TrainableUnits 非空但 TrainingQueueLimit=0：该建筑无法排队训练");
+		}
+
+		/// <summary>
+		/// （v0.3 / WP-2.6）**升级链**校验（`CON-09` / `D4`）：
+		/// <list type="bullet">
+		/// <item><c>UpgradeTo</c> 指向不存在的建筑 → **error**（悬空的晋级指针 = 该等级永远升不上去，且只会在运行时静默失败）；</item>
+		/// <item><c>UpgradeTo == 自己</c> → **error**（自环）；</item>
+		/// <item>升级消耗的资源 Id / 科技前置的树与节点 → 与建造口径同级（资源错 = error，科技错 = warning，见 `WP-2.1` 的分级理由）；</item>
+		/// <item>有 <c>UpgradeTo</c> 却缺 <c>UpgradeDuration</c>（0 日）或反之 → **warning**（升级要么瞬间完成、要么是死配置）。</item>
+		/// </list>
+		/// </summary>
+		private static void ValidateUpgrade(ConfigReport report, ConfigTables tables, string key, IBuildingConfig building,
+			HashSet<string> resourceIds, Dictionary<string, HashSet<string>> techNodes)
+		{
+			string upgradeTo = building.UpgradeTo;
+			bool hasTarget = !string.IsNullOrWhiteSpace(upgradeTo);
+			if (!hasTarget) return;
+
+			if (upgradeTo == key)
+				report.Error("Buildings", key, "UpgradeTo 指向自己（升级自环）");
+			else if (tables.Buildings.GetBuildingConfig(upgradeTo) == null)
+				report.Error("Buildings", key, $"UpgradeTo 引用了不存在的建筑 Id「{upgradeTo}」");
+
+			if (building.UpgradeDuration <= 0f)
+				report.Warn("Buildings", key, "填了 UpgradeTo 但 UpgradeDuration=0：升级瞬间完成（或忘填）");
+			else ValidateDayUnit(report, "Buildings", key, "UpgradeDuration", building.UpgradeDuration);
+
+			ValidateCosts(report, "Buildings", key, building.UpgradeCost, resourceIds, "UpgradeCost");
+			ValidateTechRequirements(report, "Buildings", key, building.UpgradeTechRequirements, techNodes, "UpgradeTechRequirements");
 		}
 
 		// ────────────────────────── Units ──────────────────────────

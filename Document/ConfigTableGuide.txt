@@ -169,6 +169,10 @@
                                                       设计稿: 工坊→worker, 军营→swordsman/archer)
   TrainingQueueLimit    int                      否    训练队列上限(默认 5; 0 = 不排队;
                                                       同时只训练 1 个是引擎口径, 不需要填)
+  UpgradeTo             string                   否    升级目标建筑 Id(空 = 已是最高级; 设计稿"晋级"列)
+  UpgradeCost           { string: number }       否    升级消耗(空 = 免费)
+  UpgradeDuration       float                    否    升级耗时(**游戏日**)
+  UpgradeTechRequirements { string: [string] }   否    升级条件 = 已解锁科技节点(设计稿"升级条件"列)
 
   [完整样板 JSON]
   ```json
@@ -257,6 +261,15 @@
   - 训练队列：TrainingQueueLimit 个排队名额（默认 5），**同时只训练 1 个**（引擎口径）；
     入队时扣资源、完成时扣人口（PopulationCost）并在建筑格或相邻空格落位
   - TrainingQueueLimit=0 表示"该建筑不训练"（与 TrainableUnits=[] 一起用于营地/学院这类非训练建筑）
+  - 升级链（v0.3 / WP-2.6）：4 条原型建筑各有 lv.I→lv.II→lv.III 三级，共 12 条
+    （camp/camp_ii/camp_iii、workshop/…、school/…、military_camp/…）；
+    数值取自设计稿 buildings.md 的"晋级 / 升级条件 / 升级消耗"三列（基础石材→Wood、
+    food→Gold，量级按原型表缩放；时间直接用设计稿的日数）
+  - 升级 = 同一栋建筑**换配置**（uid 不变）：UpgradeTo 指向下一级的建筑 Id，升级期间建筑未就绪，
+    完成后按新等级重挂 Modifier、重开视野、重注册人口任务（旧的按 uid 回收，不会叠加）
+  - 升级条件目前映射到原型已有的科技节点（基础几何 → science/mathematics、
+    初步测量/杠杆平衡 → physics/simple_machine_intuition）；数学树补全后按设计稿细化
+    （见 log.md §18.4.2"内容规模"）
   - 建筑 Id 采用设计稿口径（v0.3 / WP-2.7）：营地 camp / 工坊 workshop /
     学院 school / 军营 military_camp（旧原型 house、library、barracks 已废弃）
   - Duration 单位是游戏日；设计稿 A4 给的建造区间是 30~300 日

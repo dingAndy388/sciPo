@@ -22,6 +22,7 @@ namespace SciencePotato.HeadlessChecks
 			PopulationGrowthChecks.RunAll();
 			TrainingQueueChecks.RunAll();
 			BuilderChecks.RunAll();
+			UpgradeChecks.RunAll();
 
 			return Check.Summary();
 		}
