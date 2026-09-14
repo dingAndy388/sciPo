@@ -7,7 +7,7 @@ using System.Linq;
 
 namespace SciencePotato.Scripts.Resources.Application
 {
-	public class ResourcesAppService
+	public partial class ResourcesAppService
 	{
 		private readonly IResourcesRepository _repo;
 		private readonly IResourcesConfigRepository _configRepo;
@@ -68,30 +68,38 @@ namespace SciencePotato.Scripts.Resources.Application
 				float intervalDays = resource.GrowInterval > 0 ? resource.GrowInterval : 0f;
 				if (intervalDays <= 0f) continue;
 
-				var task = new IntervalTask(
-					0, intervalDays, resource.Name, "ResourceGrowth", "none", mapId, ownerId);
-
-				task.OnCompleted += () =>
-				{
-					var modifiers = new ModifierManager(_modifierRepo.LoadModifiers(mapId, ownerId));
-					var targets = resource.DependentModifiers?.ToArray() ?? new string[0];
-					float growth = modifiers.GetValue(targets, resource.BaseGrowth);
-
-					var currentPool = _repo.LoadResourcesPool(mapId, ownerId);
-					if (currentPool == null) return;
-
-					float current = currentPool.GetValue(resource.Name);
-					float limit = currentPool.GetLimit(resource.Name);
-
-					if (current < limit)
-					{
-						currentPool.AddValue(resource.Name, growth);
-						_repo.SaveResources(mapId, ownerId, currentPool);
-					}
-				};
-
-				_time.Register(task);
+				// v0.3 / WP-3.2：任务创建抽到 StartGrowthTask（新建与读档恢复共用同一份实现）
+				StartGrowthTask(mapId, ownerId, resource, intervalDays, 0f);
 			}
+		}
+
+		/// <summary>
+		/// 注册单条资源的月结任务（新建 = 进度 0；读档恢复 = 回填存档进度，`WP-3.2`）。
+		/// </summary>
+		private void StartGrowthTask(string mapId, int ownerId, IResourceConfig resource, float intervalDays, float initialProgress)
+		{
+			var task = new IntervalTask(initialProgress, intervalDays, resource.Name, "ResourceGrowth", "none", mapId, ownerId);
+
+			task.OnCompleted += () =>
+			{
+				var modifiers = new ModifierManager(_modifierRepo.LoadModifiers(mapId, ownerId));
+				var targets = resource.DependentModifiers?.ToArray() ?? new string[0];
+				float growth = modifiers.GetValue(targets, resource.BaseGrowth);
+
+				var currentPool = _repo.LoadResourcesPool(mapId, ownerId);
+				if (currentPool == null) return;
+
+				float current = currentPool.GetValue(resource.Name);
+				float limit = currentPool.GetLimit(resource.Name);
+
+				if (current < limit)
+				{
+					currentPool.AddValue(resource.Name, growth);
+					_repo.SaveResources(mapId, ownerId, currentPool);
+				}
+			};
+
+			_time.Register(task);
 		}
 	}
 }

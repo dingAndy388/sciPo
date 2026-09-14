@@ -31,5 +31,11 @@ namespace SciencePotato.Scripts.Common.Application
 		/// </summary>
 		/// <returns>被注销的任务数量。</returns>
 		int UnregisterByUId(string uid);
+
+		/// <summary>
+		/// （v0.3 / WP-3.2）**清空订阅列表**（不触碰仓储）：读档前调用 —— 时间总线上的任务都持有**旧实体副本**的引用，
+		/// 读档后必须全部作废，由恢复流程按新实体重建，否则同一个逻辑任务会被注册两次（月结翻倍、人口翻倍）。
+		/// </summary>
+		void Reset();
 	}
 }

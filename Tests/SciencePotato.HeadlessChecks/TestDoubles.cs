@@ -1,6 +1,7 @@
 using SciencePotato.Scripts.Common.Domain;
 using SciencePotato.Scripts.Core.Time;
 using SciencePotato.Scripts.Map.Domain;
+using SciencePotato.Scripts.Map.Infrastructure;
 using System;
 using System.Collections.Generic;
 
@@ -48,50 +49,66 @@ namespace SciencePotato.HeadlessChecks
 	}
 
 	/// <summary>
-	/// （v0.3 / WP-0.2 / WP-3.1）内存地图仓库替身。与真实存档的行为保持一致：**只保存地形**，
-	/// 因此读档后占据物与人口会丢失 —— 这正是 MapSession（WP-3.1）要解决的 M0-2 ③④ 阻塞点。
+	/// （v0.3 / WP-0.2 / WP-3.1 / WP-3.2）内存地图仓库替身。
+	/// <para>**与真实存档保持同一套映射逻辑**：内部存 `MapSave`（由 `SaveMapper.ToSave` 生成，含地形/人口/占据物），
+	/// 读档时用 `SaveRebuilder` 按 uid 重建实体 —— 这样"存档等价性"用例验的才是真实语义，
+	/// 而不是替身自己的简化行为（`WP-3.2` 起旧替身只存地形，会把实体持久化的 bug 掩盖掉）。</para>
 	/// </summary>
 	internal sealed class InMemoryMapRepository : IMapRepository
 	{
-		private sealed class Snapshot
-		{
-			public int Seed;
-			public int Width;
-			public int Height;
-			public string Id;
-			public readonly Dictionary<HexCubePosition, ITerrainData> Terrain = new();
-		}
-
-		private readonly Dictionary<string, Snapshot> _store = new(StringComparer.OrdinalIgnoreCase);
+		private readonly Dictionary<string, MapSave> _store = new(StringComparer.OrdinalIgnoreCase);
 
 		public int LoadCount { get; private set; }
 		public int SaveCount { get; private set; }
 
+		/// <summary>读档时的实体重建器（与真实仓库一致：缺省为 null = 只恢复地形）。</summary>
+		public SaveRebuilder Rebuilder { get; set; }
+
 		public void SaveMap(Map map)
 		{
 			SaveCount++;
-			var snapshot = new Snapshot { Seed = map.seed, Width = map.width, Height = map.height, Id = map.Id };
-			foreach (MapCell cell in map.GetAllCells())
-				snapshot.Terrain[cell.Position] = cell.Terrain;
-			_store[map.Id] = snapshot;
+			_store[map.Id] = SaveMapper.ToSave(map); // 深拷贝：之后对活动地图的改动不会渗进"存档"
 		}
 
 		public Map LoadMap(string id)
 		{
 			LoadCount++;
-			if (id == null || !_store.TryGetValue(id, out Snapshot snapshot)) return null;
+			if (id == null || !_store.TryGetValue(id, out MapSave save)) return null;
 
-			var map = new Map(snapshot.Seed, snapshot.Width, snapshot.Height, snapshot.Id);
-			foreach (KeyValuePair<HexCubePosition, ITerrainData> pair in snapshot.Terrain)
+			// 与真实仓库一致：更高版本的存档**拒绝加载**（v0.3 / WP-3.2）
+			if (save.SaveVersion > MapSave.CurrentVersion) return null;
+
+			var map = new Map(save.seed, save.width, save.height, save.Id);
+
+			foreach (HexCubeCellSave cellSave in save.cells)
 			{
-				var cell = new MapCell(pair.Key);
-				cell.SetTerrain(pair.Value);
-				map.SetCell(pair.Key, cell);
+				var cell = new MapCell(cellSave.position);
+				cell.SetTerrain(cellSave.terrain == null ? null : TerrainOf(cellSave.terrain));
+				cell.SetPopulation(cellSave.Population);
+				map.SetCell(cellSave.position, cell);
+
+				if (cellSave.Building != null)
+				{
+					IMapOccupant building = Rebuilder?.RebuildBuilding(cellSave.Building, cellSave.position);
+					if (building != null) map.AddOccupant(building, cellSave.position);
+				}
+				else if (cellSave.Unit != null)
+				{
+					IMapOccupant unit = Rebuilder?.RebuildUnit(cellSave.Unit, cellSave.position);
+					if (unit != null) map.AddOccupant(unit, cellSave.position);
+				}
 			}
+
 			return map;
 		}
 
 		public void DeleteMap(Map map) => _store.Remove(map.Id);
+
+		/// <summary>（v0.3 / WP-3.2）测试用：篡改存档里的格式版本（模拟更高版本的游戏写出的档）。</summary>
+		public void BumpSaveVersion(string id, int version)
+		{
+			if (_store.TryGetValue(id, out MapSave save)) save.SaveVersion = version;
+		}
 
 		public IEnumerable<Map> ListMaps()
 		{
@@ -100,6 +117,23 @@ namespace SciencePotato.HeadlessChecks
 				Map map = LoadMap(id);
 				if (map != null) yield return map;
 			}
+		}
+
+		/// <summary>地形解析：与真实仓库同样按 Id 查地形表；替身只保留 Id → 最小地形对象（无表时返回 null）。</summary>
+		public Func<string, ITerrainData> TerrainResolver { get; set; }
+
+		private ITerrainData TerrainOf(string terrainId)
+			=> TerrainResolver != null ? TerrainResolver(terrainId) : new TerrainStub(terrainId);
+
+		/// <summary>（v0.3 / WP-3.2）无地形表时的占位地形（仅测试替身使用）。</summary>
+		private sealed class TerrainStub(string id) : ITerrainData
+		{
+			public string Id { get; set; } = id;
+			public string Name { get; set; } = id;
+			public float Weight { get; set; } = 1f;
+			public float MoveCost { get; set; } = 1f;
+			public bool Passable { get; set; } = true;
+			public string UnlockTech { get; set; } = null;
 		}
 	}
 

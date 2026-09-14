@@ -63,7 +63,7 @@ public partial class ServiceContainer : Node
 			Random = new SystemRandom(20260914),
 			ResourceConfigLoader = _configLoader,
 			GeneratorConfigPath = "res://Config/Generator",
-			MapRepositoryFactory = terrain => new GodotMapRepository(terrain),
+			MapRepositoryFactory = tables => new GodotMapRepository(tables.Terrains), // v0.3 / WP-3.2：实体重建器由 CoreBootstrap 在装配后补挂
 			SessionId = "local",
 		});
 

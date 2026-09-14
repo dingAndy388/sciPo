@@ -66,6 +66,19 @@ namespace SciencePotato.Scripts.Core.Time
 			return dispatched;
 		}
 
+		/// <summary>
+		/// （v0.3 / WP-3.2）**读档恢复游戏日**：直接设置当前日，**不派发** `DayElapsed`
+		/// （历史的日子不该在加载瞬间被"补跑"一遍 —— 那会让任务一次性结算几十次；
+		/// 需要补结算的场景由调用方显式推进，见 `WP-3.9` 的离线结算）。
+		/// </summary>
+		public void RestoreDay(double day)
+		{
+			if (day < 0d) return;
+
+			CurrentDay = day;
+			PendingDays = 0d;
+		}
+
 		/// <summary>当前游戏内日期。</summary>
 		public GameDate ToDate()
 		{

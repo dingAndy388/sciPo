@@ -14,7 +14,7 @@ using System.Linq;
 
 namespace SciencePotato.Scripts.Units.Application
 {
-	public class UnitsAppService
+	public partial class UnitsAppService
 	{
 		private readonly MapAppService _map;
 		private readonly TechTreesAppService _tech;
@@ -361,10 +361,10 @@ namespace SciencePotato.Scripts.Units.Application
 			unit.IsIdle = false;
 		}
 
-		private void RegisterMoveTask(string mapId, string uid)
+		private void RegisterMoveTask(string mapId, string uid, float initialProgress = 0f)
 		{
 			// 口径（v0.3 / WP-1.5）：每 10 游戏日补一次 MP（design/unit.md「每 10 秒恢复」→ M0-3 ② 的 10 日）
-			var task = new IntervalTask(0, TimeConstants.UnitMoveDays, uid, "UnitMove", "none", mapId, 0);
+			var task = new IntervalTask(initialProgress, TimeConstants.UnitMoveDays, uid, "UnitMove", "none", mapId, 0);
 			task.OnCompleted += () => MoveTick(mapId, uid);
 			_time.Register(task);
 		}
@@ -501,6 +501,9 @@ namespace SciencePotato.Scripts.Units.Application
 			if (aRadius > 0 && unit.Position.DistenceTo(targetUnit.Position) <= aRadius)
 			{
 				// Ranged — attack immediately
+				// v0.3 / WP-3.2：把交战目标**显式记在单位上**（旧实现只有近战才记），
+				// 这样读档才能重建攻击循环（`RestoreUnitTasks`），也能让战报/UI 查到"正在打谁"
+				unit.AttackTargetUid = targetUid;
 				RegisterAttackTask(mapId, unit.GetInfo().UId, targetUid);
 				return;
 			}
@@ -514,13 +517,13 @@ namespace SciencePotato.Scripts.Units.Application
 			// When MoveTick reaches target, it will detect AttackTargetUid and start melee
 		}
 
-		private void RegisterAttackTask(string mapId, string attackerUid, string targetUid)
+		private void RegisterAttackTask(string mapId, string attackerUid, string targetUid, float initialProgress = 0f)
 		{
 			// 口径（v0.3 / WP-1.5）：每 1 游戏日结算一次伤害（原为 1 秒）
 			// 生命周期（v0.3 / WP-2.2）：交战循环的终结状态是"目标消失 / 脱离射程 / 已是尸体"，
 			// 由 AttackTick 自行注销 —— 否则循环任务会永久留在时间总线里空转（`TIME-02`）。
 			IntervalTask task = null;
-			task = new IntervalTask(0, TimeConstants.UnitAttackDays, $"atk_{attackerUid}_{targetUid}", "UnitAttack", "none", mapId, 0);
+			task = new IntervalTask(initialProgress, TimeConstants.UnitAttackDays, $"atk_{attackerUid}_{targetUid}", "UnitAttack", "none", mapId, 0);
 			task.OnCompleted += () => AttackTick(mapId, attackerUid, targetUid, task);
 			_time.Register(task);
 		}

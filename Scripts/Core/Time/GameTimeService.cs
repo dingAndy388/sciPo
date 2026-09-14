@@ -73,6 +73,12 @@ namespace SciencePotato.Scripts.Core.Time
 			return removed;
 		}
 
+		/// <summary>
+		/// （v0.3 / WP-3.2）清空订阅列表（不触碰仓储）：读档前调用 —— 订阅者持有旧实体副本的引用，
+		/// 必须全部作废并由恢复流程按新实体重建，否则同一逻辑任务会被注册两次（月结翻倍、人口翻倍）。
+		/// </summary>
+		public void Reset() => _subscribers.Clear();
+
 		private static bool BelongsTo(ITickable tickable, string uid)
 		{
 			if (tickable is not IProgressTask task) return false;

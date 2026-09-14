@@ -1,5 +1,9 @@
 using SciencePotato.Scripts.Common.Domain;
+using SciencePotato.Scripts.Construction.Domain;
+using SciencePotato.Scripts.Core;
 using SciencePotato.Scripts.Map.Domain;
+using SciencePotato.Scripts.Map.Infrastructure;
+using SciencePotato.Scripts.Units.Domain;
 using System;
 
 namespace SciencePotato.HeadlessChecks
@@ -16,12 +20,18 @@ namespace SciencePotato.HeadlessChecks
 			Check.Run("M0-2 前置：占据物跨调用不丢失（可按 uid 取回）", OccupantSurvivesAcrossCalls);
 			Check.Run("M0-2 前置：人口累加不被读盘重置", PopulationSurvivesAcrossCalls);
 			Check.Run("存档点：只在 Flush 时写盘，且只写脏地图", FlushWritesOnlyDirtyMaps);
-			Check.Run("当前边界：落盘后新会话仍读不到占据物（WP-3.2 待补）", PersistenceStillTerrainOnly);
+			Check.Run("WP-3.2 存档等价：落盘后新会话能读回建筑/单位/人口（`MAP-02` 修复）", PersistenceKeepsEntitiesAndPopulation);
 		}
 
 		private static (MapSession session, InMemoryMapRepository repo) NewSession()
 		{
 			var repo = new InMemoryMapRepository();
+
+			// v0.3 / WP-3.2：读档需要地形解析 + 实体重建（与真实仓库同一套映射）
+			CoreServices core = ConfigFixtures.BuildRealCore();
+			repo.TerrainResolver = terrainId => core.Tables.Terrains.GetById(terrainId);
+			repo.Rebuilder = new SaveRebuilder(new BuildingFactory(core.Tables.Buildings), new UnitFactory(core.Tables.Units));
+
 			var map = new Map(7, 4, 4, "m1");
 			for (int q = 0; q < 4; q++)
 				for (int r = 0; r < 4; r++)
@@ -100,28 +110,45 @@ namespace SciencePotato.HeadlessChecks
 			Check.Assert(!session.IsDirty("m1"), "写盘后应清除脏标记");
 		}
 
-		private static void PersistenceStillTerrainOnly()
+		private static void PersistenceKeepsEntitiesAndPopulation()
 		{
 			(MapSession session, InMemoryMapRepository repo) = NewSession();
 			var position = new HexCubePosition(1, 1);
+			var unitPosition = new HexCubePosition(2, 2);
 
-			session.Get("m1").AddOccupant(new FakeOccupant(position, "house", "uid-house-1", 0), position);
+			// 用**真实实体**（建筑 + 单位）而不是 FakeOccupant：重建器认的是 SaveMapper 支持的两种占据物
+			CoreServices core = ConfigFixtures.BuildRealCore();
+			var factory = new BuildingFactory(core.Tables.Buildings);
+			Building building = factory.CreateBuilding("camp", position, 3, "uid-camp-1", true);
+			var unitFactory = new UnitFactory(core.Tables.Units);
+			Unit unit = unitFactory.CreateUnit("worker", unitPosition, 3, "uid-worker-1");
+			if (unit != null) unit.IsReady = true;
+
+			session.Get("m1").AddOccupant(building, position);
+			if (unit != null) session.Get("m1").AddOccupant(unit, unitPosition);
 			session.Get("m1").GetCell(position).AddPopulation(2);
 			session.MarkDirty("m1");
 			session.FlushAll();
 
-			// 新建会话（等价于"重开游戏"）：占据物与人口仍不在存档中 —— WP-3.2 才补齐
+			// 新建会话（等价于「重开游戏」）：**实体与人口都应读回**（v0.3 / WP-3.2）
 			var reopened = new MapSession(repo);
 			Map map = reopened.Get("m1");
 
 			Check.Assert(map != null, "地形应能读回");
 			Check.Assert(map.GetCell(position).Terrain != null, "地形应存在");
-			Check.AssertEqual(0, map.GetCell(position).Population, "人口尚未落盘（预期：WP-3.2 修复）");
+			Check.AssertEqual(2, map.GetCell(position).Population, "人口应跨存档保留（`WP-2.3` 的口径）");
 
-			bool occupantGone = true;
-			try { map.GetOccupantByUId("uid-house-1"); occupantGone = false; }
-			catch (Exception) { occupantGone = true; }
-			Check.Assert(occupantGone, "占据物尚未落盘（预期：WP-3.2 修复）");
+			IMapOccupant restored = map.GetOccupantByUId("uid-camp-1");
+			Check.Assert(restored != null, "建筑应按 uid 读回（`MAP-02` 修复）");
+			Check.Assert(restored.GetInfo().Id.Equals("camp"), "建筑 Id 应为 camp");
+			Check.Assert(restored.IsReady, "完工状态应保留");
+
+			if (unit != null)
+			{
+				IMapOccupant restoredUnit = map.GetOccupantByUId("uid-worker-1");
+				Check.Assert(restoredUnit != null, "单位应按 uid 读回");
+				Check.Assert(restoredUnit.GetInfo().UId.Equals("uid-worker-1"), "单位 uid 应原样保留");
+			}
 		}
 	}
 }

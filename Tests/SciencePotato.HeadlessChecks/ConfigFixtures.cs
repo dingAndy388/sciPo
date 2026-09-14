@@ -1,6 +1,9 @@
 using SciencePotato.Scripts.Common.Domain;
 using SciencePotato.Scripts.Common.Infrastructure;
+using SciencePotato.Scripts.Construction.Domain;
 using SciencePotato.Scripts.Core;
+using SciencePotato.Scripts.Map.Infrastructure;
+using SciencePotato.Scripts.Units.Domain;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -42,10 +45,11 @@ namespace SciencePotato.HeadlessChecks
 		/// <summary>按给定配置源装配核心：测试里唯一的 <see cref="CoreBootstrap"/> 入口。</summary>
 		/// <param name="mapRepository">
 		/// （v0.3 / WP-2.3）可选：传入自己的地图仓库替身，便于断言存档点行为（`LoadCount`/`SaveCount`）。
+		/// <para>（v0.3 / WP-3.2）无论哪种方式，工厂都会给它挂上 `SaveRebuilder`（按 uid 重建建筑/单位），
+		/// 否则读档只剩地形，验不出实体持久化。</para>
 		/// </param>
 		public static CoreServices BuildCore(InMemoryConfigSource configSource, bool failOnConfigErrors = true, InMemoryMapRepository mapRepository = null)
 		{
-			var repository = mapRepository ?? new InMemoryMapRepository();
 			return CoreBootstrap.Build(new CoreDependencies
 			{
 				FileSystem = new InMemoryFileSystem(),
@@ -54,7 +58,13 @@ namespace SciencePotato.HeadlessChecks
 				ResourceConfigLoader = null, // 无头环境：生成器配置取 Config/Generator.json
 				GeneratorConfigPath = null,
 				FailOnConfigErrors = failOnConfigErrors,
-				MapRepositoryFactory = _ => repository,
+				MapRepositoryFactory = tables =>
+				{
+					InMemoryMapRepository repository = mapRepository ?? new InMemoryMapRepository();
+					repository.Rebuilder = new SaveRebuilder(new BuildingFactory(tables.Buildings), new UnitFactory(tables.Units));
+					repository.TerrainResolver = terrainId => tables.Terrains.GetById(terrainId);
+					return repository;
+				},
 				SessionId = "test",
 			});
 		}

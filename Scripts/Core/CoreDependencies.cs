@@ -18,10 +18,11 @@ namespace SciencePotato.Scripts.Core
 
 		/// <summary>
 		/// 地图存档仓库工厂：由宿主提供（Godot 层用 <c>GodotMapRepository</c>，测试用内存实现）。
-		/// <para>之所以用工厂而不是直接实例：地图仓库需要按地形 Id 解析地形，而地形配置由组合根本身产出，
-		/// 直接注入会形成"仓库 ↔ 配置"的构造循环；工厂是打断该循环的最小手段（见 §13.z 的装配顺序）。</para>
+		/// <para>之所以用工厂而不是直接实例：地图仓库需要按地形 Id 解析地形、并在读档时重建建筑/单位
+		/// （`SaveRebuilder` 又需要建筑/单位配置表），而这些配置由组合根本身产出 —— 直接注入会形成
+		/// "仓库 ↔ 配置"的构造循环；工厂是打断该循环的最小手段（见 §13.z 的装配顺序，`WP-3.2` 起改为传入整表）。</para>
 		/// </summary>
-		public Func<ITerrainConfigRepository, IMapRepository> MapRepositoryFactory { get; init; }
+		public Func<ConfigTables, IMapRepository> MapRepositoryFactory { get; init; }
 
 		/// <summary>随机源（可注入种子以保证可复现）。</summary>
 		public IRandom Random { get; init; }

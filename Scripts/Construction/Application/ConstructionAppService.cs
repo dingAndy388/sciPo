@@ -11,7 +11,7 @@ using System.Linq;
 
 namespace SciencePotato.Scripts.Construction.Application
 { 
-	public class ConstructionAppService
+	public partial class ConstructionAppService
 	{
 		private readonly MapAppService _map;
 		private readonly ResourcesAppService _resource;
@@ -270,10 +270,13 @@ namespace SciencePotato.Scripts.Construction.Application
 		/// <para>任务的回收不在本方法里：住房被拆时由 <see cref="RemoveBuildingByPosition"/> →
 		/// <c>ITimeService.UnregisterByUId</c> 按 uid 范围注销（`CON-06`，`WP-2.2` 提供能力）。</para>
 		/// </summary>
-		private void RegisterHousingTask(string mapId, int ownerId, string buildingUid, HexCubePosition center, IBuildingConfig config)
+		/// <param name="initialProgress">
+		/// （v0.3 / WP-3.2）读档恢复时回填的进度（游戏日）；新建时为 0。
+		/// </param>
+		private void RegisterHousingTask(string mapId, int ownerId, string buildingUid, HexCubePosition center, IBuildingConfig config, float initialProgress = 0f)
 		{
 			// 口径（v0.3 / WP-1.5）：`PopulationGrowthInterval` 的单位是**游戏日**（营地 300 日）
-			var task = new IntervalTask(0, config.PopulationGrowthInterval, buildingUid, "PopulationGrowth", "none", mapId, ownerId);
+			var task = new IntervalTask(initialProgress, config.PopulationGrowthInterval, buildingUid, "PopulationGrowth", "none", mapId, ownerId);
 
 			float pending = 0f; // 小数余量：修正器可能给出非整数增长（如 +50%）
 

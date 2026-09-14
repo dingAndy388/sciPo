@@ -11,12 +11,20 @@ namespace SciencePotato.Scripts.Construction.Domain
 	{
 		private IBuildingConfigRepository _repo = repo;
 
-		public Building CreateBuilding(string buildingId, HexCubePosition position, int ownerId)
+		/// <summary>
+		/// 创建建筑。
+		/// <para>（v0.3 / WP-3.2）<paramref name="uid"/> 与 <paramref name="isReady"/> 可显式指定：读档必须**保留原 uid**
+		/// （修正器/迷雾/任务/建造者绑定都以它为锚）并恢复"是否已完工"。</para>
+		/// </summary>
+		public Building CreateBuilding(string buildingId, HexCubePosition position, int ownerId, string uid = null, bool isReady = false)
 		{
 			var config = _repo.GetBuildingConfig(buildingId);
+			if (config == null) return null;
 
 			// v0.3 / WP-2.5：训练队列上限随配置进建筑实例（默认 5，见 BuildingConfigDto）
-			return new Building(position,config.BuildingId, Guid.NewGuid().ToString(), ownerId, config.Name, config.TrainingQueueLimit);
+			return new Building(position, config.BuildingId,
+				string.IsNullOrWhiteSpace(uid) ? Guid.NewGuid().ToString() : uid,
+				ownerId, config.Name, config.TrainingQueueLimit) { IsReady = isReady };
 		}
 	}
 }

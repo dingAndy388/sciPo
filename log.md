@@ -219,6 +219,7 @@
 - **影响**：**读档即世界重置**。所有与"世界状态持续存在"相关的 4X 核心体验（城市发展、部队保留、战争迷雾进度、生产队列）都无法成立。这是对设计稿影响最大的单条问题。
 - **修复方向**：① 为每类 occupant 定义**独立的存档 DTO + 序列化/反序列化路径**（不要试图直接序列化 Domain 实体）；② 每个存档格子扩为"地形 + 占据物列表/槽位 + 人口"；③ 存档时把"实体状态"与"任务快照"在同一事务里写（否则会出现"存档里有建筑、任务列表里没有它"的错位）。
 - **关联**：`MAP-01`、`TIME-08`、`CON-05`、`UNIT-09`、`FOG-04`
+> ✅ **已修复（v0.3.15 / WP-3.2）**：`GodotMapRepository` 与内存替身都走 `SaveMapper`，地形 + 人口 + 占据物（建筑/单位，含 HP/MP/训练队列/建造者绑定）一并落盘；读档按 uid 重建，`MapSession` 驱逐缓存后重读。用例断言"重开会话后建筑/单位/人口都在"。
 
 #### `MAP-03` 字典索引器取格子/占据物，缺 key 直接抛异常 —— 【P1｜逻辑层缺口】
 - **现象**：`Map.GetCell` 用 `_cells[position]`；`Map.GetOccupantByUId` 用 `_occupants[uid]`。二者都不判存在性。
@@ -385,6 +386,7 @@
 - **影响**：① 存档可能出现"有建造任务、无对应建筑"（或反之）；② 续跑 API 需调用方自己拼装快照，容易漏字段（见 `CON-03`）。
 - **修复方向**：引入统一的存档单元（SaveUnit/SaveSlot），把"地图 + 实体 + 任务 + 资源 + 迷雾 + 科技"在同一版本号下一起写；读档用同一版本号做一致性校验。
 - **关联**：`MAP-02`、`TIME-03`、`CON-03`、`TIME-05`
+> ✅ **已修复（v0.3.15 / WP-3.2）**：`ResumeConstruction` 改走统一 `CompleteConstruction`；新增 `ResumeUpgrade`/`ResumeTraining`/`RestoreGrowthTasks`/`RestoreHousingTasks`/`RestoreUnitTasks`（按实体重建 + 回填进度），并由 `WorldSaveService.LoadWorld` 统一编排（时钟 → 地图 → 建筑附加状态 → 迷雾 → 任务 → 事件引擎）。**未做**：事件的"生效中"状态仍只在内存（`WP-3.3`）。
 
 #### `TIME-09` `LinearTask` 完成后仍常驻订阅列表 —— 【P2｜逻辑层缺口】
 - **现象**：`LinearTask` 完成后仅把 `IsCompleted = true`，对象仍留在 `_subscribers`（每帧仍会 `OnTick` 后立即 return）；依赖调用方在 `OnCompleted` 回调里 `Unregister`。
@@ -1142,6 +1144,7 @@
 | **v0.3.13** | 2026-09-14 | **WP-2.9 科技树：单树串行 + 三树并行（`F1`、`TECH-01/04`）**：`ITechTreeConfig` 新增 `Concurrency`（默认 1；三棵树各自配），`TechTree` 新增研究槽位（`CanStartResearch`/`MarkResearchStarted`/`InProgress`），`TechTreesAppService` 以 `Concurrency` 闸住开工并**把树常驻内存**（否则每次读盘重建实例会让槽位状态丢失、串行形同虚设）；研究任务快照改用 `UId` 承载**所属树**（键 = `Research:{treeId}:{nodeId}`）→ `CreateResearchTask` 不再把 `nodeId` 当 `treeId`，旧口径快照显式拒绝续跑；校验器：`Concurrency<1` 判 error、`>1` 判 warning。无头验收 **96/96 通过、退出码 0**。新增决策 D42~D43 |
 | **v0.3.14** | 2026-09-14 | **WP-2.10 最小领域事件总线（`F10`、`TECH-05`、`UNIT-08`、`EVT-04`、`ROOT-4`）**：新增 `IDomainEventBus`/`DomainEventBus`（类型即频道：`Subscribe/Publish/Unsubscribe`、**快照派发**、**订阅者异常隔离**（记入 `Failures` 不打断玩法）、重复订阅幂等）与 6 类事件（建造完成 / 建筑升级 / 单位训练完成 / 单位阵亡 / 研究完成 / 事件触发）；建造-升级-研究-事件四条链路的发布点就位（`CompleteConstruction`/`CompleteTraining`/攻击阵亡分支/研究完成/`TickEvents` 触发瞬间），四个应用服务以可选构造参数接收总线；`CoreServices.DomainEvents` 由组合根提供**全进程一份**。无头验收 **103/103 通过、退出码 0**。新增决策 D44~D45 |
 | **v0.4.0** | 2026-09-14 | 🏁 **M0-2（单玩家可玩）达成**：批次 2 的 **10 个 WP 全部完成**（WP-2.1 跨树前置 → 2.2 任务体系 → 2.3 人口 → 2.4 建造者 → 2.5 训练队列 → 2.6 建筑升级 → 2.7 建筑产出 → 2.8 事件按日 → 2.9 科技并发 → 2.10 领域事件总线），5 条里程碑验收项 **①~⑤ 全部通过**，无头验收 **103/103 通过、退出码 0**（M0-1 组 43 + M0-2 组 60）。交付总结与批次 3 交接见 §18.5 |
+| **v0.3.15** | 2026-09-14 | **WP-3.2 实体持久化（`B10`、`MAP-02`，M0-3 ①）**：新增 `SaveMapper` + `MapSave.SaveVersion`（v2）+ `BuildingSaveDto`/`UnitSaveDto`/`TrainingOrderSave`/`CellSaveDto`（地形 + **人口 + 占据物**）；`GodotMapRepository` 与内存仓库共用同一套映射（读档用 `SaveRebuilder` 按 **uid 原样重建**建筑/单位，含 HP/MP/忙闲/攻击目标/训练队列/建造者绑定）；新增 `WorldSaveService`（存档点 + 读档编排：时钟 → 地图实体 → 建筑附加状态 → 迷雾 → 按类型重建周期任务 → 事件引擎）与 `IClockRepository`（游戏日）；`ITimeService.Reset()`（读档前作废旧订阅者，否则任务翻倍）；`BuildingFactory`/`UnitFactory` 支持显式 uid；**M0-3 ① 通过**：同一固定种子跑两个世界（其一在第 34 日存档→读档），第 360 日**建筑/单位/人口/任务/迷雾/时间逐项等价**。无头验收 **107/107 通过、退出码 0**。新增决策 D46~D48 |
 
 
 ---
@@ -1671,7 +1674,7 @@
 | WP | 内容 | 覆盖 | 涉及文件/模块 | 新增类型/字段 | 量 | 性质 |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | WP-3.1 | **Map 常驻内存**（`MapSession` + 脏标记 + 存档点；`IMapRepository` 退为边界） | `B11`、`MAP-01/07` | `MapAppService` 拆 `MapQuery`/`MapCommand` | `MapSession`、`MapQueryService` | 大 | 代码 |
-| WP-3.2 | **实体持久化**：建筑/单位/人口/任务/迷雾/时间完整存档 | `B10`、`MAP-02` | 存档层 + Mapper | `BuildingSaveDto`、`UnitSaveDto`、`CellSaveDto`、`SaveMapper` | 大 | 代码 |
+| WP-3.2 | **实体持久化**：建筑/单位/人口/任务/迷雾/时间完整存档 | `B10`、`MAP-02` | 存档层 + Mapper | `BuildingSaveDto`、`UnitSaveDto`、`CellSaveDto`、`SaveMapper` | 大 | 代码 | → **✅ 完成（v0.3.15）** |
 | WP-3.3 | **统一存档单元**（单序列化器、原子写、`saveVersion` 迁移钩子） | `I3`、`DEP-06`、`TIME-08` | 5 个 `*Repository` 收敛 | `ISaveStore` | 中 | 代码 |
 | WP-3.4 | **地块占用权威一致**（统一进入/离开 API、修僵尸索引） | `B3`、`MAP-03/04`、`UNIT-05` | `Map`、`MapCell`、`UnitsAppService` | — | 中 | 代码 |
 | WP-3.5 | **单位移动模型重写**（R1~R7）+ 地形消耗与通行权限 | `E5/E6/E7/E8`、`UNIT-10`、`B1/B2`（部分） | 新增 `UnitMovementService` | — | 中 | 代码+填表 |
@@ -2064,6 +2067,13 @@ WP-0.4 ─→ WP-3.5 / WP-3.8 / WP-5.3
 | 2026-09-14 | WP-2.9 **科技树：单树串行 + 三树并行（并发可配）**（`F1`、`TECH-01/04`） | ✅ 完成 | ① **配置**：`ITechTreeConfig.Concurrency`（默认 1）/`Config/TechTrees.json` 三棵树各填 `Concurrency: 1` —— 设计稿 research_tree.md「每棵树同时只能进行一项研发，三棵树互相独立」；② **域**：`TechTree` 增加研究槽位（`Concurrency` / `InProgress` / `CanStartResearch`（= 够格 ∧ 槽位未满）/ `MarkResearchStarted`/`MarkResearchFinished`；槽位**只在内存**，理由见 `D43`），`InitializeFromConfig`/`HydrateConfigs` 都随表更新并发值；③ **服务**：`Research` 用 `MarkResearchStarted` 闸住开工（被拒时**不扣资源**；资源不足时**归还槽位**，不会因一次失败把树堵死），新增 `CanStartResearch`/`GetInProgress`/`GetConcurrency` 查询（`WP-4.14` 的门控面）；**树常驻内存**（`_trees` 缓存，否则每次 `GetOrCreateTechTree` 从盘上重建实例 → 槽位状态丢失、串行失效）；④ **任务键**（`TECH-01`/`TECH-04`）：研究任务 `UId` = **所属树 Id**（原来是 `none`）、`Id` = 节点 Id → 键 = `Research:{treeId}:{nodeId}`；`CreateResearchTask` 从 `snapshot.UId` 取树（不再把 `nodeId` 当 `treeId`），旧口径快照（`UId=none`）显式拒绝续跑；⑤ **校验器**：`Concurrency<1` 判 error（否则该树永远无法开工）、`>1` 判 warning（超出设计稿当前口径）；⑥ **指南**：TechTrees 段补字段与样板。检查 **+6 项**（总计 **96/96**、退出码 0） |
 | 2026-09-14 | WP-2.10 **最小领域事件总线**（`F10`、`TECH-05`、`UNIT-08`、`EVT-04`、`ROOT-4`） | ✅ 完成 | ① **总线**：新增 `IDomainEventBus`（`Common/Application`）+ `DomainEventBus`（`Common/Infrastructure`）—— 类型即频道（`Subscribe<T>`/`Publish<T>`/`Unsubscribe<T>`/`SubscriberCount<T>`/`Failures`）；三个健壮性口径：**派发用快照**（订阅者可在回调里订阅/退订）、**异常隔离**（某个订阅者抛异常只记入 `Failures`，其余订阅者照常收到、发布方主流程不中断）、**重复订阅幂等**；② **事件类型**（`Common/Domain/DomainEvents.cs`）：`BuildingCompletedEvent` / `BuildingUpgradedEvent`（含 from/to 等级）/ `UnitTrainedEvent` / `UnitDiedEvent`（含凶手 uid）/ `ResearchCompletedEvent` / `GameEventTriggeredEvent`（含持续期）；③ **发布点**：`CompleteConstruction`（首次建成与升级分成两类事件）、`CompleteTraining`（单位诞生）、攻击致死的分支（阵亡 + 范围注销之后）、研究完成回调、`EventAppService.TickEvents` 的触发瞬间；四个应用服务以**可选构造参数**接收总线（不传 = 空操作，便于老用例零改动）；④ **组合根**：`CoreServices.DomainEvents` 由 `CoreBootstrap` 创建**全进程一份**（避免"各服务各 new 一个总线"导致订阅方静默收不到消息）；⑤ **验收**：真实配置端到端触发六类事件（含"弓箭手 12 日射杀敌方工人"的阵亡链路）+ 总线健壮性用例。检查 **+7 项**（总计 **103/103**、退出码 0），**M0-2 ⑤ 条线之外的最后一块拼图（推送侧）落地** |
 
+
+### M0-3（批次 3 · 世界可存续）
+
+| 日期 | WP | 状态 | 验证方式 / 产物 |
+| :--- | :--- | :--- | :--- |
+| 2026-09-14 | WP-3.2 **实体持久化**（`B10`、`MAP-02`） | ✅ 完成 | ① **DTO 与映射**：`MapSave`（+`SaveVersion`=2）+ `HexCubeCellSave`（地形 + 人口 + `Building`/`Unit` 两个具名槽位）+ `BuildingSaveDto`（uid/Id/Owner/IsReady/建造者 uid/训练队列）+ `UnitSaveDto`（+HP/MP/忙闲/攻击目标）+ `SaveMapper`（`ToSave`/`RebuildBuilding`/`RebuildUnit`）；具名槽位而非多态（System.Text.Json 不带派生类型元数据，且把"一格一个占据物"写进存档）；② **读档重建**：`SaveRebuilder` 由组合根用建筑/单位工厂构造（Map 模块只认 `IMapOccupant`），**uid 原样保留**；`GodotMapRepository` 与内存替身共用同一套映射（替身不再只存地形）；更高版本存档**拒绝加载**；③ **读档编排**：新增 `Scripts/Core/Save/WorldSaveService`（存档点 = 时钟 + 脏地图 + 迷雾；读档 = 时钟 → 驱逐重读地图 → 建筑附加状态 → 迷雾 → 按类型重建任务 → 事件引擎幂等启动）与 `IClockRepository`；④ **任务恢复接线**（此前 `Resume*` 无调用方）：`ResumeConstruction`/新 `ResumeUpgrade`/`ResumeTraining` + `RestoreGrowthTasks`/`RestoreHousingTasks`/`RestoreUnitTasks`（**按实体重建 + 回填进度**）；⑤ **配套修正**：`ITimeService.Reset()`（读档前作废旧订阅者，否则任务翻倍）、`FogAppService` 存档点显式写盘、远程攻击也记目标；⑥ **验收（M0-3 ①）**：同一固定种子两个世界（其一第 34 日存档→读档），第 360 日六类状态**逐项等价**。检查 **+4 项**（总计 **107/107**、退出码 0） |
+
 ### 18.1.1 里程碑验收对照
 
 | 里程碑 | 验收项 | 状态 |
@@ -2073,6 +2083,10 @@ WP-0.4 ─→ WP-3.5 / WP-3.8 / WP-5.3
 | M0-2 | ③ 营地 90 日建成 → 人口上限与视野生效 | ✅ `WP-2.3` |
 | M0-2 | ④ 工坊训练工人 30 日后单位出现且人口 −1 | ✅ `WP-2.5` |
 | M0-2 | ⑤ 固定种子下 3 年事件触发次数落在期望区间 | ✅ `WP-2.8`（检查 103/103） |
+| M0-3 | ① 存档 → 读档 → 推进 360 日后逐项等价 | ✅ `WP-3.2`（检查 107/107） |
+| M0-3 | ② 工人跨平原 10 日走 2 格 / 跨山地需 30 日 | ⏳ `WP-3.5` |
+| M0-3 | ③ 同格交战 N 日后 HP 归零、单位移除、掉落进池 | ⏳ `WP-3.6` / `WP-3.7` |
+| M0-3 | ④ 敌方单位封锁格不可建造 | ⏳ `WP-3.8` |
 
 
 **M0-2 结论（v0.4.0）**：五条验收项全部通过，验收载具为 103 项无头断言（`dotnet run --project Tests\SciencePotato.HeadlessChecks`，退出码 0）。里程碑判据与"谁验的"见 §18.5。
@@ -2087,7 +2101,7 @@ dotnet build 'Science Potato.csproj'
 dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessChecks.csproj'
 ```
 
-当前验收结果（2026-09-14，**103/103 通过、退出码 0**）：M0-1 组 43 项 + M0-2 组 60 项。
+当前验收结果（2026-09-14，**107/107 通过、退出码 0**）：M0-1 组 43 项 + M0-2 组 60 项 + M0-3 组 4 项。
 
 | 分组 | 数量 | 覆盖 |
 | :--- | :--- | :--- |
@@ -2106,6 +2120,7 @@ dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessC
 | 建筑升级（WP-2.6） | 7 | 升级链完整且参数取自设计稿（4 链 × 3 级 = 12 条；营地 9/1/300 → 18/1/240 → 36/2/180；学院 250/1000/3000；工坊·军营 +20%/+50%）/ 门控：科技未解锁·资源不足·已最高级·未完工 全部拒绝 / 升级成功：Id 与名称换级、**uid 不变**、升级中未就绪、完成释放建造者 / 修正器换级不叠加（lv.II 1000 × 1.3 科技加成 = 1300，若残留旧 250 则为 1625）/ 人口任务换级不重复（仍 1 条、Target 300 → 240）/ **`CON-03`**：续跑完成也开视野 + 注册人口任务 / 校验器守卫升级链（悬空/自环 error、缺时长 warning、负消耗 error） |
 | 科技树并发（WP-2.9） | 6 | 三棵树 `Concurrency=1` 且真实配置 0 error / 树内串行：同树第二个请求被拒（任务数不增）、完成后槽位释放、下一个才开工 / 三树并行：科学树 + 军事树两项并存并各自完成（互不阻塞）/ 并发可配：`Concurrency=2` 时同树两项并行且都完成 / 研究任务键：`UId`=树、`Id`=节点、键 = `Research:{tree}:{node}`；续跑按树恢复（不再把 nodeId 当 treeId）、旧口径快照拒绝续跑 / 校验器：`<1` error、`>1` warning |
 | 领域事件（WP-2.10） | 7 | 总线：快照派发 / 异常隔离（`Failures` 记录且不打断发布方）/ 重复订阅幂等 / 可退订 / 无订阅者不抛异常 / 建造完成事件（uid·Id·owner·位置）/ 升级完成事件（from→to，且不重复推送「建成」）/ 训练完成事件（uid 与落位单位一致）/ **单位阵亡事件**（`UNIT-08`：含阵亡方 owner 与凶手 uid）/ 研究完成事件（树+节点）/ 事件触发推送（`EVT-04`） |
+| 实体持久化（WP-3.2） | 4 | **M0-3 ①**：固定种子两个世界（其一第 34 日存档→读档），第 360 日**日期/人口/资源/建筑与单位/任务/迷雾逐项等价** / 单位运行时状态（HP/MP/忙闲/攻击目标）跨档保留且读档后战斗继续到击杀 / 施工中建筑（未完工 + 建造者忙 + 队列）跨档保留且完工时释放重建的建造者 / 更高 `SaveVersion` 的存档被拒绝加载 |
 
 
 
@@ -2158,6 +2173,9 @@ dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessC
 | D43 | **科技树必须常驻内存**，`InProgress` 槽位**只存内存**（`[JsonIgnore]`，不落盘） | 发现过程：首版把 `_inProgress` 只放在 `TechTree` 上，而 `GetOrCreateTechTree` 每次都从盘上反序列化新实例 → 槽位在两次调用间丢失，"树内串行"形同虚设（用例当场抓住）。修法：应用服务持有 `_trees` 缓存（与 `MapSession` 同思路，正式注册表归 `WP-3.3`）。而"进行中"**不落盘**的理由：研究进度由任务快照承载（`WP-3.2` 才恢复任务），若树文件里写着"研究中"而任务没恢复，该树会永远堵死 —— 比丢进度更糟 |
 | D44 | **事件总线用类型作频道、同步派发、异常隔离** | 备选：① 字符串主题（拼错即静默丢消息，与 `MOD-05`/`TIME-03` 同类教训）；② 异步队列（原型期没有帧边界/线程模型，反而让"事件什么时候到"不可断言）；③ 让异常向上抛（一个坏掉的 UI 回调会打断"建筑完工"这类核心流程）。取类型频道 + 同步 + 隔离：既能在用例里同步断言，又保证玩法流程不被订阅方拖垮。**代价**：异常被吞进 `Failures`（不静默，但不致命），表现层需要自己检查 |
 | D45 | **总线只在组合根创建一次**（`CoreServices.DomainEvents`），应用服务以可选构造参数接收 | 若各服务各自 `new DomainEventBus()`，表现层订阅的那条总线与应用服务发布的那条不是同一个 → 消息静默丢失（最典型的"事件系统看起来做了但没人收到"）。可选参数是为了让不关心事件的旧用例零改动，同时保留"无人订阅 = 空操作" |
+| D46 | **任务恢复 = 按实体重建 + 回填进度**，而不是序列化任务对象 | 任务的闭包（改哪一格人口、瞄准谁、用哪份配置）都来自实体状态，委托不可序列化；直接存"任务对象"必然出现"任务与实体两处真相"（旧的 `Resume*` 就是手抄漏项才产生 `CON-03`）。恢复顺序也因此固定：**地图实体 → 建筑附加状态 → 周期任务**（任务找不到宿主就什么也做不了） |
+| D47 | **读档前必须 `ITimeService.Reset()`**（作废旧订阅者） | 订阅者持有的是读档前的旧实体副本；不清空则"恢复的新任务"与"旧任务"同时跑 —— 月结翻倍、人口翻倍（用例当场抓到：第 360 日人口差 32）。这条也说明"存档点 = 世界状态快照"必须包含"任务注册表"这一隐式状态 |
+| D48 | **占据物在存档里用两个具名槽位**（`Building` / `Unit`），不用多态基类 | System.Text.Json 不带派生类型元数据（多态要么失效要么引入 `$type` 黑魔法）；具名槽位还把"当前一格一个占据物"写进格式 —— `WP-3.4` 扩展占用模型时会显式改成集合（迁移点清晰，不靠猜） |
 
 
 
@@ -2175,7 +2193,7 @@ dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessC
 | 问题 | 降级理由（摘要） | 回归条件（何时必须做） | 归属 WP | 状态 |
 | :--- | :--- | :--- | :--- | :--- |
 | `WIRE-02` 引擎耦合点又被绕过 | 调用点已收敛到 `IFileSystem` / `GameTimeService`，无头断言不受影响 | 出现任何"直接 `FileAccess` 读盘 / 用秒计时"的新代码；或 M1 真实运行出现存档路径不一致 | WP-1.2 / 5.x | 部分已修（`GodotTimeDriver`） |
-| `MAP-02` 每帧写盘 | 性能/IO 缺陷，不改变 headless 断言的正确性 | M1 手测卡顿/掉帧；或 `WP-3.2` / `WP-3.3` 落地统一存档点时一并收口 | WP-3.2 / 3.3 | 未修 |
+| `MAP-02` 每帧写盘 | 性能/IO 缺陷，不改变 headless 断言的正确性 | M1 手测卡顿/掉帧；或 `WP-3.2` / `WP-3.3` 落地统一存档点时一并收口 | WP-3.2 / 3.3 | **已修（WP-3.2：实体持久化完成；「每帧」早在 WP-1.5 收敛到日边界）** |
 | `TIME-01` / `TIME-02` 秒制残留与节拍失衡 | `WP-1.5` 口径重标定 + 校验器单位自检已覆盖断言面 | 校验器报"疑似仍是秒口径"；或 M1 手感与设计明显不符 | WP-1.5 / 2.2 | 部分已修（`WP-2.2` 已落地**范围注销** —— 宿主消失即回收；「每帧写盘」已由 `WP-1.5` 的日边界同步收敛，剩余「内存态 + 存档点」归 `WP-3.3`） |
 | `TIME-14` 月结未成体系 | `GrowInterval=30` 逐日派发已通过断言，差的只是"结算器汇总 → 需求 → 扣减" | M0-3 ① 月度经济结算器（`WP-3.9`） | WP-3.9 | 未修 |
 | `CON-09` 没有建筑升级 | M0-2 ②③④ 只用 lv.I 建筑（School lv.I / 营地 / 工坊 lv.I） | 科技树里 16 条"解锁 XX 升级"要落地时 | WP-2.6 | 未修 |
@@ -2199,7 +2217,7 @@ dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessC
 | 事件内容规模 | 设计稿 20 条事件 vs 当前样例 3 条（淘金热 / 瘟疫 / 启蒙时代，概率与持续期均取自设计稿） | "按日掷骰 + 前置 + 修正器"链路已通，缺的只是填表与文案 | 填表（批次 4 起，配 `WP-4.12` 决策 UI） |
 | 事件状态不落盘 | `EventAppService` 的"生效中事件 + 触发计数"是内存字段，读档即丢；永久事件的修正器也没有"发生过什么"的记录 | 读档后玩家看到数值变了却不知原因（`EVT-04`） | WP-3.2 / WP-3.3 |
 | 事件暂停与决策（`EVT-06`） | 事件仍是"触发即结算"的全自动流程，没有暂停 / 选项 / 确认（设计稿要求"事件发生时暂停直到确认"） | 叙事与决策体验缺失；`GameClock.Paused` 已有能力，缺的是待处理队列 + UI | WP-4.12 |
-| 任务恢复**未接线**（v0.3.8 新发现） | `ConstructionAppService.ResumeConstruction` / `UnitsAppService.ResumeTrainingTask` 已存在但**全仓库无调用方** —— 任务文件现在能正确读写，却没有任何「读档 → 重建任务 → 重新注册」的路径（`TIME-08` / `CON-03` 的另一半） | 读档后施工/训练进度无法续跑（虽不再出现「有任务无实体」的错位，因为实体本身也还没落盘） | WP-3.2 / 3.3 |
+| 任务恢复**已接线**（v0.3.15 更新） | `ResumeConstruction`/`ResumeUpgrade`/`ResumeTraining`/`CreateResearchTask` + 三类周期任务重建全部接上，并由 `WorldSaveService.LoadWorld` 编排（读档前 `ITimeService.Reset()`） | 读档后施工/训练/研究/月结/人口/移动/攻击都会继续（M0-3 ① 已断言 360 日等价） | 已随 `WP-3.2` 关闭 |
 | 任务写入仍是「整文件覆盖 + 每日同步」（v0.3.8 / v0.3.9） | `TaskRepository` 为保证正确性（不被半写/旧内存态覆盖）首次读盘 + 内存字典改动 + 整文件写回（单写者假设），写入本身已收敛到日边界，但仍是整文件覆盖 | 任务数变多后写放大明显（每任务每日一次全文件序列化） | WP-3.3（统一存档点 + 脏标记） |
 | 多座住房覆盖同一区域时人口叠加（v0.3.9 新发现） | 每座住房各自按**自己的** `PopulationCap` 判定「半径内总计」，两座营地覆盖同一片区域时该区域最多可住 18 人（设计稿描述的是聚落级总量，隐含"一片区域一个容量"） | 需要"按区域/聚落聚合容量"的人口模型；`CON-05` 建议的"统一人口增长系统（单一 ITickable）"正是落点 | 批次 4（人口模型）/ 或 `WP-3.9` 月度结算器一并处理 |
 | 拆除住房后已有人口不迁移/不减（v0.3.9） | `RemoveBuildingByPosition` 现在会注销人口任务（增长停止），但地块上已有的人口仍留在原格，也不存在"容量不足 → 迁移/减员"的规则 | 设计稿未定义；`WP-3.10`（赤字 → 减员）与批次 4 人口模型落地时需补齐 | 批次 4 / `WP-3.10` |
@@ -2258,3 +2276,5 @@ dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessC
 - 事件无历史记录/无队列；「事件暂停 + 决策」（`EVT-06`）归 `WP-4.12`
 - 训练「等级校验」跳过（配置还没有等级字段）
 - 资源扣除的可观测性（`D25`）
+| 事件状态与触发计数仍不落盘（v0.3.15） | `EventAppService` 的 `_active`/`_triggerCounts` 是内存字段；读档后"生效中的事件"消失（修正器还在盘上，因此会留下"无期限的加成"） | 读档后事件计数归零、持续期丢失 → 数值解释不通 | `WP-3.3`（统一存档单元）—— 与"事件历史"一并落盘 |
+| `WorldSaveService` 仍是编排层而非存档单元（v0.3.15） | 存档点 = 时钟 + 脏地图 + 迷雾显式写；资源/修正器/科技/任务在各自写入点落盘（多文件、无原子性、无版本迁移） | 断电/崩溃可能得到半写状态；跨版本迁移只能逐个仓库处理 | `WP-3.3`：单一序列化器 + 原子写 + `saveVersion` 迁移钩子 |

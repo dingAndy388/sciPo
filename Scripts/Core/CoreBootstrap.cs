@@ -1,5 +1,7 @@
 using SciencePotato.Scripts.Common.Application;
 using SciencePotato.Scripts.Common.Infrastructure;
+using SciencePotato.Scripts.Construction.Domain;
+using SciencePotato.Scripts.Units.Domain;
 using SciencePotato.Scripts.Core.Config;
 using SciencePotato.Scripts.Core.Time;
 using SciencePotato.Scripts.Map.Application;
@@ -45,8 +47,10 @@ namespace SciencePotato.Scripts.Core
 			//      放在组合根创建，是为了避免"每个服务各 new 一个总线"导致订阅方收不到消息（静默失联）。
 			var domainEvents = new DomainEventBus();
 
-			// 4) 会话状态（Map 常驻内存）：地图仓库由宿主工厂按地形配置构造
-			var mapRepository = dependencies.MapRepositoryFactory(tables.Terrains);
+			// 4) 会话状态（Map 常驻内存）：地图仓库由宿主工厂按**整表**构造（v0.3 / WP-3.2：读档要重建建筑/单位）
+			var rebuilder = new SaveRebuilder(new BuildingFactory(tables.Buildings), new UnitFactory(tables.Units));
+			var mapRepository = dependencies.MapRepositoryFactory(tables);
+			AttachRebuilder(mapRepository, rebuilder);
 			var maps = new MapSession(mapRepository);
 			var session = new GameSession(maps, clock, dependencies.SessionId);
 
@@ -71,6 +75,16 @@ namespace SciencePotato.Scripts.Core
 				Map = mapService,
 				DomainEvents = domainEvents,
 			};
+		}
+
+		/// <summary>
+		/// （v0.3 / WP-3.2）给仓库补挂实体重建器：`GodotMapRepository` 由构造参数接收，测试替身用可写属性。
+		/// <para>这里用"鸭子类型"（`is` 模式匹配）而不是往 `IMapRepository` 上加接口成员：接口是"读写地图"的最小契约，
+		/// 重建器只与**读档实现**有关，不该污染接口（也避免所有替身都要实现它）。</para>
+		/// </summary>
+		private static void AttachRebuilder(IMapRepository repository, SaveRebuilder rebuilder)
+		{
+			if (repository is GodotMapRepository godotRepository) godotRepository.AttachRebuilder(rebuilder);
 		}
 	}
 }

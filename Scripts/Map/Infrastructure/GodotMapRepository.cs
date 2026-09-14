@@ -1,29 +1,42 @@
 using Godot;
 using SciencePotato.Scripts.Common.Domain;
-using SciencePotato.Scripts.Common.Infrastructure;
 using SciencePotato.Scripts.Map.Domain;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text.Json;
 
 namespace SciencePotato.Scripts.Map.Infrastructure
 {
+	/// <summary>
+	/// （v0.3 / WP-0.4 + WP-3.2）Godot 侧地图存档：`user://maps/{mapId}.json`。
+	/// <para>v0.3.15（`WP-3.2` / `MAP-02`）起**不再只存地形**：人口与占据物（建筑/单位，含 HP/MP/训练队列/建造者绑定）
+	/// 都随 `SaveMapper` 一起落盘；读档按 uid 原样重建，因此修正器、迷雾、任务、易主等以 uid 为锚的引用不会失联。</para>
+	/// </summary>
 	public class GodotMapRepository : IMapRepository
 	{
 		private readonly string _mapDir = "user://maps/";
 
 		private readonly ITerrainConfigRepository _terrainRepo;
+		private SaveRebuilder _rebuilder;
 
-		// v0.3 / WP-0.4：地形来源由 .tres 改为 JSON 配置表，故从外部注入
-		public GodotMapRepository(ITerrainConfigRepository terrainRepository)
+		/// <param name="terrainRepository">地形解析（v0.3 / WP-0.4：地形来源为 JSON 配置表）。</param>
+		/// <param name="rebuilder">
+		/// 实体重建器（v0.3 / WP-3.2）。为 null 时读档只恢复地形（等价旧行为）—— 便于"没有建筑/单位工厂"的
+		/// 极简场景；正式装配由组合根提供（见 `CoreBootstrap`）。
+		/// </param>
+		public GodotMapRepository(ITerrainConfigRepository terrainRepository, SaveRebuilder rebuilder = null)
 		{
 			_terrainRepo = terrainRepository;
+			_rebuilder = rebuilder;
 		}
+
+		/// <summary>（v0.3 / WP-3.2）补挂实体重建器（组合根在拿到配置表后调用，见 `CoreBootstrap.AttachRebuilder`）。</summary>
+		public void AttachRebuilder(SaveRebuilder rebuilder) => _rebuilder = rebuilder;
 
 		public void DeleteMap(Domain.Map map)
 		{
-			throw new NotImplementedException();
+			string path = $"{_mapDir}{map.Id}.json";
+			if (FileAccess.FileExists(path)) DirAccess.RemoveAbsolute(path);
 		}
 
 		public Domain.Map LoadMap(string Id)
@@ -37,21 +50,41 @@ namespace SciencePotato.Scripts.Map.Infrastructure
 			string json = file.GetAsText();
 
 			MapSave mapSave = JsonSerializer.Deserialize<MapSave>(json);
+			if (mapSave == null) return null;
 
-			GD.Print("Map Load json:" + mapSave.cells.Count);
+			// 更高版本的存档**拒绝加载**（猜未知字段语义只会静默丢数据；迁移由 WP-3.3 的存档单元负责）
+			if (mapSave.SaveVersion > MapSave.CurrentVersion)
+			{
+				GD.PushError($"[GodotMapRepository] 存档 {Id} 的 SaveVersion={mapSave.SaveVersion} 高于当前支持的 {MapSave.CurrentVersion}，拒绝加载");
+				return null;
+			}
 
 			Domain.Map map = new Domain.Map(mapSave.seed, mapSave.width, mapSave.height, mapSave.Id);
 
 			foreach (HexCubeCellSave cellSave in mapSave.cells)
 			{
-				GD.Print("Loaded Map Position: " + cellSave.position.q + " , " + cellSave.position.r);
 				MapCell cell = new MapCell(cellSave.position);
 				ITerrainData terrain = _terrainRepo?.GetById(cellSave.terrain);
 				if (terrain == null)
-					GD.PushWarning($"[GodotMapRepository] 未知地形 Id '{cellSave.terrain}'（v0.3 WP-0.4：地形已迁移为 JSON 配置表）");
+					GD.PushWarning($"[GodotMapRepository] 未知地形 Id「{cellSave.terrain}」（v0.3 WP-0.4：地形已迁移为 JSON 配置表）");
 				cell.SetTerrain(terrain);
 
+				// 人口与占据物（v0.3 / WP-3.2）
+				cell.SetPopulation(cellSave.Population);
 				map.SetCell(cellSave.position, cell);
+
+				if (cellSave.Building != null)
+				{
+					IMapOccupant building = _rebuilder?.RebuildBuilding(cellSave.Building, cellSave.position);
+					if (building != null) map.AddOccupant(building, cellSave.position);
+					else GD.PushWarning($"[GodotMapRepository] 建筑「{cellSave.Building.Id}」(uid={cellSave.Building.UId}) 无法重建：配置缺失？");
+				}
+				else if (cellSave.Unit != null)
+				{
+					IMapOccupant unit = _rebuilder?.RebuildUnit(cellSave.Unit, cellSave.position);
+					if (unit != null) map.AddOccupant(unit, cellSave.position);
+					else GD.PushWarning($"[GodotMapRepository] 单位「{cellSave.Unit.Id}」(uid={cellSave.Unit.UId}) 无法重建：配置缺失？");
+				}
 			}
 
 			return map;
@@ -61,21 +94,9 @@ namespace SciencePotato.Scripts.Map.Infrastructure
 		{
 			string path = $"{_mapDir}{map.Id}.json";
 
-			GD.Print("saving");
-			GD.Print($"Saved Cell Num: {map.GetAllCells().Count()}");
+			// 地形 + 人口 + 占据物统一走 SaveMapper（v0.3 / WP-3.2）
+			MapSave mapSave = SaveMapper.ToSave(map);
 
-			MapSave mapSave = new MapSave();
-			mapSave.Id = map.Id;
-			mapSave.seed = map.seed;
-			mapSave.height = map.height;
-			mapSave.width = map.width;
-			foreach (var cell in map.GetAllCells())
-			{
-				HexCubeCellSave cellSave = new HexCubeCellSave();
-				cellSave.position = (HexCubePosition)cell.Position;
-				cellSave.terrain = cell.Terrain?.Id ?? string.Empty;
-				mapSave.cells.Add(cellSave);
-			}
 			if (!DirAccess.DirExistsAbsolute(_mapDir))
 			{
 				DirAccess.MakeDirAbsolute(_mapDir);
@@ -88,7 +109,15 @@ namespace SciencePotato.Scripts.Map.Infrastructure
 
 		public IEnumerable<Domain.Map> ListMaps()
 		{
-			throw new NotImplementedException();
+			if (!DirAccess.DirExistsAbsolute(_mapDir)) yield break;
+
+			foreach (string fileName in DirAccess.GetFilesAt(_mapDir))
+			{
+				if (!fileName.EndsWith(".json", StringComparison.OrdinalIgnoreCase)) continue;
+
+				Domain.Map map = LoadMap(fileName.Substring(0, fileName.Length - ".json".Length));
+				if (map != null) yield return map;
+			}
 		}
 	}
 }
