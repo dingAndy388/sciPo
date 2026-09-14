@@ -4,6 +4,7 @@ using SciencePotato.Scripts.Map.Domain;
 using SciencePotato.Scripts.Map.Infrastructure;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace SciencePotato.HeadlessChecks
 {
@@ -145,6 +146,28 @@ namespace SciencePotato.HeadlessChecks
 			public bool Passable { get; set; } = true;
 			public string UnlockTech { get; set; } = null;
 		}
+	}
+
+	/// <summary>
+	/// （v0.3 / WP-3.8）**固定结果的随机源替身**：`ProbCodition` 恒为 <see cref="Result"/>。
+	/// <para>让"按概率刷新"的处理器在用例里得到**受控布局**：`true` = 每个适配地块都刷出敌人
+	/// （用于断言封锁/占用语义），`false` = 一个都不刷（负向对照）。</para>
+	/// </summary>
+	internal sealed class FixedRandom(bool result) : IRandom
+	{
+		public bool Result { get; } = result;
+
+		public int Next(int min, int max) => min;
+
+		public int Next() => 0;
+
+		public float NextFloat() => Result ? 0f : 1f;
+
+		public float NextGaussian(float mean, float std) => mean;
+
+		public bool ProbCodition(float p) => Result;
+
+		public T WeightedPick<T>(IEnumerable<T> values, IEnumerable<float> weights) => values.First();
 	}
 
 	/// <summary>（v0.3 / WP-0.2）占据物替身：用于验证"占据物跨调用不丢失"。</summary>

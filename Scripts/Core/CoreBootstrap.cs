@@ -2,12 +2,14 @@ using SciencePotato.Scripts.Common.Application;
 using SciencePotato.Scripts.Common.Infrastructure;
 using SciencePotato.Scripts.Construction.Domain;
 using SciencePotato.Scripts.Units.Domain;
+using SciencePotato.Scripts.Units.Infrastructure;
 using SciencePotato.Scripts.Core.Config;
 using SciencePotato.Scripts.Core.Time;
 using SciencePotato.Scripts.Map.Application;
 using SciencePotato.Scripts.Map.Domain;
 using SciencePotato.Scripts.Map.Infrastructure;
 using System;
+using System.Collections.Generic;
 
 namespace SciencePotato.Scripts.Core
 {
@@ -62,7 +64,13 @@ namespace SciencePotato.Scripts.Core
 				dependencies.GeneratorConfigPath);
 
 			// 6) 应用服务
-			var mapService = new MapAppService(mapGenerator, maps);
+			//    v0.3 / WP-3.8：生成后处理器（敌方单位按地形概率放置）在**组合根**装配，而不是只在测试里 ——
+			//    否则"敌方封锁"这条玩法规则在生产路径上不存在。单位表装载失败时不挂（已在报告里记 error）
+			var postProcessors = new List<IMapPostProcessor>();
+			if (dependencies.EnableEnemySpawn && tables.Units != null)
+				postProcessors.Add(new EnemySpawner(tables.Units, new UnitFactory(tables.Units)));
+
+			var mapService = new MapAppService(mapGenerator, maps, postProcessors);
 
 			return new CoreServices
 			{

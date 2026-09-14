@@ -59,6 +59,10 @@ namespace SciencePotato.Scripts.Units.Application
 			{
 				if (cell.Occupant is not Unit unit || !unit.IsReady) continue;
 
+				// v0.3 / WP-3.8：敌方单位不移动、不巡逻（design/unit.md「行为模式」）→ 不重建移动循环
+				// （旧写法会给每个敌方单位挂一条永远无事可做的日循环；交战循环由 `WP-3.6` 决定）
+				if (unit.IsHostile) continue;
+
 				string uid = unit.GetInfo().UId;
 
 				RegisterMoveTask(mapId, uid, ProgressOf(progressByTaskKey, "UnitMove", "none", uid));

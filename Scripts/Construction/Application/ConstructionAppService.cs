@@ -67,8 +67,11 @@ namespace SciencePotato.Scripts.Construction.Application
 			var techRequirements = (from item in config.TechRequirements
 									select _tech.GetTechTreeRequirement(mapId, ownerId, item.Key, item.Value.ToList()));
 
+			var noHostileRequirement = _map.GetNoHostileRequirement(mapId, position);
+
 			if (contracts.All(c => c.IsConsumable())
 				&& _map.IsClear(mapId, position)
+				&& noHostileRequirement.IsMet() // v0.3 / WP-3.8（`B8`/`UNIT-14`）：敌方封锁格不可建造（M0-3 ④）
 				&& terrainRequirements.All(c => c.IsMet())
 				&& techRequirements.All(c => c.IsMet()))
 			{

@@ -48,7 +48,13 @@ namespace SciencePotato.HeadlessChecks
 		/// <para>（v0.3 / WP-3.2）无论哪种方式，工厂都会给它挂上 `SaveRebuilder`（按 uid 重建建筑/单位），
 		/// 否则读档只剩地形，验不出实体持久化。</para>
 		/// </param>
-		public static CoreServices BuildCore(InMemoryConfigSource configSource, bool failOnConfigErrors = true, InMemoryMapRepository mapRepository = null)
+		/// <param name="enableEnemySpawn">
+		/// （v0.3 / WP-3.8）是否装配「地图生成后按地形概率刷新敌方单位」（<c>EnemySpawner</c>）。缺省 **false**：
+		/// 多数用例要自己布置格位（工人/建筑/敌人），随机刷怪会抢占这些格位。
+		/// <para>敌方玩法本身由 <c>EnemySpawnChecks</c> 显式传 `true` 验收；生产装配默认开
+		/// （`CoreDependencies.EnableEnemySpawn`，见 `ServiceContainer`）。</para>
+		/// </param>
+		public static CoreServices BuildCore(InMemoryConfigSource configSource, bool failOnConfigErrors = true, InMemoryMapRepository mapRepository = null, bool enableEnemySpawn = false)
 		{
 			return CoreBootstrap.Build(new CoreDependencies
 			{
@@ -58,6 +64,7 @@ namespace SciencePotato.HeadlessChecks
 				ResourceConfigLoader = null, // 无头环境：生成器配置取 Config/Generator.json
 				GeneratorConfigPath = null,
 				FailOnConfigErrors = failOnConfigErrors,
+				EnableEnemySpawn = enableEnemySpawn,
 				MapRepositoryFactory = tables =>
 				{
 					InMemoryMapRepository repository = mapRepository ?? new InMemoryMapRepository();

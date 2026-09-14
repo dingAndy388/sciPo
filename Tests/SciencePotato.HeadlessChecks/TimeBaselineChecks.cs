@@ -215,9 +215,14 @@ namespace SciencePotato.HeadlessChecks
 					$"Buildings/{building.BuildingId}.PopulationGrowthInterval={building.PopulationGrowthInterval} 应落在 (0,360] 日或 0");
 			}
 
+			// 敌方单位不参与训练系统（`WP-3.8`：生成即就绪，Duration 无意义）→ 训练时长基线只约束玩家单位
 			foreach (IUnitConfig unit in tables.AllUnits())
+			{
+				if (unit.IsHostile) continue;
+
 				Check.Assert(unit.Duration > 0f && unit.Duration <= TimeConstants.MaxPlausibleDays,
 					$"Units/{unit.UnitId}.Duration={unit.Duration} 应落在 (0,360] 日");
+			}
 
 			foreach (ITechNodeConfig node in AllTechNodes(tables))
 				Check.Assert(node.Duration >= 0f && node.Duration <= TimeConstants.MaxPlausibleDays,

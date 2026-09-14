@@ -275,8 +275,18 @@ namespace SciencePotato.Scripts.Core.Config
 				if (tables.Units.GetUnitConfig(key)?.UnitId != key)
 					report.Error("Units", key, "字典 key 与条目 UnitId 不一致（按 Id 检索会失败）");
 
-				ValidateCosts(report, "Units", key, unit.ResourceCost, resourceIds, "ResourceCost");
-				ValidateTerrainRequirements(report, "Units", key, unit.TerrainRequirements, terrainIds);
+				// v0.3 / WP-3.8：敌方单位不参与训练系统、不消耗资源（design/unit.md），
+				// 因此"成本为空/地形要求为空/训练时长 0/不占人口"这些**玩家单位**的填表提示对它不适用
+				bool hostile = unit.IsHostile;
+
+				if (hostile)
+					ValidateResourceCosts(report, "Units", key, unit.ResourceCost, resourceIds, "ResourceCost", warnWhenEmpty: false);
+				else
+				{
+					ValidateCosts(report, "Units", key, unit.ResourceCost, resourceIds, "ResourceCost");
+					ValidateTerrainRequirements(report, "Units", key, unit.TerrainRequirements, terrainIds);
+				}
+
 				ValidateTechRequirements(report, "Units", key, unit.TechRequirements, techNodes, "TechRequirements");
 				ValidateActionList(report, "Units", key, unit.Actions);
 
@@ -285,26 +295,68 @@ namespace SciencePotato.Scripts.Core.Config
 				if (unit.AttackDamage < 0f) report.Error("Units", key, $"AttackDamage={unit.AttackDamage} 不能为负");
 				if (unit.AttackRadius < 0) report.Error("Units", key, $"AttackRadius={unit.AttackRadius} 不能为负");
 				if (unit.Movement < 0) report.Error("Units", key, $"Movement={unit.Movement} 不能为负");
-				else if (unit.Movement == 0) report.Warn("Units", key, "Movement=0：单位无法移动");
+				else if (unit.Movement == 0 && !hostile) report.Warn("Units", key, "Movement=0：单位无法移动");
 				if (unit.VisionRadius < 0) report.Error("Units", key, $"VisionRadius={unit.VisionRadius} 不能为负");
 				if (unit.AttackDamage > 0f && unit.Attack <= 0)
 					report.Warn("Units", key, "AttackDamage>0 但 Attack<=0：两套攻击口径混用，请确认哪个被使用");
 				if (unit.PopulationCost < 0) report.Error("Units", key, $"PopulationCost={unit.PopulationCost} 不能为负");
-				else if (unit.PopulationCost == 0) report.Warn("Units", key, "PopulationCost=0：该单位不占人口");
+				else if (unit.PopulationCost == 0 && !hostile) report.Warn("Units", key, "PopulationCost=0：该单位不占人口");
 
 				if (unit.Duration < 0f) report.Error("Units", key, $"Duration={unit.Duration} 不能为负");
-				else if (unit.Duration == 0f) report.Warn("Units", key, "Duration=0：瞬间训练完成");
-				else ValidateDayUnit(report, "Units", key, "Duration", unit.Duration);
+				else if (unit.Duration == 0f && !hostile) report.Warn("Units", key, "Duration=0：瞬间训练完成");
+				else if (unit.Duration > 0f) ValidateDayUnit(report, "Units", key, "Duration", unit.Duration);
+
+				ValidateEnemySpawn(report, key, unit, terrainIds, resourceIds);
 			}
 
-			// 反向完整性（v0.3 / WP-2.5）：设计稿规定"所有单位由建筑产出"，因此每个单位至少要被
+			// 反向完整性（v0.3 / WP-2.5）：设计稿规定"所有单位由建筑产出"，因此每个**玩家**单位至少要被
 			// 某个建筑列入 TrainableUnits，否则玩家永远造不出它（填表规模化后极易出现，例如新增单位忘了挂建筑）。
+			// 敌方单位不参与训练系统（`WP-3.8`），自然不该出现在任何建筑的可训练列表里。
 			var trainableAnywhere = new HashSet<string>(
 				tables.AllBuildings().SelectMany(building => building?.TrainableUnits ?? new List<string>()).Where(NotEmpty),
 				StringComparer.Ordinal);
-			foreach (string key in seen)
+			foreach (IUnitConfig unit in units)
+			{
+				string key = unit?.UnitId;
+				if (!NotEmpty(key) || unit.IsHostile) continue;
 				if (!trainableAnywhere.Contains(key))
-					report.Warn("Units", key, "没有任何建筑把它列入 TrainableUnits：玩家无法训练该单位（敌方刷新不受影响）");
+					report.Warn("Units", key, "没有任何建筑把它列入 TrainableUnits：玩家无法训练该单位");
+			}
+		}
+
+		/// <summary>
+		/// （v0.3 / WP-3.8 / `UNIT-14`）**敌方刷新字段校验**：`IsHostile` / `SpawnTerrain` / `SpawnChance` / `DropReward`。
+		/// <para>分级口径：凡是"这行永远不会出现在地图上"的填法一律 **error**（静默不刷新是最难发现的一类填表错误，
+		/// 与"建筑 TrainableUnits 引用了不存在的单位"同一处理）；跨表引用（掉落里的未知资源名）仍按 warning。
+		/// 玩家单位误填生成字段同样是 error —— 刷新只取敌方行，填了也不会生效。</para>
+		/// </summary>
+		private static void ValidateEnemySpawn(ConfigReport report, string key, IUnitConfig unit,
+			HashSet<string> terrainIds, HashSet<string> resourceIds)
+		{
+			// 掉落表：未知资源名先按跨表引用降级（与 ResourceCost 同一口径），负值 error
+			ValidateResourceCosts(report, "Units", key, unit.DropReward, resourceIds, "DropReward", warnWhenEmpty: false);
+
+			if (!unit.IsHostile)
+			{
+				if (!string.IsNullOrWhiteSpace(unit.SpawnTerrain) || unit.SpawnChance > 0f)
+					report.Error("Units", key, "IsHostile=false 却填了生成字段（SpawnTerrain/SpawnChance）：刷新只取敌方单位，该行永远不会被放置 —— 多半是漏填 IsHostile");
+
+				return;
+			}
+
+			if (string.IsNullOrWhiteSpace(unit.SpawnTerrain))
+				report.Error("Units", key, "敌方单位没有 SpawnTerrain：永远不会出现在地图上（刷新按地块地形匹配）");
+			else if (terrainIds.Count > 0 && !terrainIds.Contains(unit.SpawnTerrain))
+				report.Error("Units", key, $"SpawnTerrain 引用了不存在的地形 \"{unit.SpawnTerrain}\"（Terrains 表：{string.Join(", ", terrainIds)}）：永远不会生成");
+
+			if (unit.SpawnChance <= 0f || unit.SpawnChance > 1f)
+				report.Error("Units", key, $"SpawnChance={unit.SpawnChance} 必须落在 (0,1]（表里写 15 表示的是 1500%，设计稿的 15% 应写 0.15）");
+
+			if (unit.Movement > 0)
+				report.Warn("Units", key, $"Movement={unit.Movement}>0：敌方单位不移动（design/unit.md「行为模式」），该值不会被使用");
+
+			if (unit.Duration > 0f)
+				report.Warn("Units", key, $"Duration={unit.Duration}>0：敌方单位不参与训练系统，该值不会被使用");
 		}
 
 		// ────────────────────────── TechTrees ──────────────────────────

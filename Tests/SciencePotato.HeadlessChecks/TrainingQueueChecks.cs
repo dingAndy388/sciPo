@@ -71,10 +71,19 @@ namespace SciencePotato.HeadlessChecks
 				Check.AssertEqual(0, config.TrainingQueueLimit, $"{none} 的队列上限为 0（不排队）");
 			}
 
-			// 反向完整性：每个单位都至少能被某个建筑训练（否则玩家永远造不出来）
+			// 反向完整性：每个**玩家**单位都至少能被某个建筑训练（否则玩家永远造不出来）；
+			// 敌方单位不参与训练系统（`WP-3.8`），不该出现在任何建筑的可训练列表里。
 			List<string> trainable = tables.AllBuildings().SelectMany(b => b.TrainableUnits).ToList();
 			foreach (IUnitConfig unit in tables.AllUnits())
+			{
+				if (unit.IsHostile)
+				{
+					Check.Assert(!trainable.Contains(unit.UnitId), $"{unit.UnitId} 是敌方单位，不应被任何建筑列为可训练");
+					continue;
+				}
+
 				Check.Assert(trainable.Contains(unit.UnitId), $"{unit.UnitId} 应至少被一个建筑列为可训练");
+			}
 		}
 
 		private static void WorkshopTrainsWorker()

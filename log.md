@@ -1151,6 +1151,8 @@
 | **v0.3.16** | 2026-09-14 | **WP-3.4 地块占用权威一致（`MAP-03`、`MAP-04`、`UNIT-05`）**：`Map` 新增**进入/离开的唯一入口** —— `PlaceOccupant`/`PlaceBuilding`（同格冲突拒绝，且建筑同时写 `cell.Building` 与占据物槽位）/`RemoveOccupant`/`RemoveBuildingAt`（格子 + 建筑槽位 + `_occupants` 索引三处一起清）；旧方法（`AddOccupant`/`RemoveOccupantByPosition`/`SetBuilding`/`RemoveBuilding`）全部改为委托；建造落位改走 `PlaceBuilding` → **拆除真正生效**（`MAP-04` 的 `cell.Building` 恒空已修）；单位阵亡后不再留**僵尸索引**（`MAP-03`/`UNIT-05`）。无头验收 **111/111 通过、退出码 0**；`WP-2.3`/`WP-2.4` 的"domain 预置权威"用例已回到真实路径 |
 | **v0.3.17** | 2026-09-14 | **WP-3.5 单位移动模型 R1~R7（`UNIT-10`、`D23`、`E5~E8`，M0-3 ②）**：新增 `UnitMovementService`（R1 `Movement` = 每 10 游戏日回复的 MP；R2 离散回复；R3 静止上限 = M；R4 移动中无上限；R5 够一格即时位移、可连跳；R6 到达清零；R7 目的地可改）—— 旧实现把 MP 上限压成单次回复量（3/2/1.5 < 最小地形消耗 5）**单位 100% 不可移动**；填表 `Movement` = 设计值（工人 10 / 民兵 25 / 弓箭手 25），删除语义重叠的 `MoveRechargePerTick`；通行判定只看 `Passable`（去掉"未探索放行"的迷雾例外）；`FindPath` 加**搜索步数上限**（病态 A* 会冻结日边界）。无头验收 **117/117 通过、退出码 0**，**M0-3 ② 通过**（工人跨平原 10 日 2 格、跨山地 30 日） |
 | **v0.3.18** | 2026-09-15 | **WP-3.3 统一存档单元（`I3`、`DEP-06`、`TIME-08`）**：新增 `ISaveStore`/`JsonSaveStore`（**一个会话一份文件** + 文件头版本号 + **原子写**：先写 `*.tmp` 再替换）+ `SaveMigrations`（v1→v2 任务分区键改 `Type:UId:Id`；v2→v3 时钟并入文件头）；时钟/任务/迷雾/资源/科技/修正器**六个仓储全部收敛**到统一存档（写入只标脏、**存档点一次落盘**），更高 `saveVersion` 的档**拒绝加载**；`EventAppService` 新增 `SaveEvents`/`RestoreEvents`（生效中事件 + 剩余天数 + 触发计数 + 掷骰次数落盘，并修掉\"读档后事件引擎不再推进\"）；`IFileSystem` 增 `Move`（原子替换，Godot/系统两套实现同语义）。无头验收 **124/124 通过、退出码 0**。新增决策 D52~D54 |
+| **v0.3.19** | 2026-09-15 | **WP-3.8 敌方单位：按地形概率放置 + 地块封锁（`UNIT-14`、`B7`/`B8`/`E19`，M0-3 ④）**：新增 `IMapPostProcessor`（地图生成后处理契约）与 `EnemySpawner`（按地形概率放置敌方单位）+ `NoHostileRequirement`（把设计稿的「地块封锁」表达成 `IRequirement`）；`MapAppService.GenerateMap` 在"地形已定、实体未落位"的窗口执行处理器，并在**组合根默认装配**（`CoreDependencies.EnableEnemySpawn = true`，`ServiceContainer` 无需改动）；`Units.json` 填 5 个敌种（野狼 平原 15% / 野猪 平原 10% / 山鹰 山地 8% / 巨角山羊 山地 5% / 巨鳄 水域 6%，含 HP/ATK/射程/掉落），`IUnitConfig` 增 `IsHostile`/`SpawnTerrain`/`SpawnChance`/`DropReward`；刷新口径 = **逐种独立掷骰 + 同格按概率降序取第一个**（`D55`：野狼保真 15%、野猪 ≈ 8.5%），随机源由 `map.seed` 派生 + 格子按 (q,r) 遍历 ⇒ 同 seed 同布局；**封锁**（`D56`/`D57`）= 敌人即该格占据物 + `MapOccupantInfo.IsHostile` 标志 → 不可建造（`StartConstruction` 加 `NoHostileRequirement` 门）/不可进入（`CanEnter` 与寻路同一判据）/敌人移除后自动恢复，且敌方单位随地图存档天然保留（`IsHostile` 由配置按 `Id` 派生）；**顺带修**位移改走占据物移动的唯一入口 `Map.MoveOccupant`（旧实现只改 `Unit.Position` → 旧格留僵尸占据物）、寻路不再把地图外当可通行、`GetMapCell` 越界返回 null（修"路径可走出地图 → `KeyNotFoundException` 打断整局"）、读档恢复周期任务跳过敌方单位；校验器新增敌方行规则（概率越界/缺生成地形/地形不存在/玩家单位误填生成字段 → error）并豁免敌方行的玩家单位填表提示。检查 **+13 项**（总计 **137/137**、退出码 0），**M0-3 ④ 通过** | 
+
 
 
 
@@ -1560,6 +1562,8 @@
 - **影响**：① 探索没有阻力，早期玩法空转；② 敌方掉落（`E20`）与"击败才能进入"的战斗动机缺失。
 - **修复方向**：新增生成后处理（`IMapPostProcessor`/`EnemySpawner`，读地形概率表）+ 新增 `NoHostileRequirement` 接入建造与移动校验。
 - **关联**：`B7/B8/E19`、`WP-3.8`
+> ✅ **已修复（v0.3.19 / WP-3.8）**：新增 `IMapPostProcessor` + `EnemySpawner`（地图生成后按地形概率放置敌方单位，5 个敌种已填表）与 `NoHostileRequirement`；封锁以"敌人 = 该格占据物"建模（`Map.IsHostileAt` 单点判定）→ `StartConstruction`（不可建造）/`UnitMovementService.CanEnter`+`FindPath`（不可进入）同时生效，敌人移除即恢复；组合根默认装配（`CoreDependencies.EnableEnemySpawn`）。用例断言「敌方封锁格不可建造 / 不可进入 / 移除后恢复 / 随存档保留 / 同 seed 同布局」，**M0-3 ④ 通过**（检查 137/137）。"采集不可用"随"采集系统未实现"（`RES-*`）一并留待后续
+
 
 #### `UNIT-18` 无单位标签与条件化伤害修正（克制/减伤/对建筑加成） —— 【P1｜逻辑层 + 数据层缺口】
 - **现象**：实现只有"攻击侧伤害"一个数值，没有"目标类型/目标标签"条件、没有"防御侧减伤"。设计稿要求：长矛兵"对近战敌人伤害 +20%"、弓箭手"优先攻击远程敌人"、重装卫士"受到伤害 −25%"、弩炮"对建筑伤害 +50%"。
@@ -1688,7 +1692,7 @@
 | WP-3.5 | **单位移动模型重写**（R1~R7）+ 地形消耗与通行权限 | `E5/E6/E7/E8`、`UNIT-10`、`B1/B2`（部分） | 新增 `UnitMovementService` | — | 中 | 代码+填表 | → **✅ 完成（v0.3.17）** |
 | WP-3.6 | **同格战斗**（进入敌格即交战、一格一对）+ 按日结算 + 建筑衰减 50% + 建筑作为目标 | `E9/E10/E11/E12/E18`、`UNIT-12` | 新增 `UnitCombatService`、`Unit`（`MaxHP`） | 交战状态模型 | 大 | 代码 |
 | WP-3.7 | 单位死亡：移除 / 不返还 / 掉落入池 / 清理驻扎 | `E20/E21` | `UnitCombatService` | `Loot` 配置字段 | 中 | 代码 |
-| WP-3.8 | **敌方单位**：生成后按地形概率放置 + 地块封锁（不可进入/建造/采集） | `B7/B8/E19`、`UNIT-14` | 新增 `IMapPostProcessor`/`EnemySpawner`、`NoHostileRequirement` | 2 个类型 + `SpawnTable` | 中 | 代码+填表 |
+| WP-3.8 | **敌方单位**：生成后按地形概率放置 + 地块封锁（不可进入/建造/采集） | `B7/B8/E19`、`UNIT-14` | 新增 `IMapPostProcessor`/`EnemySpawner`、`NoHostileRequirement` | 2 个类型 + `SpawnTable` | 中 | 代码+填表 | → **✅ 完成（v0.3.19）** |
 | WP-3.9 | **月度经济结算器**（产出汇总 → 需求 → 扣减 → 赤字记录） | `C7/C8/C12`、`UNIT-19`、`RES-01`（部分） | 新增 `MonthlySettlementService` | 结算器 + `Maintenance` 字段 | 中 | 代码+填表 |
 | WP-3.10 | 赤字 → **连续 3 年 → logistic 随机减员** | `C9`、`RES-01` | `MonthlySettlementService` | — | 中 | 代码 |
 
@@ -2084,6 +2088,7 @@ WP-0.4 ─→ WP-3.5 / WP-3.8 / WP-5.3
 | 2026-09-14 | WP-3.4 **地块占用权威一致**（`MAP-03`、`MAP-04`、`UNIT-05`） | ✅ 完成 | ① **唯一入口**：`Map.PlaceOccupant`（占据物：写格子 + 索引，已被占用则**拒绝**）、`Map.PlaceBuilding`（建筑：`cell.Building` 与占据物槽位**同时**写 → 修 `MAP-04`）、`Map.RemoveOccupant`/`Map.RemoveBuildingAt`（格子 + 建筑槽位 + `_occupants` 索引**三处一起清** → 修 `MAP-03` 僵尸索引）；旧的 `AddOccupant`/`RemoveOccupantByPosition`/`SetBuilding`/`RemoveBuilding` 全部改为委托，**所有既有调用点自动获得一致语义**；② **接线**：`MapAppService.PlaceBuilding` 新增；`ConstructionAppService.StartConstruction` 落位改走它；两个地图仓库读档时建筑也用 `PlaceBuilding`（落盘/读回一致）；③ **效果**：拆除对**自建建筑**真正生效（地块清空、修正器回收、任务按 uid 注销），单位阵亡后按 uid 查不到尸体（任务/战斗回调不再对着尸体干活）；④ **用例回正**：`WP-2.7` 的"缺陷仍在"固定断言翻成"拆除生效"，`WP-2.3`/`WP-2.4` 的"domain 层预置权威"回到真实拆除路径；新增 4 条占用用例。检查 **+4 项**（总计 **111/111**、退出码 0） |
 | 2026-09-14 | WP-3.5 **单位移动模型 R1~R7 + 地形通行**（`UNIT-10`、`D23`、`E5~E8`） | ✅ 完成 | ① **新服务**：`Scripts/Units/Application/UnitMovementService`（`RegisterMoveLoop`/`SetDestination`/`Tick`/`TerrainCost`/`CanEnter`），`UnitsAppService` 的移动相关代码全部委托过去（旧 `MoveTick` 的 80 行硬编码删除）；② **口径**（design/unit.md R1~R7）：`Movement` = **每 10 游戏日回复的 MP 总量**（工人 10 / 民兵 25 / 弓箭手 25，按设计稿填表；删除语义重叠的 `MoveRechargePerTick`）、静止时 MP 上限 = M、移动中无上限可跨周期累积、`MP ≥ 下一格 MoveCost` 即**瞬时连跳**（不消耗游戏时间）、到达最终目的地 MP 清零、目的地可随时改；③ **修 `D23`**：旧实现 `CurrentMP = Min(CurrentMP + 恢复量, 恢复量)` 且恢复量（3/2/1.5）**小于最小地形消耗 5** → 单位永远走不动；④ **通行**（`E8`）：只看地形 `Passable`（去掉"未探索放行"的迷雾例外 —— 那会让单位走进看不见的水域），`CanEnter` 由移动服务统一提供；⑤ **顺带修**：`MapAppService.FindPath` 增加**搜索步数上限**（格子数 × 16）—— 目标不可达时病态 A* 会**无限循环**，而它跑在日边界上（会让整局卡死；用例当场复现）。检查 **+6 项**（总计 **117/117**、退出码 0），**M0-3 ② 通过**（工人 M=10 跨平原 10 日走 2 格；跨山地 25 需 30 日；另覆盖 R3/R4/R5/R6/R7 与水域阻断） |
 | 2026-09-15 | WP-3.3 **统一存档单元**（`I3`、`DEP-06`、`TIME-08`） | ✅ 完成 | ① **存档单元**：新增 `ISaveStore`（`Scripts/Common/Domain`）+ `JsonSaveStore`/`SaveFile`/`SaveMigrations`（`Common/Infrastructure`）—— **一个会话一份文件**（`user://save/local.json`）、文件头 = 版本号 + 会话 + 游戏日、分区 = 各子系统的原始 JSON；② **原子写**：`Commit()` 先写 `<存档>.tmp` 再替换（`IFileSystem` 新增 `Move`：Godot 用 `DirAccess.RenameAbsolute`、无头用 `File.Move(overwrite)`、替身用字典搬移 —— 三处同语义），崩溃最坏结果 = 丢最后一次改动，而不是半写；③ **写放大收口**：时钟/任务/迷雾/资源/科技/修正器六个仓储改为\"写入只标脏\"（`GenericJsonRepository` 增可选 `ISaveStore`，分区键 `tasks:{mapId}` / `resources:{mapId}_{ownerId}` / `tech:` / `modifiers:` / `fog:`；`FileClockRepository` 的日期进文件头），由 `WorldSaveService.SaveWorld` **一次落盘**（此前是每个任务每日整文件覆盖）；④ **版本迁移**：`SaveVersion` 落后按链升级（v1→v2 任务分区键改 `Type:UId:Id` 并丢历史 `null` 项；v2→v3 时钟并入文件头），版本过新 → `SaveVersionTooNewException` + `LoadWorld` 返回 false 并留 `LastLoadError`（不猜字段）；⑤ **事件状态落盘**：`EventAppService.SaveEvents`/`RestoreEvents`（生效中事件 + 剩余天数 + 触发计数 + 掷骰次数），并修掉\"读档后 `_startedEngines` 仍登记 → 日节拍不再重挂 → 事件从此不推进\"；⑥ **顺带**：`GodotFileSystem` 目录推导修正（`user://a/b` 不再被算成 `user:/a`）；`CoreDependencies`/`CoreServices`/`ServiceContainer` 持有**全进程唯一**的存档单元。检查 **+7 项**（总计 **124/124**、退出码 0） |
+| 2026-09-15 | WP-3.8 **敌方单位：按地形概率放置 + 地块封锁**（`UNIT-14`、`B7`/`B8`/`E19`，M0-3 ④） | ✅ 完成 | ① **新类型**：`IMapPostProcessor`（`Map/Domain`，生成后处理契约）+ `EnemySpawner`（`Units/Infrastructure`，按地形概率放置敌方单位）+ `NoHostileRequirement`（`Map/Domain`，把设计稿的「地块封锁」表达成 `IRequirement`，与 `TerrainRequirement` 同族）；`MapAppService` 新增可选 `IEnumerable<IMapPostProcessor>`（缺省不变）并在 `GenerateMap` 的"地形已定、实体未落位"窗口中依次执行；**组合根默认装配**（`CoreDependencies.EnableEnemySpawn = true`，`ServiceContainer` 无需改动）—— 敌方封锁是玩法而非测试专属，夹具侧显式关掉以得到干净沙盘。② **填表**：`Units.json` 新增 5 个敌种（野狼 平原 15% / 野猪 平原 10% / 山鹰 山地 8% / 巨角山羊 山地 5% / 巨鳄 水域 6%，含 HP/ATK/射程与掉落），`IUnitConfig` 增 `IsHostile`/`SpawnTerrain`/`SpawnChance`/`DropReward`；**口径**（`D55`）= 逐种独立掷骰 + 同格按概率降序取第一个（野狼保真 15%，野猪 ≈ 8.5%）；随机源从 `map.seed` 派生、格子按 (q,r) 遍历 ⇒ 同 seed 同布局。③ **封锁**（`D56`）：敌人就是该格的占据物 + `MapOccupantInfo.IsHostile` 标志，`Map.IsHostileAt` 单点判定 → 不可建造（`StartConstruction` 增 `NoHostileRequirement` 门）、不可进入（`UnitMovementService.CanEnter`）、寻路同样绕开（`MapAppService.IsPassable`）；敌人移除后自动恢复可通行/可建造。④ **顺带修**：位移改走"占据物移动的唯一入口" `Map.MoveOccupant`（旧实现只改 `Unit.Position` → 旧格留**僵尸占据物**、索引与格子分歧）；寻路不再把**地图外**当可通行、`GetMapCell` 越界返回 null（旧实现会把越界格排进路径后抛 `KeyNotFoundException`）；读档恢复周期任务时跳过敌方单位（不移动就不挂空转循环）。⑤ **校验器**：敌方行豁免"训练/时长/人口/成本为空"等玩家单位规则，新增生成字段校验（概率越界 / 缺生成地形 / 地形不存在 / 玩家单位误填生成字段 → **error**）。检查 **+13 项**（总计 **137/137**、退出码 0），**M0-3 ④ 通过** | 
 
 
 ### 18.1.1 里程碑验收对照
@@ -2098,7 +2103,7 @@ WP-0.4 ─→ WP-3.5 / WP-3.8 / WP-5.3
 | M0-3 | ① 存档 → 读档 → 推进 360 日后逐项等价 | ✅ `WP-3.2`（检查 107/107） |
 | M0-3 | ② 工人跨平原 10 日走 2 格 / 跨山地需 30 日 | ✅ `WP-3.5`（检查 117/117） |
 | M0-3 | ③ 同格交战 N 日后 HP 归零、单位移除、掉落进池 | ⏳ `WP-3.6` / `WP-3.7` |
-| M0-3 | ④ 敌方单位封锁格不可建造 | ⏳ `WP-3.8` |
+| M0-3 | ④ 敌方单位封锁格不可建造 | ✅ `WP-3.8`（检查 137/137） |
 
 
 **M0-2 结论（v0.4.0）**：五条验收项全部通过，验收载具为 103 项无头断言（`dotnet run --project Tests\SciencePotato.HeadlessChecks`，退出码 0）。里程碑判据与"谁验的"见 §18.5。
@@ -2198,6 +2203,10 @@ dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessC
 | D52 | **存档的\"写\"只由存档点收口**：仓储只标脏（`ISaveStore.WriteSection`），**原子落盘在 `WorldSaveService.SaveWorld` 末尾一次完成** | 改造前六个子系统各写各的文件：五个版本号、五份序列化代码，且\"谁在什么时候写盘\"没有唯一答案 —— 存档点写到一半崩溃会得到\"地图是新的、任务是旧的\"。收口后还有一个直接收益：任务不再\"每个任务每日一次整文件覆盖\"（`TIME-08` 的写放大） |
 | D53 | **地图（格子 + 实体）保持独立文件，不进统一存档** | 地图是所有子系统里体量最大、与\"每格\"强耦合的一块：塞进统一文件意味着**每次存档点都要重写整张地图**（`WP-5.6` 要处理的正是它的性能），而其余六个子系统都是\"小而变\"。统一存档的收益（原子性/版本/单文件）在地图侧由它自己的 `MapSave.SaveVersion` + 拒绝加载的既有语义承担；\"地图与统一存档合流\"若确有必要，作为独立变更评估（见 §18.4.2） |
 | D54 | **读档必须重挂事件日节拍**（`RestoreEvents` 主动清掉 `_startedEngines` 登记） | `LoadWorld` 会 `ITimeService.Reset()` 清空订阅者，但 `EventAppService._startedEngines` 的幂等标志还在内存里 → `StartEventsEngine` 直接 return，**事件从此不再推进**（且 `RollCount` 停在旧值，\"每日恰好掷一次\"的验收在跨档后失真）。因此\"恢复状态\"与\"恢复引擎登记\"必须成对发生 |
+| D55 | **敌方刷新 = 逐种独立掷骰 + 同格冲突按概率降序取第一个**（`SpawnChance` 的口径是"边际概率"） | 设计稿只给了"每种敌人的生成地点 + 生成概率"（平原 15% 野狼 / 10% 野猪），没定义同格撞车。备选：① 先加权抽签再掷骰 → 野狼实际 9%（表里 15% 失真）；② 按配置书写顺序取第一个通过者 → 同 seed 随表格顺序漂移；③ **按概率降序**逐个独立掷骰、命中即停 → 高概率敌种保真（野狼 15%）、低概率者让位（野猪 ≈ 8.5% = 10% × (1−15%)）。取 ③：确定性 + 可解释，用例如实锁住 15% ± 3pp / 8.5% ± 3pp |
+| D56 | **敌方单位 = 该格的地块占据物**（不启用闲置的 `MapCell.Invader` 槽位） | 设计稿的「地块封锁」要求"敌人存活 → 不可进入/建造/采集，敌人死亡 → 恢复"。占用权威（`WP-3.4`）已经能表达"一格一占据物"：把敌人放成占据物后，`IsClear`（建造）、`CanEnter`（移动）、`PlaceOccupant` 的冲突拒绝**同时**生效，且随地图存档天然保留（不需要改 `MapSave`）。`Invader` 槽位留给"格内一对交战单位"（`WP-3.6`）再定。`IsHostile` 放在 `MapOccupantInfo` 上（而不是让 `Map` 去 `is Unit`），地图模块因此不必认识 Units 类型 |
+| D57 | **`IsHostile` 是类型属性、不写进存档**（读档按 `Id` 查配置还原） | 与 `Id`（模板）同源：同一 `Id` 的敌对性恒定。写进 `UnitSaveDto` 会引出第二处真相（配置改了、存档仍说旧值），并逼出一次无意义的 `MapSave` 版本升级。代价：`Id` 必须始终能在单位表里查到（缺表时读档本来就什么也建不出来）—— 与 `WP-3.2` 的"按 Id 查配置重建"口径一致 |
+
 
 
 
@@ -2222,6 +2231,7 @@ dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessC
 | `MAP-16` 建筑 HP 与易主 | 城市攻防属批次 4，M0-1/2/3 验收均不涉及 | 需要"摧毁/夺取建筑"作为胜负条件时 | WP-4.8 | 未修 |
 | `UNIT-10` 移动力离散累积模型（**已修复**） | ✅ **已修（v0.3.17 / WP-3.5）**：R1~R7 全量实现（`UnitMovementService`），M0-3 ② 通过 | — | WP-3.5 | ✅ 已修 |
 | `MAP-17` 地形消耗量级（**已验收**） | Terrains 转 JSON 且量级对齐（平原 5 / 山地 25 / 水域 50） | 移动模型重写（`WP-3.5`）若发现量级不适配 | WP-3.5 | ✅ 已验收（量级可能在 WP-3.5 微调） |
+| `UNIT-14` 无敌方单位与地块封锁（**已修复**） | ✅ **已修（v0.3.19 / WP-3.8）**：`EnemySpawner` 按地形概率放置敌方单位、`Map.IsHostileAt` 单点判定封锁（不可进入 / 不可建造），M0-3 ④ 通过 | — | WP-3.8 | ✅ 已修 |
 
 ### 18.4.2 新增显式待办（v0.3.5）
 
@@ -2303,4 +2313,10 @@ dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessC
 | 僵尸索引与「一格一占据物」的**弱约束**（v0.3.16） | `PlaceOccupant` 在格子已占用时**拒绝**（不再静默覆盖），但"拒绝"只在应用层被检查（`IsClear`/`TryEnqueue` 路径）；`MapCell` 仍只有单占据物槽位，区域建筑/格内多占据物（`WP-4.9`）需要改结构 | 直接调用 domain API（脚本/调试）时仍可能"放置失败但调用方没看返回值" | `WP-4.9`（区域建筑 + 附属建筑嵌套）/ 后续把返回值纳入调用契约 |
 | `FindPath` 的 8 邻域图（v0.3.17） | 寻路器用 `HexCubePosition.GetNeighbor()`，它给出 **8 个方向**（含对角线）而不是六边形的 6 个；叠加"目标不可达"时会病态循环（已加步数上限兜底） | 路径形状与设计稿的六边形距离不一致（斜穿的代价被低估）；`DistenceTo` 是立方距离、邻域却是 8 向 —— 两者不自洽 | `WP-3.5` 后续 / 生成器重做（换 6 邻域 + 一致启发式） |
 | 统一存档的**生产路径接线**未完成（v0.3.18） | 存档单元已由组合根持有（`CoreServices.SaveStore` / `ServiceContainer.SaveStore`），但**只有地图仓库**进了生产装配；任务/资源/科技/修正器/迷雾/事件的仓储仍在无头夹具里手工装配（`CoreBootstrap` 目前只产出 `MapAppService` + 时间总线） | 真实 Godot 运行时保存的仍是\"地图一份文件\"，其余子系统要等装配补齐才写进统一存档 | `WP-5.1`（应用服务进组合根）—— 与\"`UnitsAppService`/`ConstructionAppService` 未进组合根\"同源 |
+| 敌方**掉落表已填、消费方未接**（v0.3.19） | `DropReward` 已按设计稿填进 `Units.json`（野狼 30 Gold / 野猪 80 Gold + 20 Wood / 山鹰 50 Gold / 巨角山羊 150 Wood + 50 Idea / 巨鳄 80 Gold + 40 Wood），但"击败 → 进资源池"还没接线 | 掉落不生效（`E19`）；M0-3 ③ 的"掉落进池"这一半未完成 | WP-3.7 |
+| 敌方战斗（反击 / 进入攻击范围即交火）未实现（v0.3.19） | 敌方单位目前只是"摆在图上的 `Unit` + 封锁格"：不会反击，玩家单位也不能进驻同格交战（近战 `AttackTick` 仍要求同格，而 `CanEnter` 因封锁为假 → 近战路径走不通） | M0-3 ③ 整条未完成 | WP-3.6 |
+| 移动遇到敌人即停（v0.3.19 起显性化） | `UnitMovementService.HasEnemyInVision` 命中就 `Stop`（清掉移动指令）——这是 `WP-3.5` 留下的过渡行为；设计稿的口径是"进入**攻击范围**时受击 + 可主动攻击" | 玩家单位在敌人附近会反复停下、需要重新下令（手感粗糙，逻辑不坏） | WP-3.6 |
+| 资源词汇别名（v0.3.19 延续） | 敌方掉落按原型资源别名填写（设计稿 Food → Gold、Basic minerals → Wood），与既有玩家单位成本口径一致 | 数值语义与设计稿的资源名不对应（`RES-*` 统一填表时收敛） | WP-4.x 资源填表 |
+| `MapCell.Invader` 槽位仍未使用（v0.3.19） | `SetInvader`/`RemoveInvader` 从早期版本就存在，但**没有任何写入方**；本轮选择"敌人 = 该格的占据物"（`D56`），`Invader` 依旧空 | 设计稿"一格内一对交战的单位"若要显式建模，需复用它或改成占据物集合 | WP-3.6 / WP-4.9 |
+
 

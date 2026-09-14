@@ -110,6 +110,39 @@ namespace SciencePotato.Scripts.Map.Domain
 			return building;
 		}
 
+		/// <summary>
+		/// （v0.3 / WP-3.8 / `UNIT-14`）**占据物移动的唯一入口**：从 <paramref name="from"/> 摘除、落到
+		/// <paramref name="to"/>（目标被**别的**占据物占着则拒绝且保持原状 —— 一格一占据物）。
+		/// <para>旧实现的移动只改 <c>Unit.Position</c>，地图索引与格子仍指着**旧格**（僵尸占据物）：
+		/// 于是"下一格有没有敌人""同格交战"这类判定全部失真。移动与落位现在共用同一套占用权威。</para>
+		/// </summary>
+		/// <returns>是否移动成功。</returns>
+		public bool MoveOccupant(IMapOccupant occupant, HexCubePosition from, HexCubePosition to)
+		{
+			if (occupant == null) return false;
+			if (!_cells.TryGetValue(to, out MapCell target)) return false;
+			if (target.Occupant != null && !ReferenceEquals(target.Occupant, occupant)) return false;
+
+			if (from != to && _cells.TryGetValue(from, out MapCell origin) && ReferenceEquals(origin.Occupant, occupant))
+				origin.RemoveOccupant();
+
+			target.SetOccupant(occupant);
+
+			string uid = occupant.GetInfo().UId;
+			if (!string.IsNullOrEmpty(uid)) _occupants[uid] = occupant;
+
+			return true;
+		}
+
+		/// <summary>
+		/// （v0.3 / WP-3.8 / `UNIT-14`）该格是否被**敌方单位**占据 —— 封锁判定（不可进入 / 不可建造 / 不可采集）的
+		/// 唯一查询入口。
+		/// <para>只看 <see cref="MapOccupantInfo.IsHostile"/>（由占据物自己声明），因此地图模块不需要认识
+		/// Units 模块的类型；不存在的地形格视为"无敌方"。</para>
+		/// </summary>
+		public bool IsHostileAt(HexCubePosition position)
+			=> _cells.TryGetValue(position, out MapCell cell) && cell.Occupant != null && cell.Occupant.GetInfo().IsHostile;
+
 		public MapCell GetCell(HexCubePosition position)
 		{
 			return _cells[position];

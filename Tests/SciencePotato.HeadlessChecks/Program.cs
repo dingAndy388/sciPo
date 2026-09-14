@@ -29,6 +29,7 @@ namespace SciencePotato.HeadlessChecks
 			OccupancyChecks.RunAll();
 			MovementChecks.RunAll();
 			SaveUnitChecks.RunAll();
+			EnemySpawnChecks.RunAll();
 
 
 			return Check.Summary();

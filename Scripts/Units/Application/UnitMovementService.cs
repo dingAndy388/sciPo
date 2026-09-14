@@ -136,8 +136,15 @@ namespace SciencePotato.Scripts.Units.Application
 					return;
 				}
 
+				// WP-3.8：位移走"占据物移动的唯一入口"（旧实现只改 unit.Position → 旧格留着僵尸占据物、
+				// 索引与格子指向分歧）；占用冲突（目标格被别人占着）时就地停下，而不是硬挤进去
+				if (!TryMoveTo(mapId, unit, next))
+				{
+					Stop(unit);
+					return;
+				}
+
 				unit.CurrentMP -= cost;
-				MoveTo(mapId, unit, next);
 				unit.MovePath.RemoveAt(0);
 
 				if (unit.Position == unit.MoveTarget.Value)
@@ -159,17 +166,24 @@ namespace SciencePotato.Scripts.Units.Application
 		}
 
 		/// <summary>
-		/// 能否进入该格（`E8`）：**只看 `Passable`**（地形通行权限是模拟侧的权威事实，未探索也一样不能穿水）。
-		/// <para>首版沿用了"未探索放行"的迷雾例外，结果单位可以走进看不见的水域；迷雾只该影响玩家**看见什么**，
-		/// 不该改变模拟的通行判定（`WP-4.11` 的解锁判定接在同一处）。</para>
+		/// 能否进入该格：
+		/// <list type="number">
+		/// <item>`E8`：地形必须 `Passable`（地形通行权限是模拟侧的权威事实，未探索也一样不能穿水）；</item>
+		/// <item>`WP-3.8` / `B8`：**被敌方单位占据的格子封锁** —— design/unit.md「若地块被敌方单位占据，
+		/// 必须先击败敌人才能进入」（敌人死亡后自动恢复，因为封锁就是"那格有没有敌方占据物"）。</item>
+		/// </list>
+		/// <para>地图外（格不存在）视为不可进入：寻路一旦把越界格排进路径，位移就会试图"走出地图"。
+		/// 友方占据不在本判据里：一格一占据物由"移动的唯一入口"（`Map.MoveOccupant` 拒绝占用冲突）兜底，
+		/// 而同格交战/合并的规则归 `WP-3.6`。</para>
 		/// </summary>
 		public bool CanEnter(string mapId, HexCubePosition position)
 		{
 			MapCell cell = _map.GetMapCell(mapId, position);
-			if (cell == null) return true;
+			if (cell == null) return false;
 
+			if (!(cell.Terrain != null && cell.Terrain.Passable)) return false;
 
-			return cell.Terrain != null && cell.Terrain.Passable;
+			return !_map.IsHostileAt(mapId, position);
 		}
 
 		/// <summary>视距内是否有敌方单位（有则停止移动）。</summary>
@@ -190,19 +204,28 @@ namespace SciencePotato.Scripts.Units.Application
 			return false;
 		}
 
-		/// <summary>位移一格：更新位置与迷雾（离开的格子重置视野、进入的格子揭示）。</summary>
-		private void MoveTo(string mapId, Unit unit, HexCubePosition position)
+		/// <summary>
+		/// 位移一格（`WP-3.8` 起走**占据物移动的唯一入口**）：占用权威（格子 + `_occupants` 索引）随位置一起更新，
+		/// 位移成功后再更新迷雾（离开的格子重置视野、进入的格子揭示）。
+		/// </summary>
+		/// <returns>是否真的动了（false = 目标格已被别的占据物占着，调用方应停下）。</returns>
+		private bool TryMoveTo(string mapId, Unit unit, HexCubePosition position)
 		{
-			int visionRadius = _configs.GetUnitConfig(unit.GetInfo().Id)?.VisionRadius ?? 0;
-
 			HexCubePosition from = unit.Position;
+
+			if (!_map.MoveOccupant(mapId, unit, from, position)) return false;
+
 			unit.Position = position;
+
+			int visionRadius = _configs.GetUnitConfig(unit.GetInfo().Id)?.VisionRadius ?? 0;
 
 			if (_fog != null)
 			{
 				_fog.ResetArea(from, visionRadius);
 				_fog.RevealArea(position, visionRadius);
 			}
+
+			return true;
 		}
 
 		private static void Stop(Unit unit)

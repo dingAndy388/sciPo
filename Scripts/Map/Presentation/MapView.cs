@@ -48,7 +48,10 @@ namespace SciencePotato.Scripts.Map.Presentation
 
 		public void UpdateCell(HexCubePosition position)
 		{
+			// （v0.3 / WP-3.8）`GetMapCell` 对不存在的格返回 null（旧实现抛异常）—— 视图侧同样跳过
 			MapCell cell = _mapQuery.GetMapCell(MapId, position);
+			if (cell == null) return;
+
 			CreateCellView(cell.Terrain, cell.Position);
 		}
 

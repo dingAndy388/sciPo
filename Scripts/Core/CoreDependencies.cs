@@ -47,6 +47,13 @@ namespace SciencePotato.Scripts.Core
 		public string SessionId { get; init; } = "session";
 
 		/// <summary>
+		/// （v0.3 / WP-3.8 / `UNIT-14`）是否在地图生成后按地形概率刷新**敌方单位**（默认开 = 生产行为）。
+		/// <para>无头用例把它关掉即可得到"没有敌人的干净沙盘"（用例要自己布置格位时避免随机敌人抢占），
+		/// 而生产装配（`ServiceContainer`）与本项默认值一致地开启 —— 敌方封锁是玩法的一部分，不该只在测试里存在。</para>
+		/// </summary>
+		public bool EnableEnemySpawn { get; init; } = true;
+
+		/// <summary>
 		/// （v0.3 / WP-3.3）**统一存档单元**（可空 = 本宿主不使用统一存档，退回\"各仓各写各的文件\"）。
 		/// <para>由宿主创建（Godot：`JsonSaveStore` + `GodotFileSystem` + `user://...`；无头：`SystemFileSystem`），
 		/// 组合根只把它透传到 <see cref="CoreServices.SaveStore"/>。**全进程只允许一个实例** ——

@@ -5,16 +5,29 @@ using System.Collections.Generic;
 
 namespace SciencePotato.Scripts.Map.Application
 {
-	public class MapAppService(IMapGenerator generator, MapSession session)
+	public class MapAppService(IMapGenerator generator, MapSession session, IEnumerable<IMapPostProcessor> postProcessors = null)
 	{
 		private readonly IMapGenerator _mapGenerator = generator;
 		private readonly MapSession _session = session;
 
+		/// <summary>（v0.3 / WP-3.8）生成后处理器（敌方单位刷新等）：由组合根按整表装配，缺省 = 不加工。</summary>
+		private readonly List<IMapPostProcessor> _postProcessors = postProcessors != null
+			? new List<IMapPostProcessor>(postProcessors)
+			: new List<IMapPostProcessor>();
+
 		private const byte FogUnexplored = 0;
+
+		/// <summary>（v0.3 / WP-3.8）已挂载的生成后处理器数量（装配自检 / 日志用）。</summary>
+		public int PostProcessorCount => _postProcessors.Count;
 
 		public void GenerateMap(int seed, int width, int height, string Id)
 		{
 			Domain.Map map = _mapGenerator.Generate(width, height, seed, Id);
+
+			// v0.3 / WP-3.8（`B7`/`UNIT-14`）：**生成后处理**在"地形已定、实体未落位"的窗口里跑
+			// （敌方单位按地形概率放置）。处理器只依赖聚合根，因此仍是"种子 → 地图"的纯生成语义。
+			foreach (IMapPostProcessor processor in _postProcessors)
+				processor?.Process(map);
 
 			// v0.3 / WP-3.1：新生成的地图放入会话缓存，并在存档点落盘
 			_session.Set(Id, map);
@@ -24,7 +37,11 @@ namespace SciencePotato.Scripts.Map.Application
 
 		public MapCell GetMapCell(string mapId, HexCubePosition position)
 		{
-			return _session.Get(mapId).GetCell(position);
+			// v0.3 / WP-3.8：越界格返回 null（旧实现抛 KeyNotFoundException —— 寻路把地图外格子当"可通行"
+			// 时会把它排进路径，随后 CanEnter/TerrainCost 一起炸；封锁判定也必须先能问"这格存在吗"）
+			var map = _session.Get(mapId);
+			if (map == null) return null;
+			return map.TryGetCell(position, out MapCell cell) ? cell : null;
 		}
 
 		public IEnumerable<MapCell> GetAllCells(string MapId)
@@ -147,11 +164,41 @@ namespace SciencePotato.Scripts.Map.Application
 			_session.MarkDirty(mapId);
 		}
 
+		/// <summary>
+		/// （v0.3 / WP-3.8 / `UNIT-14`）**占据物移动的唯一入口**：位移后格子/索引/建筑槽位一致
+		/// （修"移动只改 `Unit.Position` → 旧格留着僵尸占据物"）。
+		/// </summary>
+		/// <returns>是否移动成功（目标被别的占据物占着则拒绝，调用方应停下而不是硬挤）。</returns>
+		public bool MoveOccupant(string mapId, IMapOccupant occupant, HexCubePosition from, HexCubePosition to)
+		{
+			var map = _session.Get(mapId);
+			if (map == null) return false;
+			if (!map.MoveOccupant(occupant, from, to)) return false;
+
+			_session.MarkDirty(mapId);
+			return true;
+		}
+
 		public MapOccupantInfo? GetBuildingInfo(string mapId, HexCubePosition position)
 		{
 			var map = _session.Get(mapId);
 			return map.GetBuildingInfo(position);
 		}
+
+		/// <summary>
+		/// （v0.3 / WP-3.8 / `UNIT-14`）该格是否被**敌方单位**封锁（不可进入 / 不可建造 / 不可采集）。
+		/// <para>与 <see cref="IsClear"/> 的关系：`IsClear` 是"有没有占据物"（占用的机制），本方法是设计稿
+		/// 「地块封锁」那条规则的可读判据（敌人存活才封锁；友方/自己占据不算"封锁"）。</para>
+		/// </summary>
+		public bool IsHostileAt(string mapId, HexCubePosition position)
+		{
+			var map = _session.Get(mapId);
+			return map != null && map.IsHostileAt(position);
+		}
+
+		/// <summary>（v0.3 / WP-3.8）把「该格没有被敌方封锁」表达成 <see cref="IRequirement"/>（与地形前提同一族）。</summary>
+		public NoHostileRequirement GetNoHostileRequirement(string mapId, HexCubePosition position)
+			=> new NoHostileRequirement(_session.Get(mapId), position);
 
 		public void SetInvader(string mapId, HexCubePosition position, IMapOccupant invader)
 		{
@@ -223,14 +270,21 @@ namespace SciencePotato.Scripts.Map.Application
 
 		private static bool IsPassable(Domain.Map map, HexCubePosition pos, FogAppService fog)
 		{
+			// v0.3 / WP-3.8：地图外的格子不可通行（旧实现把越界格当可通行 → 路径可能"走出地图"，
+			// 而 Tick 的 CanEnter/TerrainCost 拿到不存在的格会炸）
 			if (!map.TryGetCell(pos, out MapCell cell))
-				return true;
+				return false;
 
 			byte visibility = fog.GetVisibility(pos);
 			if (visibility == FogUnexplored)
 				return true;
 
-			return cell.Terrain != null && cell.Terrain.Passable;
+			if (!(cell.Terrain != null && cell.Terrain.Passable))
+				return false;
+
+			// v0.3 / WP-3.8（`B8`）：敌方单位占据的格子**封锁**（必须先击败敌人才能进入）——
+			// 寻路与位移用同一套判据（`UnitMovementService.CanEnter`），否则会出现"路径指着敌人的格子"的假可达
+			return !map.IsHostileAt(pos);
 		}
 
 		private static float GetMoveCost(Domain.Map map, HexCubePosition pos)
