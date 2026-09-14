@@ -30,13 +30,22 @@ namespace SciencePotato.Scripts.Events.Domain
 		public bool IsPermanent => TotalDays <= 0;
 
 		public ActiveEvent(string mapId, int ownerId, string eventId, string name, int durationDays)
+			: this(mapId, ownerId, eventId, name, durationDays, durationDays > 0 ? durationDays : Permanent)
+		{
+		}
+
+		/// <summary>
+		/// （v0.3 / WP-3.3）**读档用**：显式给出剩余天数（存档里的倒计时必须原样接上，
+		/// 否则\"第 30 日生效、持续 30 日\"的事件读档后会重新满血）。
+		/// </summary>
+		public ActiveEvent(string mapId, int ownerId, string eventId, string name, int durationDays, int remainingDays)
 		{
 			MapId = mapId;
 			OwnerId = ownerId;
 			EventId = eventId;
 			Name = name;
 			TotalDays = durationDays > 0 ? durationDays : 0;
-			RemainingDays = IsPermanent ? Permanent : TotalDays;
+			RemainingDays = IsPermanent ? Permanent : remainingDays;
 		}
 
 		/// <summary>推进一个游戏日；返回 <c>true</c> 表示本次推进后到期（调用方负责回收修正器）。</summary>

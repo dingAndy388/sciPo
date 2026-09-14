@@ -17,13 +17,13 @@ using System.Linq;
 namespace SciencePotato.Scripts.Core.Save
 {
 	/// <summary>
-	/// （v0.3 / WP-3.2）**世界存档/读档的协调者**：把"六类状态"（地图实体 / 人口 / 任务 / 迷雾 / 资源与科技 / 时间）
-	/// 的写入点与恢复点串起来，供 M0-3 ①「存档 → 读档 → 推进 360 日 → 逐项等价」验收使用。
-	/// <para><b>本类只做编排，不做序列化</b>：格式与映射属于各仓储（`SaveMapper` + 各自的 Repository）。
-	/// 它的存在是因为"读档"必须**按依赖顺序**执行：先恢复地图实体（否则任务找不到宿主），再恢复时钟，
-	/// 最后重建周期任务与事件引擎。</para>
-	/// <para>`WP-3.3` 会把本类收敛为统一的存档单元（单一文件 + 原子写 + 版本迁移），当前版本仍然
-	/// "各仓各写各的盘"，但**入口已经唯一**。</para>
+	/// （v0.3 / WP-3.2 建，WP-3.3 收敛为存档单元的使用者）**世界存档/读档的协调者**：
+	/// 把"六类状态"（地图实体 / 人口 / 任务 / 迷雾 / 资源与科技 / 时间）+ 事件状态的
+	/// 写入点与恢复点串起来，供 M0-3 ①「存档 → 读档 → 推进 360 日 → 逐项等价」验收使用。
+	/// <para><b>本类只做编排，不做序列化</b>：格式与映射属于各仓储（`SaveMapper` + 各自的 Repository）。</para>
+	/// <para>（v0.3 / WP-3.3）注入 <see cref="ISaveStore"/> 后：各仓储的写入只是**在统一存档里标脏**，
+	/// 真正的落盘由本类在 <see cref="SaveWorld"/> 末尾**一次原子写**完成（`I3`/`DEP-06`/`TIME-08`）；
+	/// 读档先让存档单元跑**版本迁移**，再按依赖顺序恢复（地图实体 → 附加状态 → 迷雾 → 任务 → 事件引擎）。</para>
 	/// </summary>
 	public sealed class WorldSaveService
 	{
@@ -38,6 +38,7 @@ namespace SciencePotato.Scripts.Core.Save
 		private readonly ResourcesAppService _resources;
 		private readonly EventAppService _events;
 		private readonly FogAppService _fog;
+		private readonly ISaveStore _store;
 
 		public WorldSaveService(
 			GameSession session,
@@ -50,7 +51,8 @@ namespace SciencePotato.Scripts.Core.Save
 			TechTreesAppService tech,
 			ResourcesAppService resources,
 			EventAppService events = null,
-			FogAppService fog = null)
+			FogAppService fog = null,
+			ISaveStore store = null)
 		{
 			_session = session ?? throw new ArgumentNullException(nameof(session));
 			_time = time ?? throw new ArgumentNullException(nameof(time));
@@ -63,60 +65,94 @@ namespace SciencePotato.Scripts.Core.Save
 			_resources = resources;
 			_events = events;
 			_fog = fog;
+			_store = store;
 		}
 
 		/// <summary>最近一次读档恢复的任务数（验收/调试用）。</summary>
 		public int LastRestoredTaskCount { get; private set; }
 
+		/// <summary>最近一次读档是否成功（更高版本的存档 → <c>false</c> + <see cref="LastLoadError"/>）。</summary>
+		public bool LastLoadSucceeded { get; private set; } = true;
+
+		/// <summary>最近一次读档的失败原因（无失败为 <c>null</c>）。</summary>
+		public string LastLoadError { get; private set; }
+
+		/// <summary>最近一次加载应用的存档格式迁移名（升序；空 = 档是当前版本）。</summary>
+		public IReadOnlyList<string> LastAppliedMigrations => _store?.AppliedMigrations ?? new List<string>();
+
 		/// <summary>
-		/// **存档点**：写时钟 + 把所有脏地图（含实体与人口）落盘。
-		/// <para>资源/修正器/科技/迷雾/任务都在各自的写入点落盘（`WP-1.5` 起任务降为日边界同步），
-		/// 因此这里不重复写；它们的"统一在一个存档点写"由 `WP-3.3` 完成。</para>
+		/// **存档点**：写时钟（统一存档时进文件头）+ 把所有脏地图（含实体与人口）落盘 + 迷雾 + 事件状态，
+		/// 最后**一次原子写**统一存档。
+		/// <para>为什么必须由这里统一写：改造前每个子系统各写各的文件（五个版本号、无原子性、写放大），
+		/// 「谁负责落盘」没有唯一答案 —— 存档点写完一半崩溃就会得到\"地图是新的、任务是旧的\"。</para>
 		/// </summary>
-		public void SaveWorld(string mapId)
+		public void SaveWorld(string mapId, int ownerId = 1)
 		{
 			_clockRepo?.SaveDay(_session.SessionId, _session.Clock.CurrentDay);
 
 			if (mapId != null) _session.Maps.MarkDirty(mapId);
 			_session.Maps.FlushAll();
 
-			// 迷雾：`FogAppService` 只在内存里维护矩阵，必须显式写盘（此前没有任何存档点写它 —— `WP-3.2` 补齐）
+			// 迷雾：`FogAppService` 只在内存里维护矩阵，必须显式写（此前没有任何存档点写它 —— `WP-3.2` 补齐）
 			if (mapId != null) _fog?.Save(mapId);
 
-			// 任务/资源/修正器/科技：各自在写入点落盘（任务为日边界同步），此处重复写只会放大 IO
+			// 事件状态（v0.3 / WP-3.3）：生效中事件 + 触发计数 + 掷骰次数
+			if (mapId != null) _events?.SaveEvents(mapId);
+
+			// 统一落盘（原子写）：任务/资源/修正器/科技/迷雾/事件此前已经在各自写入点标脏
+			_store?.Commit();
 		}
 
 		/// <summary>
-		/// **读档**：① 恢复时钟；② 丢弃内存地图并重新读盘（拿到含占据物/人口的新实例）；
-		/// ③ 恢复建筑附加状态（训练队列、建造者绑定）；④ 按类型重建全部周期任务；⑤ 重启事件引擎（幂等）。
+		/// **读档**：① 让存档单元读盘并跑版本迁移（更高版本 → 拒绝并返回 false）；② 恢复时钟；
+		/// ③ 丢弃内存地图并重新读盘（拿到含占据物/人口的新实例）；④ 恢复建筑附加状态（训练队列、建造者绑定）；
+		/// ⑤ 按类型重建全部周期任务；⑥ 恢复事件状态并重启事件引擎（幂等 + 重挂日节拍）。
 		/// </summary>
-		public void LoadWorld(string mapId, int ownerId)
+		public bool LoadWorld(string mapId, int ownerId)
 		{
-			if (string.IsNullOrWhiteSpace(mapId)) return;
+			if (string.IsNullOrWhiteSpace(mapId)) return false;
 
-			// ① 时间
+			LastLoadSucceeded = true;
+			LastLoadError = null;
+
+			// ① 存档单元：读盘 + 迁移（版本过新直接拒绝，不猜字段）
+			try
+			{
+				_store?.Load();
+			}
+			catch (SaveVersionTooNewException ex)
+			{
+				LastLoadSucceeded = false;
+				LastLoadError = ex.Message;
+				return false;
+			}
+
+			// ② 时间（统一存档：日期来自文件头）
 			_session.Clock.RestoreDay(_clockRepo?.LoadDay(_session.SessionId) ?? 0d);
 
-			// ② 地图（含实体/人口）：先驱逐缓存再取回，确保拿到磁盘上的最新状态
+			// ③ 地图（含实体/人口）：先驱逐缓存再取回，确保拿到磁盘上的最新状态
 			_session.Maps.Evict(mapId);
 
-			// ②.5 时间总线作废（`WP-3.2`）：旧订阅者持有的是**读档前**的实体副本，
+			// ③.5 时间总线作废（`WP-3.2`）：旧订阅者持有的是**读档前**的实体副本，
 			// 不清理会让"恢复的新任务"与"旧任务"同时跑（月结翻倍、人口翻倍）
 			_time.Reset();
 
-			if (_session.Maps.Get(mapId) == null) return; // 无存档：无从恢复
+			if (_session.Maps.Get(mapId) == null) return LastLoadSucceeded; // 无存档：无从恢复
 
-			// ③ 建筑附加状态（队列/建造者绑定都在建筑对象上，但回调需要重新挂）
+			// ④ 建筑附加状态（队列/建造者绑定都在建筑对象上，但回调需要重新挂）
 			_construction?.RestoreBuildingExtras(mapId);
 
-			// ③.5 迷雾（`FogAppService` 是内存矩阵，读档必须显式加载，否则地图全黑 —— `WP-3.2` 补齐）
+			// ④.5 迷雾（`FogAppService` 是内存矩阵，读档必须显式加载，否则地图全黑 —— `WP-3.2` 补齐）
 			_fog?.Load(mapId);
 
-			// ④ 周期任务
+			// ⑤ 周期任务
 			LastRestoredTaskCount = RestoreTasks(mapId, ownerId);
 
-			// ⑤ 事件引擎（`StartEventsEngine` 幂等）
+			// ⑥ 事件状态 + 引擎（先恢复状态（同时注销旧登记），再启动 → 日节拍重新挂上）
+			_events?.RestoreEvents(mapId, ownerId);
 			_events?.StartEventsEngine(mapId, ownerId);
+
+			return LastLoadSucceeded;
 		}
 
 		/// <summary>

@@ -1,3 +1,4 @@
+using SciencePotato.Scripts.Common.Domain;
 using SciencePotato.Scripts.Common.Infrastructure;
 using SciencePotato.Scripts.Fog.Domain;
 
@@ -7,7 +8,9 @@ namespace SciencePotato.Scripts.Fog.Infrastructure
 	{
 		private readonly string _filePath;
 
-		public FogRepository(string filePath)
+		/// <param name="filePath">旧口径：文件前缀（`fog_` + mapId + `_` + ownerId）。</param>
+		/// <param name="store">（v0.3 / WP-3.3）统一存档单元；分区键 = `fog:{mapId}_{ownerId}`。</param>
+		public FogRepository(string filePath, ISaveStore store = null) : base(store)
 		{
 			_filePath = filePath;
 		}
@@ -19,7 +22,7 @@ namespace SciencePotato.Scripts.Fog.Infrastructure
 
 		private string BuildFilePath(string mapId, int ownerId)
 		{
-			return _filePath + mapId + "_" + ownerId;
+			return UsesSaveStore ? $"fog:{mapId}_{ownerId}" : _filePath + mapId + "_" + ownerId;
 		}
 
 		public FogSaveData LoadFog(string mapId, int ownerId)

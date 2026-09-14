@@ -1,3 +1,4 @@
+using Newtonsoft.Json;
 using SciencePotato.Scripts.Common.Application;
 using SciencePotato.Scripts.Common.Domain;
 using SciencePotato.Scripts.Core.Time;
@@ -21,7 +22,9 @@ namespace SciencePotato.Scripts.Events.Application
 	/// <item>**生效中的事件不再重复触发**（否则同一事件叠加多次修正器，数值失控）；</item>
 	/// <item><see cref="StartEventsEngine"/> 幂等：同一 `(mapId, ownerId)` 只注册一个日节拍任务。</item>
 	/// </list>
-	/// <para>⚠️ 生效状态与触发计数**只在内存**（不落盘）：读档后"当前生效事件"会丢，归 `WP-3.2` 实体持久化。</para>
+	/// <para>（v0.3 / WP-3.3）生效状态与触发计数**已落盘**：<see cref="SaveEvents"/> / <see cref="RestoreEvents"/>
+	/// 把\"生效中事件（含剩余天数）+ 触发计数 + 掷骰次数\"交给统一存档单元，且读档后会**重挂日节拍**
+	/// （时间总线被 `ITimeService.Reset()` 清空过，不重挂就会\"事件从此不再推进\"）。</para>
 	/// </summary>
 	public class EventAppService
 	{
@@ -34,6 +37,9 @@ namespace SciencePotato.Scripts.Events.Application
 
 		/// <summary>（v0.3 / WP-2.10）领域事件总线（可空 = 无人订阅）。</summary>
 		private readonly IDomainEventBus _events;
+
+		/// <summary>（v0.3 / WP-3.3）统一存档单元（可空 = 事件状态只在内存）。</summary>
+		private readonly ISaveStore _store;
 
 		/// <summary>生效中的事件：键 = `mapId_ownerId_eventId`。</summary>
 		private readonly Dictionary<string, ActiveEvent> _active = new(StringComparer.Ordinal);
@@ -57,7 +63,8 @@ namespace SciencePotato.Scripts.Events.Application
 			ModifierAppService modifier,
 			ITimeService time,
 			IRandom random,
-			IDomainEventBus eventBus = null)
+			IDomainEventBus eventBus = null,
+			ISaveStore store = null)
 		{
 			_eventRepo = eventRepo;
 			_resources = resources;
@@ -66,6 +73,7 @@ namespace SciencePotato.Scripts.Events.Application
 			_time = time;
 			_random = random;
 			_events = eventBus;
+			_store = store;
 		}
 
 		public void StartEventsEngine(string mapId, int ownerId)
@@ -102,6 +110,91 @@ namespace SciencePotato.Scripts.Events.Application
 		/// <summary>（v0.3 / WP-2.8）某事件是否正在生效（`G8`：生效中不再重复触发）。</summary>
 		public bool IsActive(string mapId, int ownerId, string eventId)
 			=> _active.ContainsKey(EntryKey(mapId, ownerId, eventId));
+
+		// ────────────── 存档（v0.3 / WP-3.3） ──────────────
+		// 背景：修正器早就落盘了，但\"生效中的事件 + 触发计数\"只在内存 ——
+		// 读档后事件没了、修正器还在，等于\"没有到期日的加成\"。这里把状态交给统一存档单元。
+
+		/// <summary>**存档点**：把该地图的事件状态写进存档单元的分区 `events:{mapId}`（无存档单元时只在内存）。</summary>
+		public void SaveEvents(string mapId)
+		{
+			if (_store == null || string.IsNullOrWhiteSpace(mapId)) return;
+
+			string prefix = mapId + "_";
+			var dto = new EventSaveDto { RollCount = RollCount };
+
+			foreach (ActiveEvent active in _active.Values)
+			{
+				if (active.MapId != mapId) continue;
+				if (!active.IsPermanent && active.RemainingDays <= 0) continue; // 已到期的不写（读档即等价于已回收）
+
+				dto.Active.Add(new ActiveEventSave
+				{
+					OwnerId = active.OwnerId,
+					EventId = active.EventId,
+					Name = active.Name,
+					TotalDays = active.TotalDays,
+					RemainingDays = active.RemainingDays,
+				});
+			}
+
+			foreach (var kvp in _triggerCounts)
+				if (kvp.Key.StartsWith(prefix, StringComparison.Ordinal))
+					dto.TriggerCounts[kvp.Key] = kvp.Value;
+
+			_store.WriteSection($"events:{mapId}", JsonConvert.SerializeObject(dto, Formatting.Indented));
+		}
+
+		/// <summary>
+		/// **读档**：恢复生效中事件（含剩余天数）、触发计数与掷骰次数。
+		/// <para>⚠️ 同时**注销引擎登记**：读档会清空时间总线（`ITimeService.Reset()`），日节拍任务已不存在，
+		/// 因此必须让随后的 <see cref="StartEventsEngine"/> 重新注册 —— 否则\"事件从此不再推进\"（`EVT-03` 幂等的陷阱）。</para>
+		/// </summary>
+		/// <returns>是否从存档里读到了事件状态。</returns>
+		public bool RestoreEvents(string mapId, int ownerId)
+		{
+			if (string.IsNullOrWhiteSpace(mapId)) return false;
+
+			// 时间总线已作废：本次读档必须重挂日节拍（幂等标志一并清掉）
+			_startedEngines.Remove(EngineKey(mapId, ownerId));
+
+			if (_store == null) return false;
+
+			string json = _store.ReadSection($"events:{mapId}");
+			if (string.IsNullOrWhiteSpace(json)) return false;
+
+			EventSaveDto dto;
+			try
+			{
+				dto = JsonConvert.DeserializeObject<EventSaveDto>(json);
+			}
+			catch (JsonException)
+			{
+				return false; // 认不出的分区：按\"没有生效事件\"处理，不让读档失败
+			}
+
+			if (dto == null) return false;
+
+			// 先清掉该地图的旧内存态（读档 = 以盘上状态为准）
+			foreach (string key in _active.Keys.Where(k => k.StartsWith(mapId + "_", StringComparison.Ordinal)).ToList())
+				_active.Remove(key);
+			foreach (string key in _triggerCounts.Keys.Where(k => k.StartsWith(mapId + "_", StringComparison.Ordinal)).ToList())
+				_triggerCounts.Remove(key);
+
+			foreach (ActiveEventSave saved in dto.Active ?? new List<ActiveEventSave>())
+			{
+				if (saved == null || string.IsNullOrWhiteSpace(saved.EventId)) continue;
+
+				_active[EntryKey(mapId, saved.OwnerId, saved.EventId)] =
+					new ActiveEvent(mapId, saved.OwnerId, saved.EventId, saved.Name, saved.TotalDays, saved.RemainingDays);
+			}
+
+			foreach (var kvp in dto.TriggerCounts ?? new Dictionary<string, int>())
+				_triggerCounts[kvp.Key] = kvp.Value;
+
+			RollCount = dto.RollCount;
+			return true;
+		}
 
 		private void TickEvents(string mapId, int ownerId)
 		{

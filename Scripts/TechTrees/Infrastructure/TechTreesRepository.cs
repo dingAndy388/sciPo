@@ -1,3 +1,4 @@
+using SciencePotato.Scripts.Common.Domain;
 using SciencePotato.Scripts.Common.Infrastructure;
 using TechTreeDomain = SciencePotato.Scripts.TechTree.Domain;
 
@@ -8,7 +9,11 @@ namespace SciencePotato.Scripts.TechTree.Infrastructure
 		private readonly string _filePath;
 		private readonly TechTreeDomain.ITechTreesConfigRepository _configRepo;
 
-		public TechTreesRepository(string filePath, TechTreeDomain.ITechTreesConfigRepository configRepo)
+		/// <param name="filePath">旧口径：文件前缀（`tech_` + mapId + `_` + ownerId）。</param>
+		/// <param name="configRepo">树结构配置（读档后 `HydrateConfigs` 用）。</param>
+		/// <param name="store">（v0.3 / WP-3.3）统一存档单元；分区键 = `tech:{mapId}_{ownerId}`。</param>
+		public TechTreesRepository(string filePath, TechTreeDomain.ITechTreesConfigRepository configRepo, ISaveStore store = null)
+			: base(store)
 		{
 			_filePath = filePath;
 			_configRepo = configRepo;
@@ -21,7 +26,7 @@ namespace SciencePotato.Scripts.TechTree.Infrastructure
 
 		private string BuildFilePath(string mapId, int ownerId)
 		{
-			return _filePath + mapId + "_" + ownerId;
+			return UsesSaveStore ? $"tech:{mapId}_{ownerId}" : _filePath + mapId + "_" + ownerId;
 		}
 
 		public TechTreeDomain.TechTree GetTreeById(string mapId, int ownerId, string id)

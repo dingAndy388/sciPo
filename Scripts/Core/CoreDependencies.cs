@@ -45,6 +45,14 @@ namespace SciencePotato.Scripts.Core
 		public bool FailOnConfigErrors { get; init; } = true;
 
 		public string SessionId { get; init; } = "session";
+
+		/// <summary>
+		/// （v0.3 / WP-3.3）**统一存档单元**（可空 = 本宿主不使用统一存档，退回\"各仓各写各的文件\"）。
+		/// <para>由宿主创建（Godot：`JsonSaveStore` + `GodotFileSystem` + `user://...`；无头：`SystemFileSystem`），
+		/// 组合根只把它透传到 <see cref="CoreServices.SaveStore"/>。**全进程只允许一个实例** ——
+		/// 两个实例写同一个文件会互相覆盖（各自持有不同的内存文档）。</para>
+		/// </summary>
+		public ISaveStore SaveStore { get; init; }
 	}
 }
 

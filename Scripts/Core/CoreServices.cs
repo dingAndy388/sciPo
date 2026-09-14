@@ -44,6 +44,14 @@ namespace SciencePotato.Scripts.Core
 		/// 从而不必轮询 `IsReady`/`IsResearched`/`GetActiveEvents`。</para>
 		/// </summary>
 		public IDomainEventBus DomainEvents { get; init; }
+
+		/// <summary>
+		/// （v0.3 / WP-3.3）**统一存档单元**：任务/迷雾/资源/科技/修正器/事件/时钟都写进它的分区，
+		/// 由存档点（`WorldSaveService.SaveWorld`）一次原子落盘。
+		/// <para>⚠️ 生产路径的**逐仓储接线**随 `WP-5.1`（把 Construction/Units/Events/… 应用服务收进组合根）一起完成；
+		/// 在此之前本项由宿主透传，供无头验收与后续装配使用（见 §18.5.3）。</para>
+		/// </summary>
+		public ISaveStore SaveStore { get; init; }
 	}
 }
 

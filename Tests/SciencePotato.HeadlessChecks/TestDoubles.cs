@@ -28,6 +28,16 @@ namespace SciencePotato.HeadlessChecks
 		}
 
 		public void Delete(string path) => _files.Remove(path);
+
+		/// <summary>（v0.3 / WP-3.3）移动/替换：内存实现同样是\"一次操作换掉整个文件\"（不留下半写状态）。</summary>
+		public void Move(string source, string destination, bool overwrite)
+		{
+			if (!_files.TryGetValue(source, out string text)) return;
+			if (!overwrite && _files.ContainsKey(destination)) return;
+
+			_files.Remove(source);
+			_files[destination] = text;
+		}
 	}
 
 	/// <summary>（v0.3 / WP-0.2）内存配置来源替身：预置若干 JSON 文本。</summary>

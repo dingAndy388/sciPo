@@ -74,6 +74,7 @@ namespace SciencePotato.Scripts.Core
 				MapGenerator = mapGenerator,
 				Map = mapService,
 				DomainEvents = domainEvents,
+				SaveStore = dependencies.SaveStore,
 			};
 		}
 

@@ -13,18 +13,22 @@ namespace SciencePotato.Scripts.Common.Infrastructure
 	/// 这样既不丢数据（旧实现 <c>AddTask</c> 不读盘 → 进程重启后第一次写入会用「只含一个新任务」的字典
 	/// 覆盖整个任务文件），也不再像 `WP-2.2` 首版那样"每次改动读一次盘"（日边界上每个任务一次 Read+Write
 	/// 会让长跑用例的 IO 翻倍）。</para>
-	/// <para>**单写者假设**：同一任务文件在进程内只应由一个 <see cref="TaskRepository"/> 实例写。
-	/// 多实例/跨会话的一致写由 `WP-3.3`（统一存档单元 + 单序列化器）收口 —— 那也是"内存态 + 存档点"的落地处。</para>
+	/// <para>（v0.3 / WP-3.3）注入 <see cref="ISaveStore"/> 后：分区键 = <c>tasks:{mapId}</c>，
+	/// 改动只在内存标脏、由**存档点**统一原子落盘（此前是"每个任务每日一次整文件覆盖"）。</para>
 	/// </summary>
 	public class TaskRepository :  GenericJsonRepository<TaskSnapshot>, ITaskRepository
 	{
-		private string _filePath;
-		private readonly HashSet<string> _loadedMaps = new(StringComparer.OrdinalIgnoreCase);
+		private readonly string _filePath;
 
-		public TaskRepository(string filePath)
+		/// <param name="filePath">旧口径：文件前缀（`tasks_` + mapId）；接入存档单元后不再使用。</param>
+		/// <param name="store">（v0.3 / WP-3.3）统一存档单元；为 null 时按文件落盘。</param>
+		public TaskRepository(string filePath, ISaveStore store = null) : base(store)
 		{
 			this._filePath = filePath;
 		}
+
+		/// <summary>\"已读盘\"的地图（同一地图只读一次）。</summary>
+		private readonly HashSet<string> _loadedMaps = new(StringComparer.OrdinalIgnoreCase);
 
 		public void AddTask(string mapId, TaskSnapshot task)
 		{
@@ -56,7 +60,8 @@ namespace SciencePotato.Scripts.Common.Infrastructure
 			return base.RemoveWhere(match, PathFor(mapId));
 		}
 
-		private string PathFor(string mapId) => _filePath + mapId;
+		/// <summary>分区键（存档单元模式）= `tasks:{mapId}`；文件模式 = `{前缀}{mapId}`。</summary>
+		private string PathFor(string mapId) => UsesSaveStore ? $"tasks:{mapId}" : _filePath + mapId;
 
 		/// <summary>首次触碰该地图的任务文件时读盘，并顺手把历史「以 Id 为键」的条目重新编键（`TIME-03`）。</summary>
 		private void EnsureLoaded(string mapId)

@@ -28,6 +28,8 @@ namespace SciencePotato.HeadlessChecks
 			WorldPersistenceChecks.RunAll();
 			OccupancyChecks.RunAll();
 			MovementChecks.RunAll();
+			SaveUnitChecks.RunAll();
+
 
 			return Check.Summary();
 		}

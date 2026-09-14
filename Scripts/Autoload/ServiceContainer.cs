@@ -4,6 +4,7 @@ using SciencePotato.Scripts.Common.Domain;
 using SciencePotato.Scripts.Common.Infrastructure;
 using SciencePotato.Scripts.Core;
 using SciencePotato.Scripts.Core.Config;
+using SciencePotato.Scripts.Core.Save;
 using SciencePotato.Scripts.Core.Time;
 using SciencePotato.Scripts.Map.Application;
 using SciencePotato.Scripts.Map.Domain;
@@ -42,6 +43,12 @@ public partial class ServiceContainer : Node
 	/// <summary>组合根产物（v0.3 / WP-1.3）：核心服务与状态都由它提供。</summary>
 	public CoreServices Core { get; private set; }
 
+	/// <summary>
+	/// （v0.3 / WP-3.3）**统一存档单元**：`user://save/local.json`（单一文件 + 版本迁移 + 原子写）。
+	/// <para>任务/迷雾/资源/科技/修正器/事件/时钟都以分区形式写进它；逐仓储接线随 `WP-5.1` 完成（见 `CoreServices.SaveStore`）。</para>
+	/// </summary>
+	public ISaveStore SaveStore { get; private set; }
+
 	private IConfigLoader _configLoader;
 
 	public override void _Ready()
@@ -54,6 +61,10 @@ public partial class ServiceContainer : Node
 		_configLoader = new GodotConfigService();
 		ConfigLoader = _configLoader;
 
+		// 存档单元（v0.3 / WP-3.3）：**全进程一份**（`user://save/local.json`），
+		// 由文件系统抽象落盘（因此原子替换与\"写到一半崩溃\"的语义和测试环境完全一致）
+		SaveStore = new JsonSaveStore(FileSystem, "user://save/local.json");
+
 		// 组合根：核心装配统一走 CoreBootstrap（v0.3 / WP-1.3）
 		// 配置表有 error 时 CoreBootstrap 会抛出（含逐条问题清单）；warning 只打印、不阻断启动（v0.3 / WP-1.4）
 		Core = CoreBootstrap.Build(new CoreDependencies
@@ -65,6 +76,7 @@ public partial class ServiceContainer : Node
 			GeneratorConfigPath = "res://Config/Generator",
 			MapRepositoryFactory = tables => new GodotMapRepository(tables.Terrains), // v0.3 / WP-3.2：实体重建器由 CoreBootstrap 在装配后补挂
 			SessionId = "local",
+			SaveStore = SaveStore,
 		});
 
 		ReportConfigIssues();
