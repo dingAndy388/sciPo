@@ -444,10 +444,13 @@ namespace SciencePotato.Scripts.Core.Config
 				}
 				if (!seen.Add(key)) report.Error("Events", key, "EventId 重复");
 				if (!NotEmpty(gameEvent.Name)) report.Warn("Events", key, "Name 为空（UI 将显示空名）");
-				if (gameEvent.TriggerChance < 0f || gameEvent.TriggerChance > 1f)
-					report.Error("Events", key, $"TriggerChance={gameEvent.TriggerChance} 必须落在 [0,1]");
-				else if (gameEvent.TriggerChance == 0f)
-					report.Warn("Events", key, "TriggerChance=0：该事件永远不会触发");
+
+				// （v0.3 / WP-2.8）`TriggerChance` → `TriggerChancePerDay`（口径 = %/日）。
+				// 改名后旧表会静默落到默认值 0（事件永不触发），因此 0 的警告要直接点出旧字段名。
+				if (gameEvent.TriggerChancePerDay < 0f || gameEvent.TriggerChancePerDay > 1f)
+					report.Error("Events", key, $"TriggerChancePerDay={gameEvent.TriggerChancePerDay} 必须落在 [0,1]（口径 = %/日，0.2%/日 填 0.002）");
+				else if (gameEvent.TriggerChancePerDay == 0f)
+					report.Warn("Events", key, "TriggerChancePerDay=0：该事件永远不会触发（若旧表仍写 TriggerChance，请改名为 TriggerChancePerDay）");
 				if (gameEvent.Duration < 0) report.Error("Events", key, $"Duration={gameEvent.Duration} 不能为负（0=永久）");
 				else ValidateDayUnit(report, "Events", key, "Duration", gameEvent.Duration);
 

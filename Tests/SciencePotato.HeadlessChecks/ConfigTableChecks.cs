@@ -90,7 +90,7 @@ namespace SciencePotato.HeadlessChecks
 			    {
 			      "EventId": "typo_event",
 			      "Name": "拼错的类型",
-			      "TriggerChance": 0.01,
+			      "TriggerChancePerDay": 0.01,
 			      "Duration": 5,
 			      "Modifiers": [ { "Target": "GoldGrowth", "Type": "Percentt", "Value": 0.5 } ],
 			      "ResourcePrerequisites": {},
@@ -203,7 +203,7 @@ namespace SciencePotato.HeadlessChecks
 		{
 			// 裸数组（旧 Document/EventsConfig.json 的形状）无法映射到 EventsConfigDto：
 			// 必须报"解析失败"，而不是静默得到 0 条事件
-			ConfigReport report = ReportFor("Events", """[ { "EventId": "bare", "TriggerChance": 0.1, "Duration": 1 } ]""");
+			ConfigReport report = ReportFor("Events", """[ { "EventId": "bare", "TriggerChancePerDay": 0.1, "Duration": 1 } ]""");
 
 			Check.Assert(report.HasErrors, "事件表写成裸数组应判 error");
 			Check.Assert(report.Issues.Any(i => i.Table == "Events" && i.Message.Contains("解析失败")), "应报告 JSON 解析失败");

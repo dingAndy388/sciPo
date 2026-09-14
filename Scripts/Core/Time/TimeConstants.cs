@@ -33,7 +33,7 @@ namespace SciencePotato.Scripts.Core.Time
 		// 收拢前这些数字散落在各 AppService 里（EventAppService.cs:39、UnitsAppService.cs:145,296）；
 		// 单位由"秒"改为"日"后，节拍集中在此，改动只需一处。
 
-		/// <summary>事件引擎：每日掷一次骰（`TriggerChance` 的口径是「%/日」，见 design/events.md）。</summary>
+		/// <summary>事件引擎：每日掷一次骰（`TriggerChancePerDay` 的口径是「%/日」，见 design/events.md）。</summary>
 		public const float EventRollDays = 1f;
 
 		/// <summary>单位攻击结算：每 1 日一次（design 侧"持续伤害"的最小节拍）。</summary>

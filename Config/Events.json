@@ -4,7 +4,7 @@
       "EventId": "gold_rush",
       "Name": "淘金热",
       "Description": "金矿发现！金币产量短期飙升",
-      "TriggerChance": 0.002,
+      "TriggerChancePerDay": 0.002,
       "Duration": 30,
       "Modifiers": [
         { "Target": "GoldGrowth", "Type": "Percent", "Value": 1.0 }
@@ -16,7 +16,7 @@
       "EventId": "plague",
       "Name": "瘟疫",
       "Description": "可怕的瘟疫席卷了你的领地",
-      "TriggerChance": 0.001,
+      "TriggerChancePerDay": 0.001,
       "Duration": 20,
       "Modifiers": [
         { "Target": "GoldGrowth", "Type": "Percent", "Value": -0.3 },
@@ -29,7 +29,7 @@
       "EventId": "enlightenment",
       "Name": "启蒙时代",
       "Description": "思想解放，科研速度永久提升",
-      "TriggerChance": 0.0005,
+      "TriggerChancePerDay": 0.0005,
       "Duration": 0,
       "Modifiers": [
         { "Target": "IdeaGrowth", "Type": "Percent", "Value": 0.5 }

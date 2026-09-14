@@ -472,10 +472,12 @@
   EventId               string                   是    事件唯一标识
   Name                  string                   是    事件名称
   Description           string                   否    事件描述文本
-  TriggerChance         float                    是    触发概率(0~1), **每游戏日**判定一次
+  TriggerChancePerDay   float                    是    触发概率(0~1), **每游戏日**判定一次
                                                       0.001=0.1%概率/天；设计稿的事件表即按 %/日 填写
                                                       （如 0.05%/日 = 0.0005）
-                                                      ⚠️ WP-2.8 将改名为 TriggerChancePerDay
+                                                      ⚠️ v0.3 / WP-2.8 起字段名由 TriggerChance 改为
+                                                      TriggerChancePerDay：旧表不改名会静默变成 0
+                                                      （事件永不触发），启动期校验会给出提示
   Duration              int                      是    效果持续天数, 0=永久
   Modifiers             [Modifier]              否    触发时注册的效果列表
   ResourcePrerequisites { string: float }        否    触发所需资源(不消耗则不写)
@@ -489,7 +491,7 @@
         "EventId": "gold_rush",
         "Name": "淘金热",
         "Description": "金矿发现！金币产量短期飙升",
-        "TriggerChance": 0.002,
+        "TriggerChancePerDay": 0.002,
         "Duration": 30,
         "Modifiers": [
           { "Target": "GoldGrowth", "Type": "Percent", "Value": 1.0 }
@@ -501,7 +503,7 @@
         "EventId": "plague",
         "Name": "瘟疫",
         "Description": "可怕的瘟疫席卷了你的领地",
-        "TriggerChance": 0.001,
+        "TriggerChancePerDay": 0.001,
         "Duration": 20,
         "Modifiers": [
           { "Target": "GoldGrowth", "Type": "Percent", "Value": -0.3 },
@@ -514,7 +516,7 @@
         "EventId": "enlightenment",
         "Name": "启蒙时代",
         "Description": "思想解放，科研速度永久提升",
-        "TriggerChance": 0.0005,
+        "TriggerChancePerDay": 0.0005,
         "Duration": 0,
         "Modifiers": [
           { "Target": "IdeaGrowth", "Type": "Percent", "Value": 0.5 }
@@ -527,12 +529,12 @@
   ```
 
   [注意事项]
-  - TriggerChance 每游戏日独立判定一次，互不影响
+  - TriggerChancePerDay 每游戏日独立判定一次，互不影响
     （v0.3 / WP-1.5 起：判定节拍由"每真实秒"改为"每游戏日"，
       一帧跨多日时逐日补判，第三档 6 日/真实秒也不会漏判）
-  - Duration 单位是游戏日（设计区间 5~30 日），0 表示永久效果，不会被撤销
+  - Duration 单位是游戏日（设计区间 5~30 日），0 表示永久效果；触发当日不计入，次日起持续 N 个游戏日
     （除非手动调用 RemoveModifiers）
-  - Duration>0 时到期自动撤销该事件的所有 Modifier
+  - Duration>0：到期自动撤销该事件的所有 Modifier；`GetActiveEvents` 可查询当前生效事件与剩余天数
   - 事件触发消耗资源（ResourcePrerequisites 中的资源会被扣除）
   - 事件 Modifiers 的 sourceId 是 EventId，撤销时按 EventId 删除
 
@@ -611,7 +613,7 @@
                前置不在同一棵树内、跨树前置的树 Id 不存在、跨树前置的节点 Id 在目标树中不存在
                （v0.3 / WP-2.1：后两条本为 warning，收敛跨树前置后升级为 error ，
                 因为填错即等于"该科技永久不可解锁"，见 TECH-07）
-  - Events：TriggerChance 不在 [0,1]、Duration<0
+  - Events：TriggerChancePerDay 不在 [0,1]、Duration<0
   - Modifier：Type 不是 "Percent" / "Absolute"（其余拼写会被静默当成 Absolute，见 MOD-05）
   - 跨表：TechRequirements / TechPrerequisites 引用了不存在的科技树
   - Generator：Density<=0

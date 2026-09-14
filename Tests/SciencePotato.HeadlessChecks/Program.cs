@@ -17,6 +17,7 @@ namespace SciencePotato.HeadlessChecks
 			TimeBaselineChecks.RunAll();
 			TechPrerequisiteChecks.RunAll();
 			BuildingProductionChecks.RunAll();
+			EventEngineChecks.RunAll();
 
 			return Check.Summary();
 		}

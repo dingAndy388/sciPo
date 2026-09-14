@@ -8,7 +8,7 @@ namespace SciencePotato.Scripts.Core.Time
 	/// <summary>
 	/// （v0.3 / WP-1.5）**游戏日节拍总线**：把 <see cref="GameClock"/> 的"日边界"转成 <see cref="ITickable"/> 的 tick。
 	/// <para>为什么必须逐日派发（`A3`）：一帧可能跨多日（第三档 6 日/真实秒 × 60FPS），
-	/// 若按"一帧一次 OnTick(跨过的日数)"派发，"每日掷骰"（事件 `TriggerChance` 是 %/日）、
+	/// 若按"一帧一次 OnTick(跨过的日数)"派发，"每日掷骰"（事件 `TriggerChancePerDay` 是 %/日）、
 	/// "月结"等周期就会被吞掉；<see cref="GameClock"/> 已保证逐日触发 <c>DayElapsed</c>，
 	/// 本类据此每日调用一次 <c>OnTick(1 日)</c>。</para>
 	/// <para>任务落盘口径（`A8` 的部分改善）：旧实现每帧为每个任务写一次 JSON（`GodotTimeService.cs:51-55`）；
