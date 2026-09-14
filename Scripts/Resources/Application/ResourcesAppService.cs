@@ -1,5 +1,6 @@
 using SciencePotato.Scripts.Common.Application;
 using SciencePotato.Scripts.Common.Domain;
+using SciencePotato.Scripts.Core.Time;
 using SciencePotato.Scripts.Resources.Domain;
 using System.Collections.Generic;
 using System.Linq;
@@ -61,10 +62,14 @@ namespace SciencePotato.Scripts.Resources.Application
 
 			foreach (var resource in config.Resources)
 			{
-				if (resource.GrowInterval <= 0 || resource.BaseGrowth <= 0) continue;
+				// 口径（v0.3 / WP-1.5）：GrowInterval 的单位是**游戏日**，30 = 月结（C2 / TIME-14 的最小口径）。
+				// 判定只看 GrowInterval：`BaseGrowth=0` 但依赖 Modifier 的资源（Idea 全靠建筑/科技产出）
+				// 同样必须按月到账，否则建筑 Modifiers 永远无处落地（M0-2 ②「School 250 idea/月」）。
+				float intervalDays = resource.GrowInterval > 0 ? resource.GrowInterval : 0f;
+				if (intervalDays <= 0f) continue;
 
 				var task = new IntervalTask(
-					0, resource.GrowInterval, resource.Name, "ResourceGrowth", "none", mapId, ownerId);
+					0, intervalDays, resource.Name, "ResourceGrowth", "none", mapId, ownerId);
 
 				task.OnCompleted += () =>
 				{

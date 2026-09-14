@@ -17,13 +17,27 @@ namespace SciencePotato.Scripts.Core
 
 		public MapSession Maps { get; } = maps;
 
+		/// <summary>当前游戏日（从 0 起）。</summary>
+		public int CurrentDay => (int)Clock.CurrentDay;
+
+		/// <summary>当前流速档位（三档 1/3/6 日每真实秒；<see cref="TimeSpeedTier.Paused"/> = 暂停）。</summary>
+		public TimeSpeedTier Speed
+		{
+			get => Clock.Speed;
+			set => Clock.Speed = value;
+		}
+
 		public bool IsPaused
 		{
 			get => Clock.IsPaused;
 			set => Clock.Speed = value ? TimeSpeedTier.Paused : TimeSpeedTier.Standard;
 		}
 
-		/// <summary>按真实秒推进游戏时间（返回派发的游戏日数）。</summary>
+		/// <summary>
+		/// 按**真实秒**推进游戏时间（返回派发的游戏日数）。
+		/// <para>（v0.3 / WP-1.5）日边界上的派发由 <see cref="GameTimeService"/> 负责：
+		/// 本方法只动时钟，注册在总线上的周期任务会逐日收到 <c>OnTick(1 日)</c>。</para>
+		/// </summary>
 		public int Advance(double realSeconds) => Clock.Advance(realSeconds);
 
 		/// <summary>存档点：把所有脏地图写盘。</summary>

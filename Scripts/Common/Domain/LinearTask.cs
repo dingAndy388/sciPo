@@ -1,6 +1,10 @@
 using SciencePotato.Scripts.Common.Domain;
 using System;
 
+/// <summary>
+/// （v0.3 / WP-1.5 重标定）一次性任务：进度累加到 <c>Target</c>（单位 = **游戏日**）即完成并触发一次
+/// <c>OnCompleted</c>（与 <see cref="IntervalTask"/> 的区别是完成后不再循环）。
+/// </summary>
 public class LinearTask : IProgressTask
 {
 	private readonly string _mapId;

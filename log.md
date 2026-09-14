@@ -361,6 +361,7 @@
 - **影响**：① 时间尺度不一致（单位 10 秒才挪一步，敌人却 1 秒砍一刀，战斗表现失衡）；② 策划无法通过配置调节这些节拍；③ 与 `TIME-05` 的"天/回合"缺失互为因果。
 - **修复方向**：把节拍改为配置项（单位/建筑/事件的配置表或全局时间配置），并统一走 `GameClock` 的换算。
 - **关联**：`TIME-05`、`UNIT-03`、`EVT-02`
+> ✅ **已修复（v0.3.4 / WP-1.5）**：硬编码节拍全部收敛为 `Scripts/Core/Time/TimeConstants.cs` 的具名常量（`EventRollDays` / `UnitAttackDays` / `UnitMoveDays` / `ResourceSettlementDays`），并改按**游戏日**计；单位与人口的节拍继续来自配置表（`Duration` / `PopulationGrowthInterval`），由校验器做单位自检。`TIME-05`/`TIME-07` 的诉求同批解决（见 §18.3 D18/D19）。
 
 #### `TIME-07` Domain 无法脱离 Godot 驱动 —— 【P2｜架构层缺陷】
 - **现象**：`ITimeService` 唯一实现是 `GodotTimeService : Node`，`OnTick` 由 Godot `_Process` 触发；没有"手动步进"的实现或 API。
@@ -369,6 +370,7 @@
 - **影响**：① 无法为 Domain 写**无引擎的单元测试**（"Domain 是纯 C#"的目标在时间维度上被打破）；② 无法做"服务器权威模拟/离线结算/存档回放"。
 - **修复方向**：拆成"时间推进器（纯 C#，可手动 Advance）"+"Godot 适配器（_Process → Advance）"两层；Domain 只依赖前者。
 - **关联**：`DEP-07`、`TIME-05`、`WIRE-02`
+> ✅ **已修复（v0.3.4 / WP-1.2 + WP-1.5）**：`GameTimeService`（纯 C#、可手动驱动）+ `GodotTimeDriver`（`Node`，`_Process → Clock.Advance`）两层已分离；`GodotTimeService`（唯一 Godot 依赖的时间实现）已删除。无头检查里时间系统全部由 `ManualTimeDriver` 驱动，不需要引擎。
 
 #### `TIME-08` 任务快照与实体状态不同源 —— 【P2｜架构层缺陷】
 - **现象**：任务快照写进独立 JSON 文件；而实体状态（建筑/单位）**根本不落盘**（`MAP-02`）。两者生命周期完全脱节。
@@ -1108,6 +1110,7 @@
 | v0.3.1 | 2026-09-14 | **M0-1 首批实现落地**：WP-0.1 清理、WP-0.2 验收载具（离线降级为可执行检查，12/12 通过、退出码 0）、WP-0.3 IO/配置抽象、WP-0.4 地形转 JSON（Config/Terrains.json）、WP-1.1 GameClock（逐日派发 / 三档 / 暂停 / 单帧上限）；dotnet build 通过。详见 §18。 |
 | v0.3.2 | 2026-09-14 | **M0-1 续推**：WP-1.3 组合根（`CoreBootstrap`/`GameSession`/`CoreServices`/`CoreDependencies`）与 WP-3.1 Map 常驻内存（`MapSession`）落地；`MapAppService` 改走会话缓存（解除 M0-2 ③④ 的阻塞点）；无头验收从 12 项扩到 **20 项全部通过**。新增决策 D7~D10（含"导出需包含 `*.json`"的待办风险）。 |
 | v0.3.3 | 2026-09-14 | **WP-1.4 完成（M0-1 ② 通关）**：7 张配置表统一为 `Config/{表名}.json` 并全部通电（`ConfigTables`）+ 启动期分级校验（`ConfigValidator`/`ConfigReport`，error 阻断 / warning 放行）；新增 `ModifierTargetRegistry`（Target 名登记表，由资源/单位表派生）。**校验器当场抓出两个真实缺陷**：`UnitsConfigDto` 缺 `[JsonProperty("Units")]` 导致整张单位表静默解析为 0 条；`Events` 表为裸数组（与 `EventsConfigDto` 根对象不符）→ 均修复。无头验收 **33/33 通过、退出码 0**，真实配置 **0 error / 0 warning**。新增决策 D11~D17。 |
+| **v0.3.4** | 2026-09-14 | **WP-1.5 口径重标定（秒 → 游戏日）+ WP-1.2 `GodotTimeDriver`**：`Duration`/`GrowInterval`/`PopulationGrowthInterval` 全部改按**日**计（Resources 5/8/0 → 30 月结；Buildings 10/30/20 → 90/120/60、人口 15 → 300；Units 8/12/15 → 30/35/50，对齐设计 工人 30 日/民兵 35 日/弓箭手 50 日）；硬编码节拍收敛到 `Scripts/Core/Time/TimeConstants.cs`；新增纯 C# **`GameTimeService`**（订阅 `GameClock.DayElapsed`，逐日派发 `OnTick(1 日)`）替换从未入场景的 `GodotTimeService`；新增 `Scripts/Autoload/GodotTimeDriver.cs`（`Node, ITimeDriver`，由 `ServiceContainer` 自动挂载）；校验器新增**单位自检**（>360 日 → warning「疑似仍是秒口径」）。**顺带修复**：`ResourcesAppService` 的 `BaseGrowth>0` 门槛会让 `BaseGrowth=0` 的资源永不结算（Idea 的 250 idea/月 无处到账）→ 改为只看 `GrowInterval`。无头验收 **43/43 通过、退出码 0**（真实配置仍 0 error / 0 warning）。新增决策 D18~D22。 |
 
 ---
 
@@ -1255,7 +1258,7 @@
 | A1 | 连续时间、0 起递增、显示 x年x月x日（30日/月·360日/年） | ❌ | A：只有"秒"，无游戏时间概念；`GodotTimeService.cs:44` 用 `delta*Scale` | ✘ | 新建 `GameClock`+`GameTime`，`ITimeService` 改按日推进 — **中** |
 | A2 | 三档流速 1/3/6 日每真实秒 + 暂停 | ⚠️ | A：`Scale` 存在但无人设置（`GodotTimeService.cs:10`；`WIRE-02`） | ✔（扩 `Scale` 语义） | `GameClock` 承载 `SpeedTier/Paused`；UI 三档切换 — **小** |
 | A3 | 一帧跨多日时逐日派发（每日掷骰/每 10 日回复不漏算） | ❌ | A：无"日边界事件"概念 | ✘ | `GameClock` 内逐日派发 — **小** |
-| A4 | 所有时长/节拍以"日"计（建造 30~300、研究 0~180、事件 5~30、MP 10、人口 180~300、经济 30） | ⚠️ | D：`Duration`/`GrowInterval` 现为秒；硬编码 `1f`/`10f`（`EventAppService.cs:39`、`UnitsAppService.cs:145,296`） | ✔（只填表 + 常量集中） | 配置改"日" + 节拍常量进时间配置 — **小~中** |
+| A4 | 所有时长/节拍以"日"计（建造 30~300、研究 0~180、事件 5~30、MP 10、人口 180~300、经济 30） | ⚠️ | D：`Duration`/`GrowInterval` 现为秒；硬编码 `1f`/`10f`（`EventAppService.cs:39`、`UnitsAppService.cs:145,296`） | ✔（只填表 + 常量集中） | 配置改"日" + 节拍常量进时间配置 — **小~中** ｜ **✅ v0.3.4 / WP-1.5 已落地**（`TimeConstants` 单点定义 + 校验器单位自检） |
 | A5 | 任务进度受修正（建造速度 ±50%/30%、训练速度 +20%/50%） | ❌ | L：`LinearTask.OnTick` 直接 `Progress += delta`（`LinearTask.cs:30-36`） | ✘ | 任务 tick 时按 `Type` 查询修正并加权 — **中** |
 | A6 | 事件触发时**暂停**，等玩家确认 | ❌ | L+W：`ITimeService` 无暂停（`ITimeService.cs:10-15`）；事件无交互入口（`EventAppService.cs:44-73`） | ✘ | `GameClock.Paused` + 事件挂起状态 + 面板 — **中** |
 | A7 | 任务完成即回收 / 按实体注销 | ❌ | L：`IntervalTask` 永不注销（`IntervalTask.cs:46-57`；`TIME-02/09`）；无作用域 | ✘ | 任务加 UId 键 + OwnerScope + 自动回收 — **大** |
@@ -1284,7 +1287,7 @@
 | # | 设计稿功能 | 判定 | 缺口 & 证据 | 扩展点 | 最小改动方案 + 工作量 |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | C1 | 3 资源初始值/上限（500·10000 / 300·2000 / 200·1500） | ✅ | 只填表（`ResourcesPool.cs:25-36`） | ✔ | 重写 `ResourcesConfig.json`（Id 规范化） — **小** |
-| C2 | 每月（30 日）结算 | ⚠️ | D：`GrowInterval` 现为秒（5/8） | ✔（只填表） | 统一填 30 日 — **小** |
+| C2 | 每月（30 日）结算 | ⚠️ | D：`GrowInterval` 现为秒（5/8） | ✔（只填表） | 统一填 30 日 — **小** ｜ **✅ v0.3.4 / WP-1.5 已落地**（三资源均 `GrowInterval=30`，1080 日结算 36 次） |
 | C3 | 建筑产出（School 250/月、矿场 100/月、农田 12/月、日晷 150/月） | ⚠️ | L：无"建筑产出"概念，但**可用 Modifier Absolute 表达**；挂载点已存在（`ConstructionAppService.cs:84`，拆除 `:119`） | ✔ | 建筑 `Modifiers` 填 `{Target:"IdeaGrowth",Absolute,250}` — **小（数据）** |
 | C4 | 产出归因 / "查看资源加减项"面板 | ⚠️ | L：`ModifierValue.SourceId` 已有（`ModifierValue.cs:13`），**缺查询 API**（`MOD-07`） | ✔ | `ModifierAppService` 加"按 target 汇总来源"查询 — **中** |
 | C5 | 上限提升（仓库 +500/1000/2000；科技 +10%/+200） | ⚠️ | L：`AddLimit` 存在但**无调用**（`ResourcesPool.cs:56-62`） | ✔ | 接线上限消费点（读 `ResourceLimit`） — **小** |
@@ -1407,6 +1410,7 @@
 - **影响**：① 所有"每回合/每天/每月"玩法（人口、事件、经济、MP）只能用秒近似，策划无法调节奏；② 无法实现暂停（事件决策需要）；③ 一帧跨多日时会漏算"每日掷骰"。
 - **修复方向**：新建纯 C# `GameClock`（`CurrentDay`、`SpeedTier`、`Paused`、**逐日派发 `DayElapsed`**）+ `ITimeDriver` 适配层；Godot 侧只负责 `Advance(realDelta)`。
 - **关联**：`TIME-05`、`TIME-13`、`A1/A2/A3/A6`、`WP-1.1/1.2`
+> ✅ **已修复（v0.3.1 / WP-1.1，v0.3.4 / WP-1.2 补齐驱动）**：`GameClock`（日基础 / 三档 / 暂停 / 逐日派发 / 单帧上限）+ `GodotTimeDriver`（`Node, ITimeDriver`，唯一"真实秒 → 游戏日"换算点，由 `ServiceContainer` 自动挂载）已落地。
 
 #### `TIME-13` 全部"秒"口径需重标定为"游戏日" —— 【P0｜数据层 + 逻辑层缺口】
 - **现象**：配置表的 `Duration`/`GrowInterval` 语义是秒；代码里散落硬编码节拍：事件 1 秒、单位攻击 1 秒、单位移动 10 秒。
@@ -1415,6 +1419,7 @@
 - **影响**：档位切换后各系统节奏不一致；数值无法与设计稿对齐（如"300 日的营地人口增长"）。
 - **修复方向**：配置全部改为"日"值；硬编码节拍集中为 `TimeConstants`；`GrowInterval = 30`（月结）。
 - **关联**：`TIME-06`（并入本条）、`A4`、`WP-1.5`
+> ✅ **已修复（v0.3.4 / WP-1.5）**：① 硬编码节拍收敛到 `Scripts/Core/Time/TimeConstants.cs`（事件 1 日 / 攻击 1 日 / 移动 10 日 / 月结 30 日），`EventAppService.cs:39` 与 `UnitsAppService.cs:145,296` 改引常量；② 新类 `GameTimeService` 把 `GameClock.DayElapsed` 转成逐日 `OnTick(1 日)`，`ITimeService.Scale`（秒制残源）与从未入场景的 `GodotTimeService` 一并删除；③ 5 张表的时长字段按"日"重标定（Resources 30 月结 / Buildings 90·120·60 + 人口 300 / Units 30·35·50）；④ `ConfigValidator.ValidateDayUnit` 自检 >360 日 → warning，防止再次误填秒值。验收：`TimeBaselineChecks` 10 项通过（总计 43/43）。
 
 #### `TIME-14` 缺少月度经济结算器 —— 【P0｜架构层缺陷】
 > ⚠️ **v0.3 降级（P0 → P1）**：M0-2 ② 只需"产出按月到账"（现有增长任务 + `GrowInterval=30`），**不需要**需求/赤字/减员。级别收敛依据见 §17.3。
@@ -1603,10 +1608,10 @@
 | WP | 内容 | 覆盖 | 涉及文件/模块 | 新增类型/字段 | 量 | 性质 |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | WP-1.1 | **`GameClock`（纯 C#）**：`CurrentDay`、档位（1/3/6 日每真实秒）、暂停、**逐日派发 `DayElapsed`** | `A1/A2/A3`、`TIME-12` | 新增 `Scripts/Core/Time/` | `GameClock`、`GameTime`、`TimeSpeedTier` | 中 | 代码 |
-| WP-1.2 | 时间驱动适配（Godot 只负责 `Advance`） | `A1`、`WIRE-02` | `GodotTimeService` → `GodotTimeDriver : Node, ITimeDriver` | `ITimeDriver` | 小 | 代码 |
+| WP-1.2 | 时间驱动适配（Godot 只负责 `Advance`） | `A1`、`WIRE-02` | `GodotTimeService` → `GodotTimeDriver : Node, ITimeDriver` | `ITimeDriver` | 小 | 代码 | → **✅ 完成（v0.3.4）** |
 | WP-1.3 | **`CoreBootstrap` + `GameSession`**（会话持有地图与各玩家子系统状态） | `I2`、`DEP-03`、`MAP-01`、`FOG-01` | 新增 `Scripts/Bootstrap/`；`ServiceContainer` 极薄化 | `CoreBootstrap`、`GameSession`、`PlayerContext`、`CoreDependencies` | **大** | 代码 |
 | WP-1.4 | **7 张配置表全部通电** + 启动期校验（表非空 / Id 引用完整 / 枚举合法） | `WIRE-01/03/04` | 各 `*ConfigRepository`、`ServiceContainer` | `ConfigValidator` | 中 | 代码 |
-| WP-1.5 | **口径重标定**：所有时长/节拍改"日"；硬编码集中为常量 | `A4`、`TIME-13` | 5 张配置表 + `EventAppService.cs:39`、`UnitsAppService.cs:145,296` | `TimeConstants` | 小~中 | 代码+填表 |
+| WP-1.5 | **口径重标定**：所有时长/节拍改"日"；硬编码集中为常量 | `A4`、`TIME-13` | 5 张配置表 + `EventAppService.cs:39`、`UnitsAppService.cs:145,296` | `TimeConstants` | 小~中 | 代码+填表 | → **✅ 完成（v0.3.4）** |
 
 ## 批次 2 · 单玩家可玩（P0 · 里程碑 M0-2，10 个 WP）
 
@@ -1822,7 +1827,7 @@ WP-0.4 ─→ WP-3.5 / WP-3.8 / WP-5.3
 
 ### 13.z.3 降级后的关键路径
 
-`WP-0.3 → WP-0.4 → WP-1.1 → WP-1.3 → WP-3.1 → WP-1.4 → WP-1.5 → WP-2.1 / WP-2.7 / WP-2.8 → WP-2.5`
+`WP-0.3 ✅ → WP-0.4 ✅ → WP-1.1 ✅ → WP-1.3 ✅ → WP-3.1 ✅ → WP-1.4 ✅ → WP-1.5 ✅ → WP-2.1 / WP-2.7 / WP-2.8 → WP-2.5`（`WP-1.2 ✅` 已并行完成，是 M1 的前置）
 
 （该路径决定"最早能通过 M0-1 与 M0-2 验收"的时间；其余 P1/P2 项均可并行或延后。）
 
@@ -1840,6 +1845,12 @@ WP-0.4 ─→ WP-3.5 / WP-3.8 / WP-5.3
 > **v0.3 批次重排（依赖图修正）**：`WP-3.1`（Map 常驻内存）前移至**批次 1 末尾**（它是 M0-2 ③④ 的前置：不做则建造/训练完成回调 `GetOccupantByUId` 抛异常、人口永远为 0）；`WP-3.4`（占用权威一致）前移至**批次 2 之前**（`WP-2.4` / `WP-2.5` 需要正确的占位视图）。详见 §13.z.2。
 
 **M0 与 M2 之间不存在返工**：M0 定的是数据契约（查询/事件/意图），M2 只是消费者；反之若先做 M2，M0 的 8 处核心签名变更会推翻表现层。
+
+> **M0-1 验收状态（v0.3.4）**：①②③ **已全部由无头检查覆盖并通过**（43/43、退出码 0）——
+> ① `Advance(1080)` 逐日派发 1080 次且 `CurrentDay == 1080`；
+> ② 7 张配置表全部解析成功、启动期校验 **0 error / 0 warning**；
+> ③ 「每 10 日 / 每 30 日」节拍在三档流速下**用真实配置值**验证一致（移动 10 日 → 108 次/1080 日、月结 30 日 → 36 次/1080 日）。
+> 复现命令见 §18.2。
 
 ---
 
@@ -1970,11 +1981,11 @@ WP-0.4 ─→ WP-3.5 / WP-3.8 / WP-5.3
 | 2026-09-14 | WP-0.3 IO/配置抽象 | ✅ 完成 | 新增 `IFileSystem`、`IConfigSource`（`Common/Domain`）+ `GodotFileSystem`、`GodotJsonConfigSource`（`Common/Infrastructure`）；`ServiceContainer` 完成接线 |
 | 2026-09-14 | WP-0.4 地形配置转 JSON | ✅ 完成 | 新增 `ITerrainsConfig`/`TerrainConfigDto`/`TerrainsConfigDto`/`ITerrainConfigRepository`/`TerrainsConfigRepository` + `Config/Terrains.json`（平原5/沙漠8/森林10/山地25/水域50，水域 `Passable=false`+`UnlockTech=buoyancy`）；`VoronoiMapGenerator` 与 `GodotMapRepository` 改为注入；`ITerrainData` 新增 `Passable`/`UnlockTech` 并让两处通行判定改用 `Passable`（消除 `MoveCost == 0` 魔法值） |
 | 2026-09-14 | WP-1.1 `GameClock` | ✅ 完成 | 新增 `Scripts/Core/Time/`（`GameClock`/`GameDate`/`TimeSpeedTier`/`ITimeDriver`）：日为基础、30 日/月、360 日/年、三档 1/3/6 日每真实秒、暂停、**逐日派发 `DayElapsed`**、单帧上限 30 日（超出记欠账）。M0-1 ①③ 断言通过 |
-| ⬜ | WP-1.2 `GodotTimeDriver` | 待做 | 依赖 WP-1.1/1.3 |
+| 2026-09-14 | WP-1.2 `GodotTimeDriver` | ✅ 完成 | 新增 `Scripts/Autoload/GodotTimeDriver.cs`（`Node, ITimeDriver`）：**唯一**的"真实秒 → 游戏日"换算点（`_Process → Clock.Advance`），附 `SetSpeedTier`/`SetPaused`/`TogglePause`；`ServiceContainer._Ready` 自动挂为子节点（因此无需改场景与 autoload 列表）；`ITimeDriver.Advance` 改为返回派发日数（与 `GameClock.Advance` 对齐）；删除从未入场景的 `GodotTimeService`（`WIRE-02` 的秒制残源） |
 | 2026-09-14 | WP-1.3 `CoreBootstrap` + `GameSession` | ✅ 完成 | 新增 `Scripts/Core/`（`CoreDependencies`/`CoreServices`/`CoreBootstrap`/`GameSession`）：唯一组合根、显式顺序装配、配置缺失快速失败；`ServiceContainer` 薄化为"Godot 适配器 + 调 Bootstrap"；`VoronoiMapGenerator` 生成器配置改为可空（无头回退 `GeneratorConfigDto`）。检查 3 项通过 |
 | 2026-09-14 | WP-3.1 Map 常驻内存（前移） | ✅ 完成 | 新增 `Scripts/Map/Domain/MapSession.cs`（内存缓存 + 脏标记 + 存档点 `Flush`）；`MapAppService` 由"每方法 Load/Save"改为走会话缓存（15 处 Load→Get、2 处 Save→MarkDirty、5 处补脏标记），构造函数改为 `(IMapGenerator, MapSession)`。检查 5 项通过（含"占据物/人口跨调用不丢失"） |
 | 2026-09-14 | WP-1.4 7 张配置表通电 + 启动期校验 | ✅ 完成 | **7 张表统一为 `Config/{表名}.json`**（Terrains/Resources/Buildings/Units/TechTrees/Events/Generator；`Document/*Config.json` 经 `git mv` 迁入，Events 由裸数组改为 `{ "Events": [...] }`，Generator 新增 JSON 表）；新增 `Scripts/Core/ConfigTables.cs` + `Scripts/Core/Config/`（`ConfigTableLoader`/`ConfigValidator`/`ConfigReport`/`ConfigIssue`/`ModifierTargetRegistry`）：装载"能不能解析"+ 校验"内容对不对"写入同一份报告，**error 阻断启动 / warning 仅提示**（`CoreDependencies.FailOnConfigErrors` 可关）；`ServiceContainer` 启动时把报告打到 Godot 控制台。**顺带修复两处真实缺陷**：`UnitsConfigDto` 缺 `[JsonProperty("Units")]`（单位表原本整表解析为 0 条）、`Events` 表根对象不符。检查 13 项通过（总计 **33/33**） |
-| ⬜ | WP-1.5 口径重标定（秒 → 日） | 待做 | 依赖 WP-1.1/1.4 |
+| 2026-09-14 | WP-1.5 口径重标定（秒 → 日） | ✅ 完成 | ① **常量单点**：新增 `Scripts/Core/Time/TimeConstants.cs`（日历 + 事件 1 日 / 攻击 1 日 / 移动 10 日 / 月结 30 日 + 单位自检边界 360 日），`EventAppService.cs:39`、`UnitsAppService.cs:145,296` 的 `1f`/`10f` 全部改引常量；② **节拍总线换口径**：新增纯 C# `GameTimeService`（订阅 `GameClock.DayElapsed` → 逐日 `OnTick(1 日)`，倒序遍历以便任务自注销；任务快照改为**日边界**同步，写盘频率降为 1/60），`ITimeService` 删除无人设置的 `Scale`、新增 `CurrentDay`，`ITickable` 注释锚定"日"；③ **配置重标定**：Resources 5/8/0 → **30/30/30**（月结；Idea 靠 Modifier 到账）、Buildings 10/30/20 → 90/120/60 且人口 15 → 300、Units 8/12/15 → **30/35/50**（= 设计 工人/民兵/弓箭手）；④ **单位自检**：`ConfigValidator.ValidateDayUnit` 对 5 张表的时长字段判「>360 日 → warning 疑似秒口径」。检查 10 项通过（总计 **43/43**） |
 
 ## 18.2 复现命令
 
@@ -1986,7 +1997,7 @@ dotnet build 'Science Potato.csproj'
 dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessChecks.csproj'
 ```
 
-当前 M0-1 验收结果（2026-09-14，**33/33 通过、退出码 0**）：
+当前 M0-1 验收结果（2026-09-14，**43/43 通过、退出码 0**）：
 
 | 分组 | 数量 | 覆盖 |
 | :--- | :--- | :--- |
@@ -1994,6 +2005,7 @@ dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessC
 | 配置表（WP-0.4 / WP-1.4） | 16 | Terrains 可解析·量级·未知 Id 返回 null / 7 张表文件齐全 / 7 张表全部通电（`LoadedCount=7`）/ 真实配置 **0 error** / Target 登记表覆盖派生名 / 非法 `Modifier.Type` 判 error / 科技前置同表闭合（缺失·自环·成环）/ key≠Id 判 error / 空表与缺表判 error / 跨表引用分级（未知树 error、未知节点 warning）/ 事件根对象拒绝裸数组 / `FailOnConfigErrors=false` 放行并取回报告 / 全表视图与 JSON 条目数一致 / 报告行可读 |
 | 组合根（WP-1.3） | 3 | 装配后可生成地图且常驻内存 / 配置缺失快速失败（消息指明表名）/ 会话时钟可推进 |
 | Map 常驻内存（WP-3.1） | 5 | 只读盘一次 / 占据物跨调用不丢失（可按 uid 取回）/ 人口不被读盘重置 / `Flush` 只写脏地图 / 落盘后新会话仍读不到占据物（WP-3.2 待补） |
+| 口径重标定（WP-1.5 / WP-1.2） | 10 | 节拍常量单点（事件 1 日 / 攻击 1 日 / 移动 10 日 / 月结 30 日）/ **一帧跨多日仍逐日派发**（1080 日 → 1080 次）/ 不足一日不提前触发 / **真实 Resources 表 `GrowInterval=30` → 1080 日结算 36 次**（Idea 即使 `BaseGrowth=0` 也照常结算）/ 三档 1·3·6 日每真实秒的月结次数一致 / 暂停不派发 / 移动 108 次·攻击 1080 次 / 真实 5 张表时长全落 [1,360] 日且无口径警告 / 秒值残留（600）只 warning 不阻断 / 组合根 + `ManualTimeDriver` 推进 1 个月触发 1 次月结 |
 
 
 ## 18.3 实施期决策与偏差记录
@@ -2017,6 +2029,11 @@ dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessC
 | D15 | **发现并修复**：`UnitsConfigDto.UnitsData` 缺 `[JsonProperty("Units")]` | 属性名与 JSON 键不匹配 → 单位表**整表静默解析为 0 条**（M0-1 ② 的真实阻塞点，被"表为空"error 抓出）。同时 `Events` 表原为裸数组、与 `EventsConfigDto` 根对象不符 → 改为 `{ "Events": [...] }`；`WP-2.8` 只余 `TriggerChance`→`TriggerChancePerDay` 改名与 DTO 增字段 |
 | D16 | Generator 表通电（`Config/Generator.json`），`.tres` 降级为**可选编辑器覆写** | 取值顺序：`.tres`（仅 Godot，存在资源加载器时）→ JSON 表 → 代码默认值（`Density=4`）。无头/CI 走 JSON 表，与其余 6 张表同源；`CoreDependencies.ResourceConfigLoader`/`GeneratorConfigPath` 遂变成纯可选 |
 | D17 | 三个配置仓库补**全表视图**：`IBuildingConfigRepository.GetAll`、`IUnitsRepository.GetAll`、`ITechTreesConfigRepository.GetTreeIds` | 启动期校验需要"全表"而非"按 Id 单查"；同时给 `TechTreesConfigRepository.GetTechTreeConfig` 补空值保护（原来 `_techTreesConfig` 为 null 时会 NRE）。单条检索接口保持向后兼容 |
+| D18 | **节拍总线由"帧"改为"日"**：`ITickable.OnTick(delta)` 的 `delta` 单位 = 游戏日，由新类 `GameTimeService` 订阅 `GameClock.DayElapsed` 逐日派发 `OnTick(1)` | §13.z 风险 4 的落地：若沿用"一帧一次 tick"，第三档（6 日/真实秒 × 60FPS）一帧跨多日会让"每日掷骰 / 月结"漏算（`A3`/`C12`）。逐日派发保证无论档位如何，**周期次数只与游戏日数有关**（M0-1 ③ 与 M0-2 ⑤ 的前提）。总线放在 `Scripts/Core/`（纯 C#），因此无头测试可精确驱动；Godot 侧只剩 `GodotTimeDriver.Advance(realDelta)` |
+| D19 | `ITimeService.Scale` **删除**（新增 `CurrentDay`）；`GodotTimeService`（`Node`）**删除** | `Scale` 从无任何调用方设置（`WIRE-02`），其语义已被 `GameClock.Speed`（三档 + 暂停）取代；`GodotTimeService` 既未入场景树又是秒制残留，保留它只会让"口径回归秒"再次可能。旧类型的职责被拆成 `GameTimeService`（纯逻辑）+ `GodotTimeDriver`（引擎适配），与 `GodotFileSystem`/`GodotJsonConfigSource` 的既有分工一致 |
+| D20 | 配置时长字段**是否改数值**取决于"旧秒值是否落在日的合理区间"：Resources/Buildings/Units **必须改**（5/8/0、10/30/20、8/12/15 在日口径下分别太小/与设计不符），TechTrees/Events **不改**（20/40/60/15/30 与 30/20/0 恰好落在 0~180 与 5~30 的设计区间内） | 口径重标定是**语义**变更，不是"批量乘系数"：能对齐设计稿的都按设计稿填（工人 30 日、民兵 35 日、弓箭手 50 日、营地人口 300 日），否则会引入无法解释的魔数。TechTrees/Events 的数值不改，但**由校验器的单位自检锁死口径**（>360 → warning），避免以后被再次误填成秒 |
+| D21 | `ResourcesAppService.StartGrowthTasks` 的跳过条件由 `GrowInterval <= 0 || BaseGrowth <= 0` 改为**只看 `GrowInterval`** | 原条件让 `BaseGrowth=0` 的资源永不建结算任务 —— 而 Idea 的正确形态正是"基础产出 0 + 全靠建筑/科技 Modifier"（`GrowInterval=30`）。不改这一行，M0-2 ② 的"School 250 idea/月"永远无法到账（Modifier 无处结算），且 `GrowInterval=0` 仍保持"不自动结算"的旧语义 |
+| D22 | 任务快照落盘口径：由"每帧每任务写 JSON"改为**游戏日边界**同步（写盘频率 ≈ 1/60），完整"统一存档点"仍留给 `WP-3.3` | `A8`/`TIME-08` 的中间形态：本批次先把口径与派发打通，不动存档架构（避免与 `WP-3.2/3.3` 的实体存档 DTO 冲突）。`GameTimeService` 的 `ITaskRepository` 参数是可选的（无头测试传 null），`WP-3.3` 接入时无需再改调用方 |
 
 
 

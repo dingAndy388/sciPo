@@ -1,5 +1,6 @@
 using SciencePotato.Scripts.Common.Application;
 using SciencePotato.Scripts.Common.Domain;
+using SciencePotato.Scripts.Core.Time;
 using SciencePotato.Scripts.Events.Domain;
 using SciencePotato.Scripts.Resources.Application;
 using SciencePotato.Scripts.TechTree.Application;
@@ -36,7 +37,10 @@ namespace SciencePotato.Scripts.Events.Application
 
 		public void StartEventsEngine(string mapId, int ownerId)
 		{
-			var task = new IntervalTask(0, 1f, $"evt_{mapId}_{ownerId}", "EventTick", "none", mapId, ownerId);
+			// 口径（v0.3 / WP-1.5）：每日掷一次骰（原为每秒）；TriggerChance 的语义是「%/日」
+			// —— design/events.md 的 0.05%/日 = 0.0005，即本表的填法。
+			// 注意：必须逐日派发，否则第三档（6 日/真实秒）一帧跨多日时会漏掷（A3）。
+			var task = new IntervalTask(0, TimeConstants.EventRollDays, $"evt_{mapId}_{ownerId}", "EventTick", "none", mapId, ownerId);
 			task.OnCompleted += () => TickEvents(mapId, ownerId);
 			_time.Register(task);
 		}

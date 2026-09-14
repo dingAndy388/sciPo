@@ -138,6 +138,8 @@ namespace SciencePotato.Scripts.Construction.Application
 
 		private void RegisterHousingTask(string mapId, string buildingUid, HexCubePosition center, int radius, int cap, int interval)
 		{
+			// 口径（v0.3 / WP-1.5）：interval 来自 `PopulationGrowthInterval`，单位是**游戏日**
+			// （营地 300 日 = design 行里的"人口增长间隔 300 秒"按日口径重标定）
 			var task = new IntervalTask(0, interval, buildingUid, "PopulationGrowth", "none", mapId, 0);
 			task.OnCompleted += () =>
 			{

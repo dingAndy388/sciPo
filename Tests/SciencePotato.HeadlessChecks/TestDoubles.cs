@@ -39,12 +39,12 @@ namespace SciencePotato.HeadlessChecks
 		public string LoadText(string configName) => _configs.TryGetValue(configName, out string json) ? json : null;
 	}
 
-	/// <summary>（v0.3 / WP-0.2 / WP-1.1）手动时间驱动：测试里精确控制"推进多少真实秒"。</summary>
+	/// <summary>（v0.3 / WP-0.2 / WP-1.5）手动时间驱动：测试里精确控制"推进多少真实秒"。</summary>
 	internal sealed class ManualTimeDriver(GameClock clock) : ITimeDriver
 	{
 		public GameClock Clock { get; } = clock;
 
-		public void Advance(double realDeltaSeconds) => Clock.Advance(realDeltaSeconds);
+		public int Advance(double realDeltaSeconds) => Clock.Advance(realDeltaSeconds);
 	}
 
 	/// <summary>

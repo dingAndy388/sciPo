@@ -14,6 +14,7 @@ namespace SciencePotato.HeadlessChecks
 			MapSessionChecks.RunAll();
 			CoreBootstrapChecks.RunAll();
 			ConfigTableChecks.RunAll();
+			TimeBaselineChecks.RunAll();
 
 			return Check.Summary();
 		}

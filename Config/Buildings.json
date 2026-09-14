@@ -7,13 +7,13 @@
       "TerrainRequirements": ["plain"],
       "TechRequirements": {},
       "Modifiers": [],
-      "Duration": 10,
+      "Duration": 90,
       "Actions": [],
       "VisionRadius": 1,
       "IsHousing": true,
       "PopulationRadius": 3,
       "PopulationCap": 5,
-      "PopulationGrowthInterval": 15
+      "PopulationGrowthInterval": 300
     },
     "library": {
       "BuildingId": "library",
@@ -22,9 +22,9 @@
       "TerrainRequirements": ["plain"],
       "TechRequirements": { "science": ["writing"] },
       "Modifiers": [
-        { "Target": "IdeaGrowth", "Type": "Absolute", "Value": 0.5 }
+        { "Target": "IdeaGrowth", "Type": "Absolute", "Value": 250 }
       ],
-      "Duration": 30,
+      "Duration": 120,
       "Actions": ["CanResearch"],
       "VisionRadius": 3,
       "IsHousing": false,
@@ -39,7 +39,7 @@
       "TerrainRequirements": ["plain"],
       "TechRequirements": {},
       "Modifiers": [],
-      "Duration": 20,
+      "Duration": 60,
       "Actions": [],
       "VisionRadius": 3,
       "IsHousing": false,

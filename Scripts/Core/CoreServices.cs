@@ -1,5 +1,6 @@
 using SciencePotato.Scripts.Common.Domain;
 using SciencePotato.Scripts.Core.Config;
+using SciencePotato.Scripts.Core.Time;
 using SciencePotato.Scripts.Map.Application;
 using SciencePotato.Scripts.Map.Domain;
 
@@ -15,6 +16,14 @@ namespace SciencePotato.Scripts.Core
 	public sealed class CoreServices
 	{
 		public GameSession Session { get; init; }
+
+		/// <summary>
+		/// （v0.3 / WP-1.5）**游戏日节拍总线**：所有周期任务（建造 / 训练 / 人口 / 事件 / 资源月结）
+		/// 都注册到这里，由 <see cref="GameSession.Clock"/> 逐日派发（`OnTick(1 日)`）。
+		/// <para>调用方只需推进时钟（`Session.Advance(realSeconds)` 或 `ITimeDriver.Advance`），
+		/// 不必关心"秒"。</para>
+		/// </summary>
+		public GameTimeService Time { get; init; }
 
 		public IConfigSource ConfigSource { get; init; }
 

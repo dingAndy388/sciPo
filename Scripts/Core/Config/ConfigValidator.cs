@@ -1,5 +1,6 @@
 using SciencePotato.Scripts.Common.Domain;
 using SciencePotato.Scripts.Construction.Domain;
+using SciencePotato.Scripts.Core.Time;
 using SciencePotato.Scripts.Events.Domain;
 using SciencePotato.Scripts.Map.Domain;
 using SciencePotato.Scripts.Resources.Domain;
@@ -115,6 +116,7 @@ namespace SciencePotato.Scripts.Core.Config
 				if (!seen.Add(id)) report.Error("Resources", id, "资源名重复");
 				if (!NotEmpty(resource.Description)) report.Warn("Resources", id, "Description 为空");
 				if (resource.GrowInterval < 0) report.Error("Resources", id, $"GrowInterval={resource.GrowInterval} 不能为负（0=不自动增长）");
+				else ValidateDayUnit(report, "Resources", id, "GrowInterval", resource.GrowInterval);
 				if (resource.GrowInterval == 0 && resource.BaseGrowth > 0f)
 					report.Warn("Resources", id, "GrowInterval=0（不自动增长）但 BaseGrowth>0：增长率不会被使用");
 				if (resource.BaseGrowth < 0f) report.Error("Resources", id, $"BaseGrowth={resource.BaseGrowth} 不能为负");
@@ -164,6 +166,8 @@ namespace SciencePotato.Scripts.Core.Config
 
 				if (building.Duration < 0f) report.Error("Buildings", key, $"Duration={building.Duration} 不能为负");
 				else if (building.Duration == 0f) report.Warn("Buildings", key, "Duration=0：瞬间建成");
+				else ValidateDayUnit(report, "Buildings", key, "Duration", building.Duration);
+				ValidateDayUnit(report, "Buildings", key, "PopulationGrowthInterval", building.PopulationGrowthInterval);
 				if (building.VisionRadius < 0) report.Error("Buildings", key, $"VisionRadius={building.VisionRadius} 不能为负");
 
 				if (building.IsHousing)
@@ -227,6 +231,7 @@ namespace SciencePotato.Scripts.Core.Config
 
 				if (unit.Duration < 0f) report.Error("Units", key, $"Duration={unit.Duration} 不能为负");
 				else if (unit.Duration == 0f) report.Warn("Units", key, "Duration=0：瞬间训练完成");
+				else ValidateDayUnit(report, "Units", key, "Duration", unit.Duration);
 			}
 		}
 
@@ -272,6 +277,7 @@ namespace SciencePotato.Scripts.Core.Config
 					if (node.Cost < 0f) report.Error("TechTrees", $"{treeId}/{key}", $"Cost={node.Cost} 不能为负");
 					if (node.Duration < 0f) report.Error("TechTrees", $"{treeId}/{key}", $"Duration={node.Duration} 不能为负");
 					else if (node.Duration == 0f) report.Warn("TechTrees", $"{treeId}/{key}", "Duration=0：瞬间研发完成");
+					else ValidateDayUnit(report, "TechTrees", $"{treeId}/{key}", "Duration", node.Duration);
 					ValidateModifiers(report, "TechTrees", $"{treeId}/{key}", node.Modifiers, registry);
 
 					// 同表内闭合：前置必须落在同一棵树内（§13.z「引用完整性先只校验同表内闭合」→ error）
@@ -327,6 +333,7 @@ namespace SciencePotato.Scripts.Core.Config
 				else if (gameEvent.TriggerChance == 0f)
 					report.Warn("Events", key, "TriggerChance=0：该事件永远不会触发");
 				if (gameEvent.Duration < 0) report.Error("Events", key, $"Duration={gameEvent.Duration} 不能为负（0=永久）");
+				else ValidateDayUnit(report, "Events", key, "Duration", gameEvent.Duration);
 
 				ValidateModifiers(report, "Events", key, gameEvent.Modifiers, registry);
 				ValidateResourceCosts(report, "Events", key, gameEvent.ResourcePrerequisites, resourceIds, "ResourcePrerequisites", warnWhenEmpty: false);
@@ -346,6 +353,24 @@ namespace SciencePotato.Scripts.Core.Config
 		}
 
 		// ────────────────────────── 共享规则 ──────────────────────────
+
+		/// <summary>
+		/// （v0.3 / WP-1.5）**配置单位自检**：所有时长字段的单位都是"游戏日"。
+		/// <para>负数与"0 的特殊含义"由各表自身规则负责；这里只抓一件最容易静默出错的事 ——
+		/// **疑似仍是秒值**：超过 <see cref="TimeConstants.MaxPlausibleDays"/>（1 年）即记 warning。
+		/// 设计上的时长上限都在 1 年以内（`A4`：建造 30~300、研究 0~180、事件 5~30、人口 180~300、经济 30），
+		/// 所以 >360 的值基本只可能是漏改的秒口径（如旧的 `GrowInterval=300`/建造 `Duration=600`）。</para>
+		/// <para>为什么是 warning 而不是 error：口径错误不会让解析失败，但会让节奏慢 N 倍且"不易察觉"，
+		/// 需要提示而无需阻断原型启动（分级原则同 `D12`）。</para>
+		/// </summary>
+		private static void ValidateDayUnit(ConfigReport report, string table, string ownerId, string field, float days)
+		{
+			if (days <= TimeConstants.MaxPlausibleDays) return;
+
+			report.Warn(table, ownerId,
+				$"{field}={days} 超过 1 年（{TimeConstants.MaxPlausibleDays:0} 日）：时长字段的单位应为**游戏日**，" +
+				"该值疑似仍是秒口径，请重标定（v0.3 / WP-1.5，`TIME-13`）");
+		}
 
 		/// <summary>全树节点索引：treeId → 节点 Id 集合（供建筑/单位/事件的跨表引用校验）。</summary>
 		private static Dictionary<string, HashSet<string>> BuildTechNodeIndex(ConfigTables tables)

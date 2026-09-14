@@ -1,6 +1,7 @@
 using SciencePotato.Scripts.Common.Application;
 using SciencePotato.Scripts.Common.Domain;
 using SciencePotato.Scripts.Construction.Application;
+using SciencePotato.Scripts.Core.Time;
 using SciencePotato.Scripts.Fog.Application;
 using SciencePotato.Scripts.Map.Application;
 using SciencePotato.Scripts.Resources.Application;
@@ -142,7 +143,8 @@ namespace SciencePotato.Scripts.Units.Application
 
 		private void RegisterMoveTask(string mapId, string uid)
 		{
-			var task = new IntervalTask(0, 10f, uid, "UnitMove", "none", mapId, 0);
+			// 口径（v0.3 / WP-1.5）：每 10 游戏日补一次 MP（design/unit.md「每 10 秒恢复」→ M0-3 ② 的 10 日）
+			var task = new IntervalTask(0, TimeConstants.UnitMoveDays, uid, "UnitMove", "none", mapId, 0);
 			task.OnCompleted += () => MoveTick(mapId, uid);
 			_time.Register(task);
 		}
@@ -293,7 +295,8 @@ namespace SciencePotato.Scripts.Units.Application
 
 		private void RegisterAttackTask(string mapId, string attackerUid, string targetUid)
 		{
-			var task = new IntervalTask(0, 1f, $"atk_{attackerUid}_{targetUid}", "UnitAttack", "none", mapId, 0);
+			// 口径（v0.3 / WP-1.5）：每 1 游戏日结算一次伤害（原为 1 秒）
+			var task = new IntervalTask(0, TimeConstants.UnitAttackDays, $"atk_{attackerUid}_{targetUid}", "UnitAttack", "none", mapId, 0);
 			task.OnCompleted += () => AttackTick(mapId, attackerUid, targetUid);
 			_time.Register(task);
 		}

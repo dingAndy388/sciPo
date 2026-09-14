@@ -1,6 +1,8 @@
 ================================================================================
   Science Potato - 配置填表指南 (Config Table Guide)
-  版本: 1.0 | 最后更新: 2026-06-29
+  版本: 1.1 | 最后更新: 2026-09-14
+  v1.1 变更（v0.3 / WP-1.5）：全部时长字段的单位由「秒」重标定为「游戏日」；
+  新增「时间口径」约定与附录C 的单位自检规则。
 ================================================================================
 
 目录:
@@ -10,11 +12,29 @@
   四、单位配置 (Units)
   五、科技树配置 (TechTrees)
   六、事件配置 (Events)
-  附录A、地形配置 (Terrains - .tres 文件)
+  附录A、地形配置 (Terrains)
+  附录B、Modifier 常用 Target 名参考
+  附录C、配置表校验（启动期自动执行）
 
 ================================================================================
   一、通用结构与约定
 ================================================================================
+
+[时间口径]  —— 最重要的一条：所有时长一律填「游戏日」
+  日历：30 日 = 1 月；12 月 = 1 年 = 360 日；第 0 日显示为 0年1月1日。
+  单位：`Duration` / `GrowInterval` / `PopulationGrowthInterval` 等的单位都是**日**，
+        填 30 就是"30 个游戏日（1 个月）"，不是秒。
+  节拍：任务按日推进，每过一个游戏日结算一次（一帧跨多日会逐日补算，不会漏结算）。
+        固化的短节拍已集中定义在 `Scripts/Core/Time/TimeConstants.cs`：
+          事件掷骰       1 日/次   （EventRollDays）
+          单位攻击结算   1 日/次   （UnitAttackDays）
+          单位移动/MP    10 日/次  （UnitMoveDays）
+          经济结算       30 日/次  （ResourceSettlementDays = 月结）
+  流速（只影响"真实时间→游戏日"的换算，不影响配置）：三档 1 / 3 / 6 日每真实秒 + 暂停。
+  取值范围（设计稿 A4 行）：建造 30~300 日、研究 0~180 日、事件 5~30 日、
+        人口增长 180~300 日、经济 30 日。
+  自检：任何时长字段 > 360（1 年）都会被启动期校验判为 warning「疑似仍是秒口径」
+        —— 见附录C。
 
 [Modifier 格式]
   所有系统共享的 Modifier 结构，用于表示加成/减益效果。
@@ -64,10 +84,12 @@
   Name              string    是    资源唯一标识，如 "Gold", "Wood", "Food"
                                     也用作资源消耗时的 key
   Description       string    否    资源描述文本
-  GrowInterval      int       是    自然增长间隔（秒）。系统每间隔秒数尝试
-                                    增长一次。填 0 表示不自动增长
-  BaseGrowth        float     是    每次增长的基础数值。最终增长率 =
+  GrowInterval      int       是    自然增长/结算间隔（**游戏日**）。系统每隔这么多天
+                                    结算一次并按 DependentModifiers 汇总产出。
+                                    填 30 = 月结（推荐值）；填 0 表示不自动结算
+  BaseGrowth        float     是    每次结算的基础数值。最终结算量 =
                                     ModifierManager(DependentModifiers, BaseGrowth)
+                                    填 0 表示"基础产出为 0，全靠建筑/科技/事件的 Modifier"
   BaseValue         float     是    初始资源量（新游戏开局时）
   BaseLimit         float     是    资源上限，增长到此值后停止
   DependentModifiers [string]  否   修饰器目标名列表。留空写 [] 即可
@@ -79,7 +101,7 @@
       {
         "Name": "Gold",
         "Description": "金币，用于建造和研发",
-        "GrowInterval": 5,
+        "GrowInterval": 30,
         "BaseGrowth": 1.0,
         "BaseValue": 0,
         "BaseLimit": 999999,
@@ -88,7 +110,7 @@
       {
         "Name": "Wood",
         "Description": "木材，用于建造",
-        "GrowInterval": 8,
+        "GrowInterval": 30,
         "BaseGrowth": 0.5,
         "BaseValue": 0,
         "BaseLimit": 500,
@@ -97,7 +119,7 @@
       {
         "Name": "Idea",
         "Description": "科技点，用于研发",
-        "GrowInterval": 0,
+        "GrowInterval": 30,
         "BaseGrowth": 0,
         "BaseValue": 0,
         "BaseLimit": 999999,
@@ -108,7 +130,9 @@
   ```
 
   [注意事项]
-  - "Idea" 是科技研发消耗的资源，建议填 Interval=0 靠事件/建筑产出
+  - GrowInterval 一律填 30（月结）：设计稿的经济节拍就是"每月结算一次"。
+  - "Idea" 的 BaseGrowth 填 0 + GrowInterval 填 30：基础产出为 0，但**照样按月结算**，
+    以便把建筑的 `IdeaGrowth` Modifier（如 School 250/月）结算进池子。
   - 资源名区分大小写，必须与建筑/单位配置中的 ResourceCost key 一致
   - DependentModifiers 填的是 modifier 的 Target 名，不是资源名
 
@@ -129,14 +153,14 @@
   TerrainRequirements   [string]                 是    可建造地形列表(地形ID)
   TechRequirements       { string: [string] }    否    建造所需科技前提
   Modifiers             [Modifier]              否    建成后注册的全局效果
-  Duration              float                    是    建造耗时(秒)
+  Duration              float                    是    建造耗时(**游戏日**)
   Actions               [string]                 是    建筑可执行动作列表
                                                       当前支持: "CanResearch"
   VisionRadius          int                      否    开迷雾半径(格),默认填0
   IsHousing             bool                     是    是否为住房(true/false)
   PopulationRadius      int                      否    住房辐射人口半径(格)
   PopulationCap         int                      否    住房提供人口上限(每格)
-  PopulationGrowthInterval int                   否    人口增长间隔(秒)
+  PopulationGrowthInterval int                   否    人口增长间隔(**游戏日**, 300 = 设计稿的营地 lv.I)
 
   [完整样板 JSON]
   ```json
@@ -149,13 +173,13 @@
         "TerrainRequirements": ["plain"],
         "TechRequirements": {},
         "Modifiers": [],
-        "Duration": 10,
+        "Duration": 90,
         "Actions": [],
         "VisionRadius": 1,
         "IsHousing": true,
         "PopulationRadius": 3,
         "PopulationCap": 5,
-        "PopulationGrowthInterval": 15
+        "PopulationGrowthInterval": 300
       },
       "library": {
         "BuildingId": "library",
@@ -164,9 +188,9 @@
         "TerrainRequirements": ["plain"],
         "TechRequirements": { "science": ["writing"] },
         "Modifiers": [
-          { "Target": "IdeaGrowth", "Type": "Absolute", "Value": 0.5 }
+          { "Target": "IdeaGrowth", "Type": "Absolute", "Value": 250 }
         ],
-        "Duration": 30,
+        "Duration": 120,
         "Actions": ["CanResearch"],
         "VisionRadius": 3,
         "IsHousing": false,
@@ -181,7 +205,7 @@
         "TerrainRequirements": ["plain"],
         "TechRequirements": {},
         "Modifiers": [],
-        "Duration": 20,
+        "Duration": 60,
         "Actions": [],
         "VisionRadius": 3,
         "IsHousing": false,
@@ -196,6 +220,8 @@
   [注意事项]
   - 非住房建筑: IsHousing=false, PopulationRadius=0, PopulationCap=0,
     PopulationGrowthInterval=0
+  - Duration 单位是游戏日；设计稿 A4 给的建造区间是 30~300 日
+    （示例：住房 90 / 图书馆 120 / 兵营 60）
   - Actions 当前只支持 "CanResearch"，留空写 []
   - TechRequirements 格式: { "科技树ID": ["节点ID1", "节点ID2"] }
   - VisionRadius=0 表示建筑不提供视野
@@ -215,16 +241,16 @@
   ResourceCost          { string: float }        是    训练消耗资源
   TerrainRequirements   [string]                 是    可训练地形列表
   TechRequirements       { string: [string] }    否    训练所需科技前提
-  Duration              float                    是    训练耗时(秒)
+  Duration              float                    是    训练耗时(**游戏日**)
   HP                    float                    是    生命值
   Attack                int                      否    攻击力(废弃,用下面)
   Movement              int                      否    移动力(废弃)
   Actions               [string]                 是    可执行动作:
                                                       "CanBuild"/"CanMove"/"CanAttack"
   VisionRadius          int                      否    视野半径(格),默认3
-  MoveRechargePerTick   float                    是    每10秒恢复的MP(移动点)
+  MoveRechargePerTick   float                    是    每 10 **游戏日**恢复的MP(移动点)
   AttackRadius          int                      是    攻击半径(格),0=近战
-  AttackDamage          float                    是    每次攻击造成的伤害(每秒)
+  AttackDamage          float                    是    每次攻击结算造成的伤害(每 1 **游戏日**结算一次)
   PopulationCost        int                      是    训练消耗的人口
 
   [完整样板 JSON]
@@ -236,7 +262,7 @@
         "ResourceCost": { "Gold": 20 },
         "TerrainRequirements": ["plain"],
         "TechRequirements": {},
-        "Duration": 8,
+        "Duration": 30,
         "HP": 50,
         "Attack": 0,
         "Movement": 5,
@@ -252,7 +278,7 @@
         "ResourceCost": { "Gold": 50, "Wood": 20 },
         "TerrainRequirements": ["plain"],
         "TechRequirements": {},
-        "Duration": 12,
+        "Duration": 35,
         "HP": 100,
         "Attack": 8,
         "Movement": 4,
@@ -268,7 +294,7 @@
         "ResourceCost": { "Gold": 60, "Wood": 30 },
         "TerrainRequirements": ["plain"],
         "TechRequirements": {},
-        "Duration": 15,
+        "Duration": 50,
         "HP": 60,
         "Attack": 6,
         "Movement": 3,
@@ -286,9 +312,11 @@
   [注意事项]
   - AttackRadius=0 表示近战单位，必须移动到目标同一格才能攻击
   - AttackRadius>0 表示远程单位，可以隔格攻击
-  - MoveRechargePerTick 是每 10 秒(游戏中10天)恢复的 MP，移动一格消耗
-    地形MoveCost
-  - AttackDamage 是每秒(游戏中1天)造成的伤害
+  - MoveRechargePerTick 是每 10 游戏日恢复的 MP，移动一格消耗
+    地形MoveCost（设计示例：移动力 10 的单位跨消耗 5 的平原有余，
+    跨消耗 25 的山地需等 30 日）
+  - AttackDamage 按游戏日结算：每 1 日造成一次伤害（持续战斗）
+  - Duration 单位是游戏日（设计示例：工人 30 日 / 民兵 35 日 / 弓箭手 50 日）
   - 单位需要先拥有 "CanBuild" action 才能调用建造动作建造建筑
   - 单位训练完毕后会自动注册 Move engine (IntervalTask)
 
@@ -310,7 +338,7 @@
     Id              string                   是    节点ID(与key同)
     Prerequisites   [string]                 否    前置科技节点ID列表
     Cost            float                    是    研发消耗的"Idea"资源量
-    Duration        float                    是    研发耗时(秒)
+    Duration        float                    是    研发耗时(**游戏日**，设计区间 0~180 日)
     Modifiers       [Modifier]              否    研发完成后注册的效果
 
   [完整样板 JSON]
@@ -392,8 +420,10 @@
   EventId               string                   是    事件唯一标识
   Name                  string                   是    事件名称
   Description           string                   否    事件描述文本
-  TriggerChance         float                    是    触发概率(0~1), 每天一次
-                                                      0.001=0.1%概率/天
+  TriggerChance         float                    是    触发概率(0~1), **每游戏日**判定一次
+                                                      0.001=0.1%概率/天；设计稿的事件表即按 %/日 填写
+                                                      （如 0.05%/日 = 0.0005）
+                                                      ⚠️ WP-2.8 将改名为 TriggerChancePerDay
   Duration              int                      是    效果持续天数, 0=永久
   Modifiers             [Modifier]              否    触发时注册的效果列表
   ResourcePrerequisites { string: float }        否    触发所需资源(不消耗则不写)
@@ -445,8 +475,11 @@
   ```
 
   [注意事项]
-  - TriggerChance 每天独立判定，互不影响
-  - Duration=0 表示永久效果，不会被撤销（除非手动调用 RemoveModifiers）
+  - TriggerChance 每游戏日独立判定一次，互不影响
+    （v0.3 / WP-1.5 起：判定节拍由"每真实秒"改为"每游戏日"，
+      一帧跨多日时逐日补判，第三档 6 日/真实秒也不会漏判）
+  - Duration 单位是游戏日（设计区间 5~30 日），0 表示永久效果，不会被撤销
+    （除非手动调用 RemoveModifiers）
   - Duration>0 时到期自动撤销该事件的所有 Modifier
   - 事件触发消耗资源（ResourcePrerequisites 中的资源会被扣除）
   - 事件 Modifiers 的 sourceId 是 EventId，撤销时按 EventId 删除
@@ -465,25 +498,26 @@
   字段名             类型     说明
   ────────────────  ────────  ─────────────────────────────────
   Id                string    地形ID, 供建筑/单位 TerrainRequirements 引用
-                              (也是文件名, 如 "plain", "forest", "mountain")
   Name              string    显示名
-  Weight            float     生成权重(越大越常见)
-  MoveCost          float     移动消耗MP, 0=不可通行, >0=消耗
+  Weight            float     生成权重(占比, 5 类之和 = 1)
+  MoveCost          float     移动消耗MP（设计量级 5/8/10/25/50），与时间口径无关
+  Passable          bool      是否可通行（水域 false，达到解锁科技前不可进入）
+  UnlockTech        string    使该地形可通行的科技节点ID（无需解锁则填 ""）
 
-  [创建方法]
-  1. Godot 编辑器中右键 → New Resource → TerrainConfigResources
-  2. 填写 Id, Name, Weight, MoveCost
-  3. 保存为 Config/Terrains/{Id}.tres (如 Config/Terrains/plain.tres)
+  [修改方法]
+  1. 直接编辑 Config/Terrains.json（权威来源，运行时会读）
+  2. 每个条目必须写全 6 个字段；改完启动一次，附录C 的校验会检查 Weight/MoveCost
+  3. Config/Terrains/*.tres 与 Config/Terrains/test*.tres 只是历史遗留，不要依赖
 
-  [典型地形示例]
+  [当前地形表]
 
-  | Id       | Name | Weight | MoveCost | 说明 |
-  |----------|------|--------|----------|------|
-  | plain    | 平原 | 0.5    | 1.0      | 默认地形 |
-  | forest   | 森林 | 0.2    | 2.0      | 移动慢 |
-  | mountain | 山崖 | 0.05   | 0        | 不可通行 |
-  | water    | 水域 | 0.15   | 0        | 不可通行(除非将来做船) |
-  | desert   | 沙漠 | 0.1    | 1.5      | 移动稍慢 |
+  | Id       | Name | Weight | MoveCost | Passable | UnlockTech | 说明 |
+  |----------|------|--------|----------|----------|------------|------|
+  | plain    | 平原 | 0.50   | 5        | true     | (空)       | 默认地形 |
+  | desert   | 沙漠 | 0.10   | 8        | true     | (空)       | 移动稍慢 |
+  | forest   | 森林 | 0.20   | 10       | true     | (空)       | 移动慢 |
+  | mountain | 山地 | 0.05   | 25       | true     | (空)       | 移动很慢 |
+  | water    | 水域 | 0.15   | 50       | false    | buoyancy   | 解锁浮力定律后可通行 |
 
 ================================================================================
   附录B、Modifier 常用 Target 名参考
@@ -491,12 +525,15 @@
 
   | Target 名        | 影响内容       | 举例 |
   |-----------------|---------------|------|
-  | GoldGrowth      | 金币增长率     | Percent 0.5 = +50% |
-  | WoodGrowth      | 木材增长率     | Absolute 2 = +2/次 |
-  | IdeaGrowth      | 科技点增长率   | Percent 0.3 = +30% |
+  | GoldGrowth      | 金币增长率/产量 | Absolute 250 = 每次结算 +250 |
+  | WoodGrowth      | 木材增长率/产量 | Percent 0.5 = +50% |
+  | IdeaGrowth      | 科技点增长率/产量 | Absolute 250 = School 的 250 idea/月 |
   | Attack          | 攻击力         | Absolute 5 = +5 |
   | 单位ID+Attack    | 特定单位攻击力 | swordsmanAttack |
   | 单位ID+HP        | 特定单位生命   | swordsmanHP |
+
+  ⚠️ 产出型 Target 的结算节拍 = 资源表的 GrowInterval（应为 30 = 月结）：
+     建筑/科技/事件写的 Absolute 值是"每次结算的量"，也就是"每月产量"。
 
 ================================================================================
   附录C、配置表校验（v0.3 / WP-1.4 起，启动期自动执行）
@@ -523,6 +560,8 @@
   - Modifier：Type 不是 "Percent" / "Absolute"（其余拼写会被静默当成 Absolute，见 MOD-05）
   - 跨表：TechRequirements / TechPrerequisites 引用了不存在的科技树
   - Generator：Density<=0
+  （时长字段的单位是「日」，因此 Duration/GrowInterval 只判"不能为负"；
+    "单位写错"由下面的自检按 warning 处理）
 
   [warning 清单]
   - 未知地形 Id、未知资源名、树内不存在的科技节点（跨表引用先降级，WP-2.1 收敛）
@@ -532,6 +571,18 @@
   - Duration=0（瞬间完成）、MoveRechargePerTick=0、PopulationCost=0
   - 住房字段与 IsHousing 不一致（IsHousing=true 但 Cap/Radius<=0；非住房却填了人口字段）
   - Terrains 的 Weight 总和不等于 1；Generator.Density>50
+
+  [单位自检（v0.3 / WP-1.5）]
+  口径：所有时长字段的单位是**游戏日**（30 日 = 1 月、360 日 = 1 年）。
+  规则：任何时长字段 > 360 即判 warning「疑似仍是秒口径」，
+        涉及字段：Resources.GrowInterval、Buildings.Duration、
+                  Buildings.PopulationGrowthInterval、Units.Duration、
+                  TechTrees.*.Duration、Events[].Duration。
+  为什么是 warning：口径错误不会让 JSON 解析失败，只会让节奏慢 N 倍且不易察觉，
+        故提示但不阻断原型启动（分级原则见 D12）。
+  为什么上界是 360：设计稿给的上限都在 1 年以内
+        （建造 30~300、研究 0~180、事件 5~30、人口 180~300、经济 30）。
+  常量定义处：Scripts/Core/Time/TimeConstants.cs（MaxPlausibleDays / 各节拍）
 
 ================================================================================
   END OF DOCUMENT

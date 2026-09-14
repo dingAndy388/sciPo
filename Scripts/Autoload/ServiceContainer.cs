@@ -1,8 +1,10 @@
 using Godot;
+using SciencePotato.Scripts.Autoload;
 using SciencePotato.Scripts.Common.Domain;
 using SciencePotato.Scripts.Common.Infrastructure;
 using SciencePotato.Scripts.Core;
 using SciencePotato.Scripts.Core.Config;
+using SciencePotato.Scripts.Core.Time;
 using SciencePotato.Scripts.Map.Application;
 using SciencePotato.Scripts.Map.Domain;
 using SciencePotato.Scripts.Map.Infrastructure;
@@ -15,6 +17,15 @@ public partial class ServiceContainer : Node
 	//Services
 	public MapAppService MapService => Core?.Map;
 	public GameSession Session => Core?.Session;
+
+	/// <summary>（v0.3 / WP-1.5）游戏日节拍总线：表现层/M1 调试面板可查看注册中的任务数。</summary>
+	public GameTimeService Time => Core?.Time;
+
+	/// <summary>
+	/// （v0.3 / WP-1.2）Godot 时间适配器：每帧把真实秒交给 <see cref="GameClock"/>，玩法侧只见"游戏日"。
+	/// <para>由本节点在 <c>_Ready</c> 中创建并挂为子节点，因此无需改场景与 autoload 列表。</para>
+	/// </summary>
+	public GodotTimeDriver TimeDriver { get; private set; }
 
 	/// <summary>（v0.3 / WP-1.4）7 张配置表，供表现层与后续应用服务读取。</summary>
 	public ConfigTables Tables => Core?.Tables;
@@ -57,6 +68,22 @@ public partial class ServiceContainer : Node
 		});
 
 		ReportConfigIssues();
+		StartTimeDriver();
+	}
+
+	/// <summary>
+	/// （v0.3 / WP-1.2）挂载 Godot 时间适配器：每帧把真实秒推进为游戏日，日边界由
+	/// <see cref="GameTimeService"/> 逐日派发（玩法侧不再接触秒）。
+	/// </summary>
+	private void StartTimeDriver()
+	{
+		TimeDriver = new GodotTimeDriver { Name = "GodotTimeDriver" };
+		AddChild(TimeDriver);
+		TimeDriver.Configure(Core.Session.Clock, Core.Time);
+
+		GameClock clock = Core.Session.Clock;
+		GD.Print($"[ServiceContainer] 时间适配器就绪：{GameClock.DaysPerYear} 日/年、{TimeConstants.DaysPerMonth} 日/月；" +
+				 $"当前档位 {clock.DaysPerSecond} 日/真实秒，暂停={clock.IsPaused}；已注册周期任务 {Core.Time?.SubscriberCount ?? 0} 个");
 	}
 
 	/// <summary>把配置校验结论打到 Godot 控制台：填表错误在编辑器里第一时间可见（`WIRE-04`）。</summary>

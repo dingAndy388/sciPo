@@ -35,8 +35,9 @@ namespace SciencePotato.Scripts.Core
 				throw new InvalidOperationException(
 					$"[CoreBootstrap] 配置表校验未通过（{report.Summary()}）：\n{report.ToLines()}");
 
-			// 3) 时间（纯 C#，可手动推进）
+			// 3) 时间（纯 C#，可手动推进）：时钟 + 逐日派发总线（v0.3 / WP-1.5）
 			var clock = new GameClock();
+			var timeService = new GameTimeService(clock);
 
 			// 4) 会话状态（Map 常驻内存）：地图仓库由宿主工厂按地形配置构造
 			var mapRepository = dependencies.MapRepositoryFactory(tables.Terrains);
@@ -56,6 +57,7 @@ namespace SciencePotato.Scripts.Core
 			return new CoreServices
 			{
 				Session = session,
+				Time = timeService,
 				ConfigSource = dependencies.ConfigSource,
 				Tables = tables,
 				ConfigReport = report,
