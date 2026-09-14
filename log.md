@@ -624,6 +624,7 @@
 - **影响**：读档后该研究任务会去找一棵**以节点名命名的科技树**（不存在 → `GetOrCreateTechTree` 会新建一棵空树并保存），随后 `tree.Research(nodeId)` 在空树里静默失败（`TechTree.cs:78` 直接 return）→ **科技永远研究不完、且存档里被塞进一棵垃圾科技树**。
 - **修复方向**：`TaskSnapshot` 增加明确的上下文载荷（如 `TreeId` + `NodeId` 两个字段，或统一的 `payload` 字典）；写入与读取用同一套语义。
 - **关联**：`TIME-03`、`TECH-04`、`TECH-06`
+> ✅ **已修复（v0.3.13 / WP-2.9）**：研究任务的 `UId` 改为**所属树 Id**（`Id` 仍是节点 Id）→ 键 = `Research:{treeId}:{nodeId}`；`CreateResearchTask` 从 `snapshot.UId` 取树，不再把 `nodeId` 当 `treeId`；旧口径快照（`UId=none`）显式拒绝续跑（不静默猜一棵树）。
 
 #### `TECH-02` 研究成本硬编码为单资源 `"Idea"` —— 【P1｜数据层缺口】
 - **现象**：研究消耗写死 `new Consumption("Idea", cost)`；节点配置里成本只是一个 `float Cost`，没有资源类型、没有多资源成本。
@@ -648,6 +649,7 @@
 - **影响**：① 无法回答"这条任务属于谁/属于什么"（UI 无法把任务显示在正确的对象上）；② 多玩家/多科技树时无法区分（两个人同时研究同一节点，任务文件键相同 → 覆盖）。
 - **修复方向**：把任务主体抽象为"目标引用"（类型 + Id），占据物只是其中一种；或为任务引入 `OwnerScope`（玩家/实体/全局）。
 - **关联**：`TIME-03`、`TECH-01`、`DEP-03`
+> ✅ **已修复（v0.3.13 / WP-2.9）**：研究任务的 `UId` 不再是 `none`，而是**所属科技树 Id** —— 任务从此有明确的归属主体（`ROOT-3` 的 `OwnerScope` 在科技域的最小落地）。
 
 #### `TECH-05` 科技完成没有任何"推送" —— 【P2｜架构层缺陷】
 - **现象**：研究完成时只做"树内置位 + 保存 + 挂修正器 + 注销任务"，没有事件/回调/通知可供 UI 或其它系统订阅。
@@ -1134,6 +1136,7 @@
 | **v0.3.10** | 2026-09-14 | **WP-2.5 训练绑定建筑 + 队列（`UNIT-11`、`D10`、`E2/E3/E4`，M0-2 ④）**：`IBuildingConfig` 新增 `TrainableUnits` / `TrainingQueueLimit`（默认 5），表里工坊→worker、军营→swordsman/archer 且 Actions 补 `CanTrain`；`Building` 新增**训练队列**（上限 5、**同时只训练 1 个**）；`UnitsAppService.TrainUnit(mapId, buildingUid, unitId)` 走「建筑已完工 → 名单校验 → 队列未满 → 资源足够（入队即扣）→ 人口足够（按已占用的队列预留）」五道门，完成时**落位到建筑相邻格 + 人口 −1**（`E2`/`E4`）；`MapAppService.ConsumePopulation` 补齐人口扣减（唯一写入点 + 脏标记）；校验器新增 TrainableUnits 引用完整性与「单位没有任何建筑可训练」的反向检查。无头验收 **77/77 通过、退出码 0**，**M0-2 ④ 通过**。新增决策 D36~D38 |
 | **v0.3.11** | 2026-09-14 | **WP-2.4 建造者校验（`D6`）**：`BuilderBinding` 把在建建筑与建造者单位绑定（`Building.TryBindBuilder` = 每建筑同时仅 1 个 / `ReleaseBuilder` = 完工或被拆时释放）；`UnitsAppService.Build` 四道门（`CanBuild` 能力 / 单位空闲 / 距离 ≤1 / 目标格为空）后经 `StartConstruction(mapId, buildingId, position, ownerId, builder)` 开工，**失败即无副作用**；修掉两个硬伤 —— 旧实现要求"盖在自己脚下"（该格被自己占着 → 建造永远失败）与"无论成败都置忙"（单位永久卡死）。无头验收 **90/90 通过、退出码 0**。新增决策 D38~D39 |
 | **v0.3.12** | 2026-09-14 | **WP-2.6 建筑升级 + 完成逻辑收敛（`CON-09`、`CON-03`、`D4/D5/D14`）**：`IBuildingConfig` 新增 `UpgradeTo/UpgradeCost/UpgradeDuration/UpgradeTechRequirements`，`Config/Buildings.json` 补齐 **4 条 lv.I→II→III 链（12 条）**（数值取自设计稿 buildings.md）；`Building.ApplyUpgrade` 换级**保持 uid 不变**；`ConstructionAppService.StartUpgrade` 校验等级链/科技前置/消耗/建造者绑定，升级期间建筑未就绪；**完成路径收敛为单一 `CompleteConstruction`**（首次建造/升级/续跑三条路径共用 → 修 `CON-03`：续跑完成也会开视野与注册人口任务），升级时按 uid 回收旧修正器与旧人口任务（不叠加、不重复）；校验器新增升级链校验（悬空/自环 error）。无头验收 **90/90 通过、退出码 0**。新增决策 D40~D41 |
+| **v0.3.13** | 2026-09-14 | **WP-2.9 科技树：单树串行 + 三树并行（`F1`、`TECH-01/04`）**：`ITechTreeConfig` 新增 `Concurrency`（默认 1；三棵树各自配），`TechTree` 新增研究槽位（`CanStartResearch`/`MarkResearchStarted`/`InProgress`），`TechTreesAppService` 以 `Concurrency` 闸住开工并**把树常驻内存**（否则每次读盘重建实例会让槽位状态丢失、串行形同虚设）；研究任务快照改用 `UId` 承载**所属树**（键 = `Research:{treeId}:{nodeId}`）→ `CreateResearchTask` 不再把 `nodeId` 当 `treeId`，旧口径快照显式拒绝续跑；校验器：`Concurrency<1` 判 error、`>1` 判 warning。无头验收 **96/96 通过、退出码 0**。新增决策 D42~D43 |
 
 
 ---
@@ -1373,7 +1376,7 @@
 
 | # | 设计稿功能 | 判定 | 缺口 & 证据 | 扩展点 | 最小改动方案 + 工作量 |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| F1 | 3 树 93 节点；树内串行、三树并行、未来可配并发 | ⚠️ | L：**无并发限制**，可无限并行（`TechTreesAppService.cs:50-80`） | ✘ | 按树研究队列 + 并发上限配置 — **中** |
+| F1 | 3 树 93 节点；树内串行、三树并行、未来可配并发 | ✅️ | L：**无并发限制**，可无限并行（`TechTreesAppService.cs:50-80`） | ✘ | 按树研究队列 + 并发上限配置 — **中** |
 | F2 | **跨树前置**（46 多前置、33 处跨树） | ❌ | L：`CanResearch` 只查本树集合 → **物理树 35 节点永久不可解锁**（`TECH-07`） | ✘ | 前置结构改 `{treeId,nodeId}` + 跨树查询 — **中**（P0 最急） |
 | F3 | 消耗 idea（0~8000），含 0 消耗 0 时长节点 | ✅ | `Cost` + `LinearTask(Target=0)`（`:54-64`） | ✔ | 只填表 |
 | F4 | 研究时间 0~180 日 | ⚠️ | D：秒口径 | ✔ | 填日值 — **小** |
@@ -1383,7 +1386,7 @@
 | F8 | 效果=解锁水域通行 5.0 | ❌ | 同 B2 | ✘ | 通行权限 + 科技解锁 — **中** |
 | F9 | 研究是 School 的操作（按建筑等级） | ⚠️ | L：`CanResearch` 已存在（`ConstructionAppService.cs:123-137`）但不校验等级/不绑定建筑 | ✔ | 校验建筑等级 — **小~中** |
 | F10 | 科技完成推送（提示/联动） | ❌ | L：无事件（`TECH-05`） | ✘ | 领域事件 — **中** |
-| F11 | 研究进度持久化/续跑 | ❌ | L：`nodeId` 被当 `treeId`（`TECH-01`）→ 读档错乱 | ✔ | 修 + 快照加"树/节点" — **小~中** |
+| F11 | 研究进度持久化/续跑 | ✅ | L：`nodeId` 被当 `treeId`（`TECH-01`）→ 读档错乱 | ✔ | 修 + 快照加"树/节点" — **小~中** |
 
 ## G. 事件（8 行）
 
@@ -2053,6 +2056,7 @@ WP-0.4 ─→ WP-3.5 / WP-3.8 / WP-5.3
 | 2026-09-14 | WP-2.5 **训练绑定建筑 + 队列**（`UNIT-11`、`D10`、`E2/E3/E4`） | ✅ 完成 | ① **配置**（`D10`）：`IBuildingConfig` 新增 `TrainableUnits`（可训练单位名单）+ `TrainingQueueLimit`（默认 5，`BuildingConfigDto.DefaultTrainingQueueLimit`），`Config/Buildings.json` 填 工坊→[worker] / 军营→[swordsman,archer] / 营地·学院→[]，训练建筑补 `CanTrain`；② **队列**（`E3`）：`Building` 持 `TrainingQueue`（入队即锁定单位 uid、上限 5、`HasActiveTraining` 保证**同时只训练 1 个**），`UnitsAppService.TrainUnit(mapId, buildingUid, unitId)` → `StartNextTraining`（完成回调里推进队头）；③ **门控**：建筑存在且已完工 / 单位在 `TrainableUnits` 内 / 队列未满 / 资源足够（**入队时扣**，`D36`）/ 人口足够（`半径 1 内人口 − 队列已占用 ≥ PopulationCost`）—— 五道门任一不过即返回 false 且无副作用；**等级校验按计划跳过**（配置无等级字段，见 §18.4.2）；④ **完工**（`E2`/`E4`）：落位到**建筑相邻空格**（建筑自己占着它的格）→ 单位就绪 → **人口 −1**（`MapAppService.ConsumePopulation`，与新增口径同源）→ 视野与移动任务；⑤ **校验器**：`TrainableUnits` 引用不存在的单位判 **error**，`CanTrain` ↔ `TrainableUnits` 不匹配与「某个单位没有任何建筑可训练」判 warning（真实配置 0 error / 训练字段 0 warning）；⑥ **指南**：Buildings 段补两个字段与训练口径说明。检查 **+6 项**（总计 **77/77**、退出码 0），**M0-2 ④ 通过**（真实配置：工坊 90 日完工 → 训练工人 30 日 → 单位落在相邻格、人口 −1） |
 | 2026-09-14 | WP-2.4 **建造者校验**（`D6`） | ✅ 完成 | ① **绑定**：新增 `BuilderBinding{BuilderUId, BuilderPosition, TargetPosition, OnRelease}`（`Construction.Domain`），`Building.TryBindBuilder` 保证**每建筑同时仅 1 建造者**、`ReleaseBuilder` 在**完工与被拆**两条路径上释放（释放动作由 Units 层以回调形式注入 → 构造模块不认识 `Unit` 类型，避免模块环）；② **订单校验**：`UnitsAppService.Build` 四道门 —— `CanBuild` 能力（民兵等非建造者被拒）/ 单位空闲（每建造者同时 1 座）/ 距离 ≤ 1（相邻格）/ 目标格为空；`StartConstruction` 改为 `bool` 并接受可选 <c>builder</c>（无建造者的脚本/测试路径保持兼容），绑定失败时**不消耗任何资源**；③ **修硬伤**：旧实现要求"建筑盖在自己脚下"（而该格被自己占着 → 建造永远失败）且无论成败都置 `IsIdle=false`（单位永久卡死），现在只在真正开工后占用、完工/被拆自动释放；④ **副作用**：被拒请求不留建筑、不留任务、不占用单位（资源维度因 `D25` 不可观测，用例改以三个状态面判定）。检查 **+6 项**（总计 **83/83**、退出码 0） |
 | 2026-09-14 | WP-2.6 **建筑升级 lv.I→II→III + 完成逻辑收敛**（`CON-09`、`CON-03`、`D4/D5/D14`） | ✅ 完成 | ① **配置**（`D4`/`D5`/`D14`）：`IBuildingConfig` 新增 `UpgradeTo`（晋级目标）/`UpgradeCost`（升级消耗）/`UpgradeDuration`（游戏日）/`UpgradeTechRequirements`（升级条件 = 已解锁科技节点），`Config/Buildings.json` 由 4 条扩到 **12 条**（营地/工坊/学院/军营 各 lv.I~III），数值取自设计稿 buildings.md（营地人口 9/1/300 → 18/1/240 → 36/2/180；学院 250 → 1000 → 3000 idea/月；工坊·军营训练速度 +20%/+50%），资源词汇按原型表映射（基础石材→Wood、food→Gold，量级缩放）；② **域**：`Building.ApplyUpgrade` **换 Id/Name 但保持 uid** —— 修正器/迷雾/任务/易主都以 uid 为锚；③ **服务**：`StartUpgrade(mapId, buildingUid, ownerId, builder)` 校验「已就绪 + 有 UpgradeTo + 目标建筑存在 + 科技前置 + 消耗可付 + 建造者绑定」，升级期间 `IsReady=false`（训练/研究门控自动失效）；`UnitsAppService` 新增 `CanUpgrade` 动作（由 `CanBuild` 角色派生，无需新单位字段）且 `ExcuteAction` 改为**返回 bool**（`CON-01` 的最小闭合：调用方能拿到成败）；④ **完成逻辑收敛**（修 `CON-03`）：首次建造 / 升级 / 读档续跑三条路径统一走 `CompleteConstruction`，升级时按 uid **回收旧修正器与旧人口任务**（不叠加、不重复），续跑完成现在也会开视野 + 注册人口任务（旧实现手抄漏项）；⑤ **校验器**：升级链校验 —— `UpgradeTo` 悬空/自环判 **error**、缺 `UpgradeDuration` 判 warning、升级消耗与科技前置沿用建造口径。检查 **+7 项**（总计 **90/90**、退出码 0） |
+| 2026-09-14 | WP-2.9 **科技树：单树串行 + 三树并行（并发可配）**（`F1`、`TECH-01/04`） | ✅ 完成 | ① **配置**：`ITechTreeConfig.Concurrency`（默认 1）/`Config/TechTrees.json` 三棵树各填 `Concurrency: 1` —— 设计稿 research_tree.md「每棵树同时只能进行一项研发，三棵树互相独立」；② **域**：`TechTree` 增加研究槽位（`Concurrency` / `InProgress` / `CanStartResearch`（= 够格 ∧ 槽位未满）/ `MarkResearchStarted`/`MarkResearchFinished`；槽位**只在内存**，理由见 `D43`），`InitializeFromConfig`/`HydrateConfigs` 都随表更新并发值；③ **服务**：`Research` 用 `MarkResearchStarted` 闸住开工（被拒时**不扣资源**；资源不足时**归还槽位**，不会因一次失败把树堵死），新增 `CanStartResearch`/`GetInProgress`/`GetConcurrency` 查询（`WP-4.14` 的门控面）；**树常驻内存**（`_trees` 缓存，否则每次 `GetOrCreateTechTree` 从盘上重建实例 → 槽位状态丢失、串行失效）；④ **任务键**（`TECH-01`/`TECH-04`）：研究任务 `UId` = **所属树 Id**（原来是 `none`）、`Id` = 节点 Id → 键 = `Research:{treeId}:{nodeId}`；`CreateResearchTask` 从 `snapshot.UId` 取树（不再把 `nodeId` 当 `treeId`），旧口径快照（`UId=none`）显式拒绝续跑；⑤ **校验器**：`Concurrency<1` 判 error（否则该树永远无法开工）、`>1` 判 warning（超出设计稿当前口径）；⑥ **指南**：TechTrees 段补字段与样板。检查 **+6 项**（总计 **96/96**、退出码 0） |
 
 ### 18.1.1 里程碑验收对照
 
@@ -2074,7 +2078,7 @@ dotnet build 'Science Potato.csproj'
 dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessChecks.csproj'
 ```
 
-当前验收结果（2026-09-14，**90/90 通过、退出码 0**）：M0-1 组 43 项 + M0-2 组 47 项。
+当前验收结果（2026-09-14，**96/96 通过、退出码 0**）：M0-1 组 43 项 + M0-2 组 53 项。
 
 | 分组 | 数量 | 覆盖 |
 | :--- | :--- | :--- |
@@ -2091,6 +2095,7 @@ dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessC
 | 训练与队列（WP-2.5） | 6 | 建筑表口径：工坊→worker（队列 5、CanTrain）、军营→swordsman/archer、营地/学院不可训练、每个单位至少有一个建筑可训练（真实配置 0 error / 训练字段 0 warning）/ **M0-2 ④**：工坊 90 日完工 → 训练工人 30 日 → 单位落在建筑相邻格且人口 −1 / 队列：上限 5（第 6 个被拒）、同时只训练 1 个（只有 1 条任务）、完成后自动推进队头 / 门控：未完工·名单外单位·非训练建筑·不存在单位/建筑·资源不足·人口不足全部拒绝且无副作用 / 同名不同实例（两座工坊造 worker）保留两条独立任务快照 / 入队不扣人口、**完成时**扣（`E2`）+ 落位可取回（`E4`） |
 | 建造者绑定（WP-2.4） | 6 | 非建造者（民兵）不能下令建造且不占用单位（`D6`）/ 相邻空格可建、隔 2 格与脚下同格被拒（旧实现只能盖脚下 → 永远失败）/ 每建造者同时只建 1 座：施工中再下令被拒、完工后自动释放并能接新工地 / 被拒的建造不留建筑·不留任务·不占用建造者（资源维度受 `D25` 限制）/ 施工中的建筑被拆 → 建造者回到空闲 + 建造任务被注销 / 域内 `TryBindBuilder` 拒绝第二个建造者、释放后可重绑 |
 | 建筑升级（WP-2.6） | 7 | 升级链完整且参数取自设计稿（4 链 × 3 级 = 12 条；营地 9/1/300 → 18/1/240 → 36/2/180；学院 250/1000/3000；工坊·军营 +20%/+50%）/ 门控：科技未解锁·资源不足·已最高级·未完工 全部拒绝 / 升级成功：Id 与名称换级、**uid 不变**、升级中未就绪、完成释放建造者 / 修正器换级不叠加（lv.II 1000 × 1.3 科技加成 = 1300，若残留旧 250 则为 1625）/ 人口任务换级不重复（仍 1 条、Target 300 → 240）/ **`CON-03`**：续跑完成也开视野 + 注册人口任务 / 校验器守卫升级链（悬空/自环 error、缺时长 warning、负消耗 error） |
+| 科技树并发（WP-2.9） | 6 | 三棵树 `Concurrency=1` 且真实配置 0 error / 树内串行：同树第二个请求被拒（任务数不增）、完成后槽位释放、下一个才开工 / 三树并行：科学树 + 军事树两项并存并各自完成（互不阻塞）/ 并发可配：`Concurrency=2` 时同树两项并行且都完成 / 研究任务键：`UId`=树、`Id`=节点、键 = `Research:{tree}:{node}`；续跑按树恢复（不再把 nodeId 当 treeId）、旧口径快照拒绝续跑 / 校验器：`<1` error、`>1` warning |
 
 
 
@@ -2139,6 +2144,8 @@ dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessC
 | D39 | **建造地点口径：只能在本格或相邻格（距离 ≤ 1），且目标格必须为空** —— 因此"同格建造"被拒 | 设计稿要求"可在相邻格建造"（`D6` 的修正方向）；同格建造在当前"一格一个 `Occupant`"模型下必然失败（格子被建造者自己占着）。距离判定用 `DistenceTo <= 1`（含自身格），目标格判定用 `IMapAppService.IsClear`，两条都是可断言的口径；`WP-4.9`（建筑嵌套）允许格内多占据物后，同格建造会自动变为合法 |
 | D40 | **升级 = 同一栋建筑换配置（uid 不变）**，而不是"拆了重建" | 依据：修正器按 `sourceId`（`WP-2.7` 起 = 建筑 uid）、迷雾视野计数、人口任务、未来的易主（`WP-4.8`）与附属建筑（`WP-4.9`）全都以 uid 为锚。换 uid 会让这些引用全部失联（且需要"迁移"逻辑）。实现上只换 Id/Name，等级参数（人口三件套/产出/视野/可训练名单）在读数时按新配置生效 |
 | D41 | **升级中的最小语义 = `IsReady = false`**（不引入新状态字段） | 训练门控（`WP-2.5`）、研究门控（`ExcuteAction`）都已经在检查 `IsReady`，复用它即可让"升级中"建筑自然停止工作；副作用是 UI 需要把"未就绪"渲染成"施工中/升级中"两态，归 `WP-5.1` 调试层。备选是加 `IsUpgrading` 字段 —— 会多出一处状态同步（拆除/完工/读档都要清），当前收益不足 |
+| D42 | **树内串行 = 域内研究槽位（`Concurrency`）**，而不是"给研究任务排队" | 备选：① 在应用层维护"每树一个研究队列"（状态两处真相：树的已研究集合之外还有一份队列）；② 用任务清单反推"该树是否在忙"（要先扫全表任务，且读档后扫不到）。取域内槽位：`CanStartResearch` 是唯一判定点，任务数自然 ≤ 并发上限。**Suffix**：被拒的请求**不扣资源**（先占位后扣费，失败即归还槽位） |
+| D43 | **科技树必须常驻内存**，`InProgress` 槽位**只存内存**（`[JsonIgnore]`，不落盘） | 发现过程：首版把 `_inProgress` 只放在 `TechTree` 上，而 `GetOrCreateTechTree` 每次都从盘上反序列化新实例 → 槽位在两次调用间丢失，"树内串行"形同虚设（用例当场抓住）。修法：应用服务持有 `_trees` 缓存（与 `MapSession` 同思路，正式注册表归 `WP-3.3`）。而"进行中"**不落盘**的理由：研究进度由任务快照承载（`WP-3.2` 才恢复任务），若树文件里写着"研究中"而任务没恢复，该树会永远堵死 —— 比丢进度更糟 |
 
 
 
@@ -2186,3 +2193,5 @@ dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessC
 | 建造资源扣除的可观测性（`D25` 关联，v0.3.11） | 建造/训练/研发都调 `contracts.Consume()`，但 `ResourcesPool` 不写回 → 运行时"扣了等于没扣"，测试也无法用资源池断言副作用（`WP-2.4` 的用例因此改用建筑/任务/单位状态判定） | 经济系统的所有"花费"目前在读档后回滚；`WP-3.9` 月度结算器落地前必须修 | `WP-3.2` / `WP-3.3`（已在 §18.4.2 `D25` 行登记，此处补注"可观测性"这一面） |
 | 升级链只填了 4 条原型建筑（v0.3.12） | 设计稿 24 个建筑中 21 个有 lv.II/III 链，原型表只有营地/工坊/学院/军营 4 条（各三级，共 12 条）；且设计稿的 math 树节点（基础几何/初步测量…）尚未填入科技表，升级条件暂映射到 `science/mathematics` 与 `physics/simple_machine_intuition` | 其余 17 条建筑的成长线在 M1 手测里是空的 | 填表（批次 4 起，配 `WP-4.14` UI 门控）/ `WP-2.9` 补数学树节点 |
 | 升级/建造的"完成"只在内存（v0.3.12） | `CompleteConstruction` 会重挂修正器、重开视野、重注册人口任务，但这些**派生状态**没有落盘（`ModifierRepository` 有盘、迷雾有盘、任务有盘，建筑等级只在 `Building` 对象上） | 读档后建筑等级丢失 → 修正器/人口任务与等级不一致（"lv.I 的产出但名字是 lv.III"） | `WP-3.2`（实体持久化）必须把建筑等级 + 建造者绑定 + 训练队列一起存 |
+| 科技树"研究中的节点"不落盘（v0.3.13） | `TechTree.InProgress` 是内存槽位（`D43`）：读档后"正在研究哪个节点"丢失（任务快照也还没恢复，见"任务恢复未接线"行） | 读档后研究进度归零、需要玩家重新点一次研究（资源已扣过的那次不会自动继续） | `WP-3.2`（任务/实体持久化）—— 任务恢复后把 `InProgress` 一并恢复 |
+| 三棵树之外没有更多树的并发口径（v0.3.13） | `Concurrency` 是**每棵树**的配置，`Config/TechTrees.json` 目前 3 棵树；设计稿的 93 节点里"一树多研发"是后续节点效果（需要节点效果能改 `Concurrency`） | 现在只能靠填表改；"某节点解锁本树并发 +1"还没有落点 | 批次 4（节点效果扩展，配 `WP-4.4` 修正作用面） |

@@ -23,6 +23,7 @@ namespace SciencePotato.HeadlessChecks
 			TrainingQueueChecks.RunAll();
 			BuilderChecks.RunAll();
 			UpgradeChecks.RunAll();
+			TechTreeConcurrencyChecks.RunAll();
 
 			return Check.Summary();
 		}

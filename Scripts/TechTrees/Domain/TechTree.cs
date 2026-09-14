@@ -16,6 +16,22 @@ namespace SciencePotato.Scripts.TechTree.Domain
 		private HashSet<string> _researchedIds = new();
 
 		/// <summary>
+		/// （v0.3 / WP-2.9）**正在进行中的研究**（`nodeId` 集合，上限 = <see cref="Concurrency"/>）。
+		/// <para>**只在内存**（`[JsonIgnore]`）：研究进度由任务快照承载（`WP-3.2` 才做任务/实体持久化），
+		/// 若把它写进树文件而任务却没恢复，读档后这棵树会永远卡在"研究中有节点"上 —— 这比丢进度更糟。</para>
+		/// </summary>
+		[JsonIgnore]
+		private readonly HashSet<string> _inProgress = new();
+
+		/// <summary>（v0.3 / WP-2.9）本树的研究并发上限（来自配置，默认 1）。</summary>
+		public int Concurrency { get; private set; } = TechTreeConfigDto.DefaultConcurrency;
+
+		/// <summary>（v0.3 / WP-2.9）进行中的研究节点（只读；供 UI 与研究队列断言使用）。</summary>
+		public IReadOnlyCollection<string> InProgress => _inProgress;
+
+		public int InProgressCount => _inProgress.Count;
+
+		/// <summary>
 		/// （v0.3 / WP-2.1）跨树前置的解析入口：<c>(treeId, nodeId) → 是否已研究</c>。
 		/// <para>由 `TechTreesAppService` 在取到树之后挂上（<see cref="AttachResearchLookup"/>）；**不落盘**
 		/// （<see cref="JsonIgnoreAttribute"/>：委托无法序列化，且它是"环境"而不是树的自身状态）。</para>
@@ -43,6 +59,10 @@ namespace SciencePotato.Scripts.TechTree.Domain
 		{
 			_nodes.Clear();
 			_researchedIds.Clear();
+			_inProgress.Clear();
+
+			// 并发上限随配置（v0.3 / WP-2.9）：< 1 视为 1（校验器已把非法值记 error）
+			Concurrency = config != null && config.Concurrency > 0 ? config.Concurrency : TechTreeConfigDto.DefaultConcurrency;
 
 			if (config?.Techs == null) return;
 
@@ -72,6 +92,9 @@ namespace SciencePotato.Scripts.TechTree.Domain
 			var treeConfig = configRepo?.GetTechTreeConfig(TreeId);
 			if (treeConfig?.Techs == null) return;
 
+			// 并发上限也随表更新（v0.3 / WP-2.9：改表后无需重开存档）
+			if (treeConfig.Concurrency > 0) Concurrency = treeConfig.Concurrency;
+
 			foreach (var kvp in treeConfig.Techs)
 			{
 				if (kvp.Value == null) continue;
@@ -91,6 +114,30 @@ namespace SciencePotato.Scripts.TechTree.Domain
 		{
 			return _researchedIds.Contains(nodeId);
 		}
+
+		/// <summary>
+		/// （v0.3 / WP-2.9）**能否开工研究**：在前置/未研究之上，再加**本树的研究并发上限**（默认 1）。
+		/// <para>设计稿：每棵树同时只能进行一项研发；三棵树互相独立（因此最多 3 项并行）。
+		/// 与 <see cref="CanResearch"/> 的分工：前者是"够不够格"（前置/未研究），本方法是"轮不轮得到"（并发槽位）。</para>
+		/// </summary>
+		public bool CanStartResearch(string nodeId)
+		{
+			if (!CanResearch(nodeId)) return false;
+			if (_inProgress.Contains(nodeId)) return false;
+			return _inProgress.Count < Concurrency;
+		}
+
+		/// <summary>（v0.3 / WP-2.9）占一个研究槽位（开工时调用）。返回是否占位成功。</summary>
+		public bool MarkResearchStarted(string nodeId)
+		{
+			if (!CanStartResearch(nodeId)) return false;
+
+			_inProgress.Add(nodeId);
+			return true;
+		}
+
+		/// <summary>（v0.3 / WP-2.9）释放研究槽位（完成/取消时调用）。</summary>
+		public bool MarkResearchFinished(string nodeId) => _inProgress.Remove(nodeId);
 
 		/// <summary>
 		/// 是否可以研究该节点：未研究 + **全部前置已满足**。
@@ -128,6 +175,10 @@ namespace SciencePotato.Scripts.TechTree.Domain
 			=> (_nodes.TryGetValue(nodeId, out var node) ? node.Config?.Prerequisites : null)
 			   ?? new List<TechPrerequisite>();
 
+		/// <summary>
+		/// 完成研究：写入已研究集合（`CanResearch` 为 false 时拒绝）。
+		/// <para>（v0.3 / WP-2.9）同时释放该节点的研究槽位。</para>
+		/// </summary>
 		public void Research(string nodeId)
 		{
 			if (!_nodes.ContainsKey(nodeId)) return;
@@ -137,6 +188,7 @@ namespace SciencePotato.Scripts.TechTree.Domain
 			{
 				_researchedIds.Add(nodeId);
 				_nodes[nodeId].MarkResearched();
+				_inProgress.Remove(nodeId);
 			}
 		}
 

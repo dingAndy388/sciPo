@@ -344,6 +344,15 @@ namespace SciencePotato.Scripts.Core.Config
 
 				ITechTreeConfig tree = tables.TechTrees.GetTechTreeConfig(treeId);
 				Dictionary<string, ITechNodeConfig> nodes = tree?.Techs;
+
+				// （v0.3 / WP-2.9）研究并发上限：< 1 = 该树永远无法开工研究（静默死锁，必须 error）；
+				// > 1 是"一树多研发"的预留能力，合法但提示（设计稿当前口径是 1）。
+				int concurrency = tree?.Concurrency ?? 0;
+				if (concurrency < 1)
+					report.Error("TechTrees", treeId, $"Concurrency={concurrency} 必须 ≥ 1（否则该树永远无法开工研究）");
+				else if (concurrency > 1)
+					report.Warn("TechTrees", treeId, $"Concurrency={concurrency}：该树可同时进行多项研发（设计稿当前口径为 1）");
+
 				if (nodes == null || nodes.Count == 0)
 				{
 					report.Warn("TechTrees", treeId, "该科技树没有任何节点");

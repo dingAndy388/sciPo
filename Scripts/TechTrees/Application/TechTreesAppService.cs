@@ -16,6 +16,15 @@ namespace SciencePotato.Scripts.TechTree.Application
 		private readonly ModifierAppService _modifier;
 		private readonly ITimeService _time;
 
+		/// <summary>
+		/// （v0.3 / WP-2.9）**科技树常驻内存**（`(mapId, ownerId, treeId)` → 实例）。
+		/// <para>为什么必须缓存：研究是**有状态**的（"本树正在研究哪个节点"决定并发槽位，`F1`），
+		/// 若每次都从磁盘反序列化一棵新树，槽位状态会在两次调用之间丢失 —— 树内串行就形同虚设。
+		/// 同一份存档只应由一个应用服务实例持有（单写者假设，与 `TaskRepository` 一致）；
+		/// 正式的"会话级注册表 + 存档点"归 `WP-3.3`。</para>
+		/// </summary>
+		private readonly Dictionary<string, TechTreeDomain.TechTree> _trees = new(StringComparer.OrdinalIgnoreCase);
+
 		public TechTreesAppService(
 			TechTreeDomain.ITechTreesRepository repo,
 			TechTreeDomain.ITechTreesConfigRepository configRepo,
@@ -32,22 +41,35 @@ namespace SciencePotato.Scripts.TechTree.Application
 
 		/// <summary>
 		/// 取得（必要时创建）某玩家的某棵树；**每次都挂上跨树前置解析器**（`WP-2.1`）。
+		/// <para>（v0.3 / WP-2.9）同一 `(mapId, ownerId, treeId)` 返回**同一个内存实例**（见 <c>_trees</c> 的说明）。</para>
 		/// </summary>
 		public TechTreeDomain.TechTree GetOrCreateTechTree(string mapId, int ownerId, string treeId)
 		{
+			string cacheKey = CacheKey(mapId, ownerId, treeId);
+			if (_trees.TryGetValue(cacheKey, out var cached))
+			{
+				AttachCrossTreeLookup(mapId, ownerId, cached);
+				return cached;
+			}
+
 			var tree = _repo.GetTreeById(mapId, ownerId, treeId);
 			if (tree != null)
 			{
+				_trees[cacheKey] = tree;
 				AttachCrossTreeLookup(mapId, ownerId, tree);
 				return tree;
 			}
 
 			var config = _configRepo.GetTechTreeConfig(treeId);
 			tree = new TechTreeDomain.TechTree(treeId, ownerId, config);
+			_trees[cacheKey] = tree;
 			AttachCrossTreeLookup(mapId, ownerId, tree);
 			_repo.SaveTree(mapId, ownerId, treeId, tree);
 			return tree;
 		}
+
+		private static string CacheKey(string mapId, int ownerId, string treeId)
+			=> $"{mapId}|{ownerId}|{treeId}";
 
 		/// <summary>
 		/// （v0.3 / WP-2.1）跨树前置的解析器：`(treeId, nodeId) → 是否已研究`。
@@ -69,9 +91,26 @@ namespace SciencePotato.Scripts.TechTree.Application
 
 		/// <summary>
 		/// （v0.3 / WP-2.1）**能否研究**的对外入口（M0-2 ① 的验收面：物理树根节点在数学树研究后才可研究）。
+		/// <para>注意：这是"够不够格"（前置满足、未研究），不含并发槽位；开工判定见
+		/// <see cref="CanStartResearch"/>。</para>
 		/// </summary>
 		public bool CanResearch(string mapId, int ownerId, string treeId, string nodeId)
 			=> GetOrCreateTechTree(mapId, ownerId, treeId).CanResearch(nodeId);
+
+		/// <summary>
+		/// （v0.3 / WP-2.9）**能否开工研究**：`CanResearch` + 本树并发槽位（默认树内串行）。
+		/// 表现层的"研究"按钮应当用它（`WP-4.14`）；`CanResearch` 用于"还差哪个前置"的提示。
+		/// </summary>
+		public bool CanStartResearch(string mapId, int ownerId, string treeId, string nodeId)
+			=> GetOrCreateTechTree(mapId, ownerId, treeId).CanStartResearch(nodeId);
+
+		/// <summary>（v0.3 / WP-2.9）本树正在研究中的节点（UI/调试面板与断言用）。</summary>
+		public IReadOnlyCollection<string> GetInProgress(string mapId, int ownerId, string treeId)
+			=> GetOrCreateTechTree(mapId, ownerId, treeId).InProgress;
+
+		/// <summary>（v0.3 / WP-2.9）本树的研究并发上限（来自 `Concurrency` 配置）。</summary>
+		public int GetConcurrency(string mapId, int ownerId, string treeId)
+			=> GetOrCreateTechTree(mapId, ownerId, treeId).Concurrency;
 
 		public TechTreeDomain.TechRequirement GetTechTreeRequirement(string mapId, int ownerId, string treeId, List<string> requirements)
 		{
@@ -87,17 +126,27 @@ namespace SciencePotato.Scripts.TechTree.Application
 			// 玩家付出资源却什么也没得到。跨树前置（`TECH-07`）在本方法里第一次真正生效。
 			if (!tree.CanResearch(nodeId)) return;
 
+			// （v0.3 / WP-2.9）**树内串行**：并发槽位已满（默认 1）或该节点已在研究中 → 拒绝。
+			// 三棵树互相独立 ⇒ 最多 3 项并行；`Concurrency` 可配（为"一树多研发"预留）。
+			if (!tree.MarkResearchStarted(nodeId)) return;
+
 			float cost = tree.GetCost(nodeId);
 			float duration = tree.GetDuration(nodeId);
 
 			Consumption consumption = new("Idea", cost);
 			var contract = _resource.CreateResourceConsumption(consumption, mapId, ownerId);
 
-			if (!contract.IsConsumable()) return;
+			if (!contract.IsConsumable())
+			{
+				tree.MarkResearchFinished(nodeId); // 资源不够 → 归还槽位（不能因为一次失败请求把树堵住）
+				return;
+			}
 
 			contract.Consume();
 
-			LinearTask task = new(0, duration, nodeId, "Research", false, "none", mapId, ownerId); // UID "none" — not an Occupant
+			// 任务键 = `Research:{treeId}:{nodeId}`（`WP-2.2`）：`UId` 承载**所属科技树** ——
+			// 旧实现把 `UId` 填成 "none"、`Id` 填 nodeId，续跑时误把 nodeId 当 treeId（`TECH-01`/`TECH-04`）。
+			LinearTask task = new(0, duration, nodeId, "Research", false, treeId, mapId, ownerId);
 			task.OnCompleted += () =>
 			{
 				tree.Research(nodeId);
@@ -115,15 +164,24 @@ namespace SciencePotato.Scripts.TechTree.Application
 			_time.Register(task);
 		}
 
+		/// <summary>
+		/// （v0.3 / WP-2.6 + WP-2.9）读档续跑研究：**树 Id 从快照的 `UId` 取**（新口径）；
+		/// 旧快照（`UId` 为空或 `none`）无法判断所属树 → 返回 null 由调用方决定策略（见 §18.4.2）。
+		/// </summary>
 		public LinearTask CreateResearchTask(string mapId, int ownerId, TaskSnapshot snapshot)
 		{
-			var tree = GetOrCreateTechTree(mapId, ownerId, snapshot.Id);
+			if (snapshot == null || string.IsNullOrWhiteSpace(snapshot.UId) || snapshot.UId == "none") return null;
+
+			string treeId = snapshot.UId;
+			var tree = GetOrCreateTechTree(mapId, ownerId, treeId);
 
 			LinearTask task = new(snapshot.Progress, snapshot.Target, snapshot.Id, snapshot.Type, snapshot.IsCompleted, snapshot.UId, mapId, snapshot.OwnerId);
+			tree.MarkResearchStarted(snapshot.Id); // 重新占用研究槽位（`WP-2.9`）
+
 			task.OnCompleted += () =>
 			{
 				tree.Research(snapshot.Id);
-				_repo.SaveTree(mapId, ownerId, snapshot.Id, tree);
+				_repo.SaveTree(mapId, ownerId, treeId, tree);
 
 				var modifiers = tree.GetModifiers(snapshot.Id);
 				if (modifiers.Count > 0)

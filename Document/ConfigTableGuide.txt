@@ -392,6 +392,8 @@
   ────────────────  ──────────────────────  ────  ───────────────────────
   (树根 key)        string                   是    科技树ID, 如 "military"
   ────── 每个科技树节点下 ──────
+  Concurrency       int                      否    本树**同时可进行的研究数**(默认 1 = 树内串行;
+                                                   三棵树互相独立 → 最多 3 项并行; <1 判 error)
   Techs             { string: {...} }        是    该树所有科技节点
     ──── 每个科技节点 ────
     Id              string                   是    节点ID(与key同)
@@ -413,6 +415,7 @@
   {
     "TechTrees": {
       "military": {
+        "Concurrency": 1,
         "Techs": {
           "melee_weapons": {
             "Id": "melee_weapons",

@@ -1,6 +1,7 @@
 {
   "TechTrees": {
     "military": {
+      "Concurrency": 1,
       "Techs": {
         "melee_weapons": {
           "Id": "melee_weapons",
@@ -32,6 +33,7 @@
       }
     },
     "science": {
+      "Concurrency": 1,
       "Techs": {
         "counting": {
           "Id": "counting",
@@ -59,6 +61,7 @@
       }
     },
     "physics": {
+      "Concurrency": 1,
       "Techs": {
         "simple_machine_intuition": {
           "Id": "simple_machine_intuition",
