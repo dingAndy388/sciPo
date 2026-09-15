@@ -44,7 +44,7 @@ namespace SciencePotato.HeadlessChecks
 			ConfigTables tables = ConfigFixtures.BuildRealCore().Tables;
 			List<IEventConfig> events = tables.Events.GetAllEvents();
 
-			Check.AssertEqual(3, events.Count, "事件条目数（最小样例）");
+			Check.AssertEqual(20, events.Count, "事件条目数（`WP-7.4`：20 条全表）");
 			Check.AssertEqual(0.002f, events.Single(e => e.EventId == "gold_rush").TriggerChancePerDay, "淘金热 触发概率（设计 0.2%/日）");
 			Check.AssertEqual(0.001f, events.Single(e => e.EventId == "plague").TriggerChancePerDay, "瘟疫 触发概率（设计 0.1%/日）");
 			Check.AssertEqual(0.0005f, events.Single(e => e.EventId == "enlightenment").TriggerChancePerDay, "启蒙时代 触发概率（设计 0.05%/日）");

@@ -3,19 +3,17 @@
     {
       "EventId": "gold_rush",
       "Name": "淘金热",
-      "Description": "金矿发现！金币产量短期飙升",
+      "Description": "矿脉发现！矿物产量短期飙升",
       "TriggerChancePerDay": 0.002,
       "Duration": 30,
-      "Modifiers": [
-        { "Target": "FoodGrowth", "Type": "Percent", "Value": 1.0 }
-      ],
-      "ResourcePrerequisites": { "Food": 200 },
+      "Modifiers": [ { "Target": "MineralGrowth", "Type": "Percent", "Value": 1.0 } ],
+      "ResourcePrerequisites": { "BasicMinerals": 200 },
       "TechPrerequisites": {}
     },
     {
       "EventId": "plague",
       "Name": "瘟疫",
-      "Description": "可怕的瘟疫席卷了你的领地",
+      "Description": "可怕的瘟疫席卷了你的领地，食物与矿物产出大跌",
       "TriggerChancePerDay": 0.001,
       "Duration": 20,
       "Modifiers": [
@@ -31,11 +29,188 @@
       "Description": "思想解放，科研速度永久提升",
       "TriggerChancePerDay": 0.0005,
       "Duration": 0,
+      "Modifiers": [ { "Target": "IdeaGrowth", "Type": "Percent", "Value": 0.5 } ],
+      "ResourcePrerequisites": { "BasicMinerals": 500, "Idea": 100 },
+      "TechPrerequisites": { "science": [ "mathematics" ] }
+    },
+    {
+      "EventId": "harvest_festival",
+      "Name": "丰收庆典",
+      "Description": "土豆大丰收，人民欢庆，食物储备充盈",
+      "TriggerChancePerDay": 0.002,
+      "Duration": 10,
       "Modifiers": [
-        { "Target": "IdeaGrowth", "Type": "Percent", "Value": 0.5 }
+        { "Target": "FoodGrowth", "Type": "Percent", "Value": 0.4 },
+        { "Target": "IdeaGrowth", "Type": "Absolute", "Value": 50 }
       ],
-      "ResourcePrerequisites": { "Food": 500, "Idea": 100 },
-      "TechPrerequisites": { "science": ["mathematics"] }
+      "ResourcePrerequisites": { "Food": 100 },
+      "TechPrerequisites": {}
+    },
+    {
+      "EventId": "visiting_scholar",
+      "Name": "游学学者来访",
+      "Description": "一位远方学者带来新知，短暂停留期间激发科研热情",
+      "TriggerChancePerDay": 0.001,
+      "Duration": 20,
+      "Modifiers": [ { "Target": "IdeaGrowth", "Type": "Percent", "Value": 0.3 } ],
+      "ResourcePrerequisites": { "Food": 50 },
+      "TechPrerequisites": {}
+    },
+    {
+      "EventId": "mine_collapse",
+      "Name": "矿脉塌方",
+      "Description": "矿井发生塌方，数日无法开采，损失惨重",
+      "TriggerChancePerDay": 0.001,
+      "Duration": 10,
+      "Modifiers": [ { "Target": "MineralGrowth", "Type": "Percent", "Value": -0.6 } ],
+      "ResourcePrerequisites": {},
+      "TechPrerequisites": {}
+    },
+    {
+      "EventId": "sunspot_observation",
+      "Name": "太阳黑子观测",
+      "Description": "天文观测发现太阳表面黑子，引发对天体运行的猜测",
+      "TriggerChancePerDay": 0.0005,
+      "Duration": 0,
+      "Modifiers": [ { "Target": "IdeaGrowth", "Type": "Percent", "Value": 0.1 } ],
+      "ResourcePrerequisites": {},
+      "TechPrerequisites": {}
+    },
+    {
+      "EventId": "pottery_spread",
+      "Name": "制陶技术传播",
+      "Description": "邻族掌握制陶术，交流后我方陶器质量提升，食物保存改善",
+      "TriggerChancePerDay": 0.001,
+      "Duration": 0,
+      "Modifiers": [ { "Target": "FoodGrowth", "Type": "Absolute", "Value": 20 } ],
+      "ResourcePrerequisites": {},
+      "TechPrerequisites": {}
+    },
+    {
+      "EventId": "earthquake",
+      "Name": "地震",
+      "Description": "大地震动，部分建筑受损，重建工作需要额外资源",
+      "TriggerChancePerDay": 0.0008,
+      "Duration": 5,
+      "Modifiers": [
+        { "Target": "BuildingSpeed", "Type": "Percent", "Value": -0.5 },
+        { "Target": "MineralGrowth", "Type": "Percent", "Value": -0.2 }
+      ],
+      "ResourcePrerequisites": {},
+      "TechPrerequisites": {}
+    },
+    {
+      "EventId": "flash_of_inspiration",
+      "Name": "灵感迸发",
+      "Description": "一位工匠在梦中获得灵感，科研热情持续高涨",
+      "TriggerChancePerDay": 0.0005,
+      "Duration": 0,
+      "Modifiers": [ { "Target": "IdeaGrowth", "Type": "Percent", "Value": 0.15 } ],
+      "ResourcePrerequisites": {},
+      "TechPrerequisites": {}
+    },
+    {
+      "EventId": "cold_wave",
+      "Name": "低温寒潮",
+      "Description": "异常低温导致作物冻伤，人口取暖消耗更多燃料",
+      "TriggerChancePerDay": 0.0012,
+      "Duration": 12,
+      "Modifiers": [
+        { "Target": "FoodGrowth", "Type": "Percent", "Value": -0.4 },
+        { "Target": "PopulationGrowth", "Type": "Percent", "Value": -0.2 }
+      ],
+      "ResourcePrerequisites": {},
+      "TechPrerequisites": {}
+    },
+    {
+      "EventId": "trade_caravan",
+      "Name": "贸易商队到来",
+      "Description": "远方商队带来稀有资源，可用剩余食物换取矿物",
+      "TriggerChancePerDay": 0.001,
+      "Duration": 30,
+      "Modifiers": [ { "Target": "MineralGrowth", "Type": "Absolute", "Value": 30 } ],
+      "ResourcePrerequisites": { "Food": 100 },
+      "TechPrerequisites": {}
+    },
+    {
+      "EventId": "volcanic_ash",
+      "Name": "火山灰笼罩",
+      "Description": "远处火山喷发，火山灰遮蔽阳光，气温下降，农业受损",
+      "TriggerChancePerDay": 0.0006,
+      "Duration": 30,
+      "Modifiers": [ { "Target": "FoodGrowth", "Type": "Percent", "Value": -0.5 } ],
+      "ResourcePrerequisites": {},
+      "TechPrerequisites": {}
+    },
+    {
+      "EventId": "math_contest",
+      "Name": "数学竞赛",
+      "Description": "各地学者聚集，切磋数学难题，胜者获得声望，科研提速",
+      "TriggerChancePerDay": 0.001,
+      "Duration": 15,
+      "Modifiers": [ { "Target": "IdeaGrowth", "Type": "Percent", "Value": 0.2 } ],
+      "ResourcePrerequisites": { "Food": 80, "Idea": 50 },
+      "TechPrerequisites": {}
+    },
+    {
+      "EventId": "locust_swarm",
+      "Name": "蝗虫灾害",
+      "Description": "蝗虫蔽日，啃食庄稼，收成大减",
+      "TriggerChancePerDay": 0.001,
+      "Duration": 15,
+      "Modifiers": [ { "Target": "FoodGrowth", "Type": "Percent", "Value": -0.7 } ],
+      "ResourcePrerequisites": {},
+      "TechPrerequisites": {}
+    },
+    {
+      "EventId": "alchemy_breakthrough",
+      "Name": "炼金术突破",
+      "Description": "炼金炉意外产出一种新物质，可替代部分矿物，提升产出",
+      "TriggerChancePerDay": 0.0008,
+      "Duration": 0,
+      "Modifiers": [ { "Target": "MineralGrowth", "Type": "Percent", "Value": 0.15 } ],
+      "ResourcePrerequisites": { "Idea": 100 },
+      "TechPrerequisites": {}
+    },
+    {
+      "EventId": "master_builder",
+      "Name": "建造大师到来",
+      "Description": "一位经验丰富的建筑师指导建造，所有正在建造的建筑进度加速",
+      "TriggerChancePerDay": 0.001,
+      "Duration": 20,
+      "Modifiers": [ { "Target": "BuildingSpeed", "Type": "Percent", "Value": 0.3 } ],
+      "ResourcePrerequisites": { "Food": 60 },
+      "TechPrerequisites": {}
+    },
+    {
+      "EventId": "cultural_renaissance",
+      "Name": "文化复兴",
+      "Description": "民间艺术繁荣，学者受启发，灵感产出增加",
+      "TriggerChancePerDay": 0.0008,
+      "Duration": 25,
+      "Modifiers": [ { "Target": "IdeaGrowth", "Type": "Percent", "Value": 0.15 } ],
+      "ResourcePrerequisites": {},
+      "TechPrerequisites": {}
+    },
+    {
+      "EventId": "drought",
+      "Name": "干旱",
+      "Description": "长时间无雨，河流干涸，农作物枯萎",
+      "TriggerChancePerDay": 0.0012,
+      "Duration": 20,
+      "Modifiers": [ { "Target": "FoodGrowth", "Type": "Percent", "Value": -0.6 } ],
+      "ResourcePrerequisites": {},
+      "TechPrerequisites": {}
+    },
+    {
+      "EventId": "mysterious_stele",
+      "Name": "神秘石碑",
+      "Description": "发现古老石碑，上面刻有未知符号，学者投入研究",
+      "TriggerChancePerDay": 0.0005,
+      "Duration": 0,
+      "Modifiers": [ { "Target": "IdeaGrowth", "Type": "Percent", "Value": 0.1 } ],
+      "ResourcePrerequisites": {},
+      "TechPrerequisites": {}
     }
   ]
 }

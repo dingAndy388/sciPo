@@ -270,7 +270,7 @@ namespace SciencePotato.HeadlessChecks
 
 			Check.Assert(report.HasErrors, "事件表写成裸数组应判 error");
 			Check.Assert(report.Issues.Any(i => i.Table == "Events" && i.Message.Contains("解析失败")), "应报告 JSON 解析失败");
-			Check.AssertEqual(3, ConfigFixtures.BuildRealCore().Tables.AllEvents().Count(), "真实事件表条目数");
+			Check.AssertEqual(20, ConfigFixtures.BuildRealCore().Tables.AllEvents().Count(), "真实事件表条目数（`WP-7.4`：20 条全表）");
 		}
 
 		private static void ReportWithoutThrowing()
@@ -291,7 +291,7 @@ namespace SciencePotato.HeadlessChecks
 			Check.AssertEqual(21, tables.AllBuildings().Count(), "Buildings 条目数（12 旧 + 农田/矿场/仓库各 3 级 = 21；24 条全表归 WP-7.2b）");
 			Check.AssertEqual(15, tables.AllUnits().Count(), "Units 条目数（WP-7.5：10 条玩家单位 + 5 条敌方单位）");
 			Check.AssertEqual(3, tables.TreeIds().Count(), "TechTrees 树数量（WP-2.1 起含最小 physics 样例）");
-			Check.AssertEqual(3, tables.AllEvents().Count(), "Events 条目数");
+			Check.AssertEqual(20, tables.AllEvents().Count(), "Events 条目数（`WP-7.4`）");
 			Check.AssertEqual(4f, tables.Generator.Density, "Generator.Density（来自 Config/Generator.json）");
 
 			// 按 Id 检索仍然可用：新增的全表视图没有破坏原有单条查询
