@@ -1,3 +1,4 @@
+using SciencePotato.Scripts.AI.Application;
 using SciencePotato.Scripts.Common.Domain;
 using SciencePotato.Scripts.Events.Application;
 using SciencePotato.Scripts.Resources.Application;
@@ -40,6 +41,9 @@ namespace SciencePotato.Scripts.Core
 		/// <summary>（v0.6.4 / WP-5.9）开局放下的单位数（人类与 AI 应相同）。</summary>
 		public int InitialUnitCount { get; set; }
 
+		/// <summary>（v0.7.3 / WP-6.2）AI 决策循环由**本次调用**新挂上（人类势力恒为 <c>false</c>）。</summary>
+		public bool AiEngineStarted { get; set; }
+
 		public override string ToString()
 			=> $"{DisplayName}(owner={OwnerId},{(IsHuman ? "人类" : "AI")}) 资源池={ResourcesPoolStarted} 月结={SettlementStarted} 事件={EventsStarted}" +
 			   $"{(Spawn.HasValue ? $" 出生点=({Spawn.Value.q},{Spawn.Value.r}) 单位×{InitialUnitCount}" : string.Empty)}{(Repeat ? " [重复启动]" : string.Empty)}";
@@ -70,8 +74,17 @@ namespace SciencePotato.Scripts.Core
 		/// <summary>（v0.6.4 / WP-5.9）开局布置（可空 = 不做布置，只启动子系统）。</summary>
 		private SessionSetupService _setup;
 
+		/// <summary>（v0.7.3 / WP-6.2）AI 决策循环（可空 = 本局没有 AI）。</summary>
+		private AiService _ai;
+
 		/// <summary>（v0.6.4 / WP-5.9）挂上开局布置（由组合根在装配末尾调用，避免"忘了布置"）。</summary>
 		public void AttachSetup(SessionSetupService setup) => _setup = setup;
+
+		/// <summary>
+		/// （v0.7.3 / WP-6.2）挂上 AI 决策服务（由组合根在装配末尾调用）。
+		/// <para>它只对**非人类**势力启动（人类的行为来自玩家操作，不是决策循环）。</para>
+		/// </summary>
+		public void AttachAi(AiService ai) => _ai = ai;
 
 		/// <summary>（v0.6.4 / WP-5.9）某势力的出生点（未布置过返回 <c>null</c>）。</summary>
 		public PlayerSpawn SpawnOf(string mapId, int ownerId) => _setup?.SpawnOf(mapId, ownerId);
@@ -181,6 +194,9 @@ namespace SciencePotato.Scripts.Core
 
 				// ③ 事件引擎：只给人类玩家（`G8` / `WP-4.12` 口径：随机事件要打断的是玩家的决策，AI 不需要被打断）
 				if (player.IsHuman && _events != null) report.EventsStarted = _events.StartEventsEngine(mapId, player.OwnerId);
+
+				// ④ AI 决策循环：只给**非人类**势力（v0.7.3 / WP-6.2）—— 人类的行为来自玩家操作
+				if (!player.IsHuman && _ai != null) report.AiEngineStarted = _ai.StartEngine(mapId, player.OwnerId);
 
 				byOwner[player.OwnerId] = report;
 				started.Add(report);

@@ -1,4 +1,4 @@
-# Science Potato · 代码地图（活文档 · v0.6.7）
+# Science Potato · 代码地图（活文档 · v0.7.3）
 
 > **用途**（工作流 W5）：把"改 X 要同时改哪几处、入口在哪、对应用例叫什么"写在一页纸上，
 > 避免每个 WP 都重新 grep 同一批链路。**发现新链路就补进来**，过期条目立刻删（不堆叠）。
@@ -11,7 +11,7 @@
 | **组合根**（新增服务/仓储） | `Scripts/Core/CoreBootstrap.cs` 的 `Build()` | ① `CoreServices` 加只读属性 ② `CoreDependencies` 加注入项 ③ `WiringChecks` 加一条装配断言 |
 | 宿主（Godot autoload） | `Scripts/Autoload/ServiceContainer.cs`（`_Ready`） | 装配自检清单（`ReportWiring`）；`Scene/Autoload/service_container.tscn` 的脚本路径 |
 | 会话状态 | `Scripts/Core/GameSession.cs`（玩家表）/ `MapSession`（地图缓存） | 玩家表变化要同步 `WiringChecks` + `SessionSetupChecks` |
-| 会话级启动链 | `Scripts/Core/SessionOrchestrator.cs` → `SessionSetupService.Setup` → 逐 owner 资源池/月结/事件 | 新子系统要挂在 `StartMap` 里（**不要**让调用方自己记得调） |
+| 会话级启动链 | `Scripts/Core/SessionOrchestrator.cs` → `SessionSetupService.Setup` → 逐 owner 资源池/月结/事件/AI 决策 | 新子系统要挂在 `StartMap` 里（**不要**让调用方自己记得调）；人类 / 非人类的差别只在这里分（`IsHuman`） |
 | 开局布置 | `Scripts/Core/SessionSetupService.cs` + `Config/Generator.json` 的 `Start` 段 | `SessionOrchestrator.AttachSetup`（装配）、`SessionSetupChecks` |
 
 ## 2. 配置表（7 张 + 1 组文本）
@@ -48,6 +48,7 @@
 | 存档 | `WorldSaveService`（`SaveWorld`/`LoadWorld`） | `ISaveStore`、`SaveMapper`、`SaveRebuilder` | `WorldPersistence`、`SaveUnit` |
 | 玩家/开局 | `SessionOrchestrator`、`SessionSetupService` | `PlayerContext`、`PlayerSpawn`、`PlayerStartReport` | `Wiring`、`SessionSetup` |
 | 胜负 | `VictoryService`（`Evaluate`/`OutcomeOf`/`IsAlive`） | `PlayerStatus`、`GameOutcome` | `Victory` |
+| AI 决策 | `AiService`（`StartEngine`/`Observe`/`Decide`/`Evaluate`/`DecisionsOf`） | `AiDecision`、`AiObservation`、`AiFocus`、`AiThreatLevel`、`IAiConfig` | `AiConfig`、`AiDecision` |
 | 外观/表现 | `MapView`（`UpdateAllCells`）、`MapCellView`（`Configure`/`SetTerrain`）、`CameraController` | `IMapAppearanceConfig`、`TerrainAppearance`、`RgbColor` | `Appearance` + 冒烟 |
 | i18n | `II18nService`（`T`） | `I18nService`、`I18nMarkers` | `I18n` |
 

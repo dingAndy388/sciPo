@@ -1,4 +1,5 @@
 using Godot;
+using SciencePotato.Scripts.AI.Domain;
 using SciencePotato.Scripts.Core;
 using SciencePotato.Scripts.Core.Time;
 using SciencePotato.Scripts.Map.Domain;
@@ -97,14 +98,20 @@ namespace SciencePotato.Scripts.Dev
 				GD.Print($"[SMOKE] 出生点：人类 ({humanReport.Spawn.Value.q},{humanReport.Spawn.Value.r})" +
 						 $"，间距配置 ≥ {core.Tables.Start.MinSpawnDistance}，开局单位 {humanReport.InitialUnitCount} 个");
 
-			// 周期任务明细：每个势力 = 月结 1 条 + 每个可成长资源 1 条（资源表 `GrowInterval`）；事件引擎只有人类有
+			// 周期任务明细：每个势力 = 月结 1 条 + 每个可成长资源 1 条（资源表 `GrowInterval`）；
+			// 事件引擎只有人类有（`G8`）；AI 决策循环只给非人类（v0.7.3 / WP-6.2）
 			int growthTasksPerPlayer = 0;
 			foreach (var resource in core.Tables.AllResources())
 				if (resource.GrowInterval > 0f) growthTasksPerPlayer++;
 
-			int expectedTasks = core.Session.Players.Count * (1 + growthTasksPerPlayer) + 1;
-			GD.Print($"[SMOKE] 周期任务：实际 {core.Time.SubscriberCount} 条（期望 势力{core.Session.Players.Count} ×（月结1+资源成长{growthTasksPerPlayer}）+ 人类事件1 = {expectedTasks}）");
-			Check("编排：周期任务数 = 势力 ×（月结 + 资源成长）+ 人类事件", core.Time.SubscriberCount == expectedTasks);
+			int aiPlayers = 0;
+			foreach (PlayerContext player in core.Session.Players)
+				if (!player.IsHuman) aiPlayers++;
+
+			int expectedTasks = core.Session.Players.Count * (1 + growthTasksPerPlayer) + 1 + aiPlayers;
+			GD.Print($"[SMOKE] 周期任务：实际 {core.Time.SubscriberCount} 条（期望 势力{core.Session.Players.Count} ×（月结1+资源成长{growthTasksPerPlayer}）" +
+					 $" + 人类事件1 + AI决策{aiPlayers} = {expectedTasks}）");
+			Check("编排：周期任务数 = 势力 ×（月结 + 资源成长）+ 人类事件 + AI 决策", core.Time.SubscriberCount == expectedTasks);
 
 			bool humanEvents = core.Events != null && core.Events.IsEngineStarted(MapId, core.Session.HumanOwnerId);
 			Check("编排：人类玩家的事件引擎已启动", humanEvents);
@@ -131,6 +138,20 @@ namespace SciencePotato.Scripts.Dev
 
 			Check("时间：90 日后月结至少发生 1 次", core.Settlement != null && core.Settlement.SettledCount >= 1);
 			Check("时间：人类玩家的月结报告可读", core.Settlement != null && core.Settlement.LastReport(MapId, core.Session.HumanOwnerId) != null);
+
+			// AI 决策循环确实在跑（v0.7.3 / WP-6.2）：90 日 ≥ 3 个节拍 ⇒ 应有决策记录
+			if (aiPlayers > 0 && core.AiService != null)
+			{
+				var aiDecisionLines = new List<string>();
+				foreach (PlayerContext player in core.Session.Players)
+				{
+					if (player.IsHuman) continue;
+					AiDecision last = core.AiService.LastDecision(MapId, player.OwnerId);
+					aiDecisionLines.Add(last == null ? $"{player.DisplayName}：无决策" : last.ToString());
+				}
+				GD.Print($"[SMOKE] AI 决策：共 {core.AiService.DecisionCount} 次 —— {string.Join(" | ", aiDecisionLines)}");
+				Check("编排：AI 势力已按节拍产出决策（WP-6.2）", core.AiService.DecisionCount >= aiPlayers);
+			}
 
 			// ⑤ 存档点 → 读档点（真实 user:// 落盘 + 任务恢复）
 			startedMs = Time.GetTicksMsec();

@@ -1,3 +1,4 @@
+using SciencePotato.Scripts.AI.Application;
 using SciencePotato.Scripts.AI.Domain;
 using SciencePotato.Scripts.AI.Infrastructure;
 using SciencePotato.Scripts.Common.Application;
@@ -191,6 +192,10 @@ namespace SciencePotato.Scripts.Core
 			var setup = new SessionSetupService(session, mapService, units, resources, fog, tables.Start);
 			orchestrator.AttachSetup(setup);
 
+			// 6.10) AI 决策循环（v0.7.3 / WP-6.2）：只对非人类势力启动；策略参数来自 `Config/AI.json`
+			var ai = new AiService(session, mapService, resources, tables.Resources, tables.Buildings, tables.Units, timeService, aiConfig);
+			orchestrator.AttachAi(ai);
+
 			// 6.9) 胜负判定（v0.7.0 / WP-4.19）：每月判定（吃月结推送）+ 全灭（吃单位阵亡推送）
 			var victory = new VictoryService(session, mapService, settlement, domainEvents);
 
@@ -220,6 +225,7 @@ namespace SciencePotato.Scripts.Core
 				Setup = setup,
 				Victory = victory,
 				Ai = aiConfig,
+				AiService = ai,
 				I18n = i18n,
 			};
 		}

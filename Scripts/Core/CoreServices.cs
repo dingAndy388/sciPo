@@ -1,3 +1,4 @@
+using SciencePotato.Scripts.AI.Application;
 using SciencePotato.Scripts.AI.Domain;
 using SciencePotato.Scripts.Common.Application;
 using SciencePotato.Scripts.Common.Domain;
@@ -125,6 +126,12 @@ namespace SciencePotato.Scripts.Core
 		/// <para>行为（决策循环/经济/军事）归 `WP-6.2`~`WP-6.4`；本项只提供参数与校验结论。</para>
 		/// </summary>
 		public IAiConfig Ai { get; init; }
+
+		/// <summary>
+		/// （v0.7.3 / WP-6.2）**AI 决策循环**：按游戏日节拍做"生存 → 威胁 → 发展"判断（人类不参与）。
+		/// <para>它只产出 <c>AiDecision</c>（可复盘）；下单（建造/科研/训练）归 `WP-6.3`/`WP-6.4`。</para>
+		/// </summary>
+		public AiService AiService { get; init; }
 
 		/// <summary>
 		/// （v0.6.5 / WP-5.10）**多语言（i18n）**：UI 文案的键 → 文本解析器（缺键可见、可回退到默认语言）。
