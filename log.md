@@ -2564,7 +2564,7 @@ dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessC
 | WP-3.10 | 连续赤字减员（logistic）+ 建筑维护来源 | ✅ 完成 | M0-3 |
 
 
-### 批次 4 · 深度机制（19 WP · 完成 7 / 未开始 12）
+### 批次 4 · 深度机制（19 WP · ✅ 全部完成）
 
 | WP | 内容 | 状态 | M |
 | :--- | :--- | :--- | :--- |
@@ -2615,7 +2615,7 @@ dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessC
 | WP-6.5 | AI 信息公平（不无视迷雾、不凭空生成、不完美克制；以测试判据锁住"不作弊"） | ✅ 完成（v0.7.7，5 条**差分**判据：视野外/对手状态/不凭空生成/资源上限/科技选择） | M2 |
 | WP-6.6 | AI 与胜负（AI 也会被全灭/被月度判定淘汰；AI 胜利条件与人类同构） | ✅ 完成（v0.7.6，出局即停 + tick 自摘；双向胜负同构） | M2 |
 
-### 批次 7 · 全内容（7 WP · 完成 2 / 未开始 5）
+### 批次 7 · 全内容（7 WP · 完成 5 / 未开始 2：科技 93 表本体 + 一致性长跑）
 
 | WP | 内容 | 状态 | M |
 | :--- | :--- | :--- | :--- |
@@ -2627,7 +2627,7 @@ dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessC
 | WP-7.5 | 单位 15 个（玩家 10 + 敌方 5；HP/伤害/维护/掉落/标签） | ✅ 完成（v0.7.9，15 条全表 + 训练来源闭合；数值沿用现值待 `N2`） | M2 |
 | WP-7.6 | 平衡校验（产出/消耗/时长/科技成本的整表一致性 + 抽样长跑） | ☐ 未开始 | M3 |
 
-### 批次 8 · 美术完工（4 WP · 全部未开始）
+### 批次 8 · 美术完工（4 WP · 全部未开始，等 N4）
 
 | WP | 内容 | 状态 | M |
 | :--- | :--- | :--- | :--- |
