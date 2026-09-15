@@ -1156,6 +1156,7 @@
 | **v0.3.21** | 2026-09-15 | **WP-3.10 连续赤字减员 + 建筑维护（`C9`、`RES-01` 收口）**：① **减员（`C9`）**：`MonthlySettlementService` 新增**年度评估窗口**（累计赤字 / 累计需求，与连续赤字月数同键、同落盘）+ `EvaluateDecline` —— 连续赤字 ≥ `DeclineThresholdMonths`（36 月）后，在**年边界**（`日 % DeclineIntervalDays == 0`，360 日）算缺口率 `r = Σ赤字 / Σ需求` → logistic 概率 `p = 1/(1+e^(−k(r−0.5)))`（k = 8）→ 期望减员 = **总人口 × p × 0.05** → 乘随机抖动（±25%）后交给新增的 **`IPopulationSink`**（`Common/Domain`，`D62`）：`MapAppService` 实现它、`Map.ApplyPopulationLoss(amount, IRandom)` **按地块随机扣人**（候选按 (q,r) 显式排序 + 随机索引挑格、扣空退出候选、**不出现负人口**、有变化即标脏进存档点）；评估后年度窗口清零、**连续赤字月数保留** ⇒ 只要还在赤字，每个年边界都再评估（不是一辈子只罚一次）；② **全配置化**：`Settlement` 段新增 `DeclineThresholdMonths/DeclineIntervalDays/DeclineLogisticK/DeclineExpectedFactor/DeclineJitterRatio`（省略 = 设计稿值，见 `SettlementConfigDto` 常量），`ConfigValidator` 分级：阈值 0 → **warning**（显式关闭而非静默）、阈值 < 18 月 → warning（疑似漏填）、负数 / 间隔 ≤ 0 / k ≤ 0 / 系数 ≤ 0 / 抖动越界 → **error**；③ **建筑维护（`D63`）**：`IBuildingConfig` 新增 `Maintenance{ResourceId, Amount}`（与单位维护同构）+ 新增第三条需求来源 `BuildingMaintenanceUpkeepDemandSource`（Construction 侧读建筑表、只收**本玩家**建筑、敌方占据物不计），`ConfigValidator` 复用 `ValidateResourceCosts`（负值 error / 未定义资源 warning）；**真实 `Buildings.json` 全部留空** —— 设计稿尚未定义建筑维护数值，机制先就位（填表即生效）而不臆造数字；④ **可观测**：`MonthlySettlementReport` 新增 `DeclineEvaluated/DeficitRatio/DeclineProbability/PopulationLost`（报告行含减员摘要）、`DeclineEvaluations` 计数；⑤ **存档**：`settlement:{mapId}` 分区新增 `YearDeficit/YearDemand`（否则反复读档就能把缺口率压小）。检查 **+8 项**（总计 **155/155**、退出码 0）。**`C9` 闭环**（`C4` 产出归因 UI 仍归 `WP-4.13`） |
 | **v0.3.22** | 2026-09-15 | **WP-3.6 同格战斗（`E9`/`E10`/`E12`/`E18`/`E19`、`UNIT-12` 收口）**：① **交战状态（`D65`）**：`MapCell.Invader`（`D56` 预留的空槽位）表达"一格内一对交战的单位" —— `Map.BeginEngagement` 是占据物**进入交战的唯一入口**（目标格必须有人 / 该格只能一对 / 从原格摘除且索引仍指向进攻方），`EndEngagement` 是退出入口，`Map.RemoveOccupant` 收尾时**自动把进攻方顶上位**（被挑战方阵亡 → 胜者占据该格，不留"格子有人但占据物槽位空着"的悬空态）；`MapSave` 升 **v3**（新增 `Invader` 槽位，旧档缺字段 = 未交战，**无需迁移**）；② **交互模型（`D66`）**：近战（`AttackRadius=0`）= **攻进敌格**（进入敌格即交战，不消耗 MP，攻击动作结束当前移动）、远程（≥1）= 隔格开火、射程外先接近（`R7` 改目的地）走到位再开火；**删除"遇敌即停"**（`HasEnemyInVision`，缺陷闭合）；③ **按日结算 + 反击（`D67`）**：新增 `UnitCombatService`（`UnitAttackDays=1` 的 `IntervalTask`，键 `atk_{a}_{t}` 幂等、双向各一条），被挑战方**打得到就打回去**（敌方 `EnemyAttack` target）、打不到就白挨（野狼射程 0 对 2 格外的弓箭手）；`E19` 落地为**进入敌方射程即受击**（落地/训练完成/每次位移后按"最大 AttackRadius"窗口扫描）；④ **伤害公式（`E12`）**：`CombatRules`（纯函数）—— 目标类型衰减（建筑 ×0.5）在前、攻击方加伤乘其后（`UnitAttack`/`EnemyAttack`）、建筑目标再乘 `BuildingDamage`（弩炮 +50% ⇒ `0.5×1.5=0.75`）；⑤ **建筑作为目标（`E18`/`D68`）**：可瞄准、公式生效、无友伤（不同 `OwnerId` 即敌对），但**不加建筑 HP**（归 `WP-4.8`），本轮以 `BuildingHits`/`LastBuildingDamage` 记账；⑥ **收尾**：`Unit.MaxHP`（`E15` 前置，配置派生不落盘）、阵亡沿用既有"移除 + 注销任务 + `UnitDiedEvent`"、掉落仍归 `WP-3.7`；`RestoreUnitTasks` 覆盖**交战进攻方**与**敌方反击循环**，`WorldSaveService.LoadWorld` 在 `ITimeService.Reset()` 后作废交战登记（否则读档后敌人不再反击）；`GetOccupants` 计入 `Invader`（单位维护费不漏算）；⑦ **配置校验**：`Units` 新增 2 条 warning（有 `CanAttack` 却 0 伤害 / 有伤害却缺 `CanAttack`）。检查 **+11 项**（总计 **166/166**、退出码 0），**M0-3 ③ 的前两半（同格交战 → HP 归零 → 单位移除）通过**，掉落入池待 `WP-3.7` |
 | **v0.3.23** | 2026-09-15 | **WP-3.7 击杀掉落（`E20`/`E21` 收口，M0-3 ③ 整条闭合）**：① **掉落 = 事件消费端（`D69`）**：新增 `UnitLootService`（`Units/Application`）订阅 `UnitDiedEvent` —— 战斗引擎（`UnitCombatService`）**一行未改**（它只负责推送阵亡，不认识资源池），掉落口径因此可以单独验收；② **入池口 = 新契约（`D70`，`D62` 手法）**：`ILootSink`（`Common/Domain`）+ `ResourcesAppService.GrantLoot`（新增 `ResourcesAppService.Loot.cs` 分部实现）—— 空表不建池、数量 ≤ 0 不写、**不破池上限**（沿用 `ResourcesPool.AddValue` 的夹取）、有变化即落盘、**返回实际入池量**（满仓时是 0 而不是静默吞掉）；③ **口径**：只给「玩家击杀敌方」—— 被杀者 `IsHostile`、凶手能在图上找回且**不是**敌方单位；掉落进**击杀者所有者**的池（不是阵亡方、不是旁观者）；玩家单位阵亡不掉落（design「不掉落单位或建筑」）；④ **可观测（`D25`）**：`Drops`/`HandledDeaths` + 四类「没掉成」分类计数（玩家阵亡 / 找不出凶手 / 空表 / 没接池）+ `LastDroppedUnitId`/`LastLootOwnerId`/`LastGranted`（**逐项实际入池量**）/`TotalGranted`；⑤ **装配**：`UnitsAppService` 新增**可选** `ILootSink lootSink = null`（缺省取 `resourcesApp as ILootSink` ⇒ 装配处零改动）与 `Loot` 只读出口；⑥ **`E21`**：移除 + 不返还 + 阵亡事件自 `WP-3.6` 已闭环，**驻扎加成清理登记给 `WP-4.6`**（当前没有驻扎字段，不为它造空接口）。检查 **+4 项**（新增 `LootChecks`）+ 1 项改造（`CombatChecks` 的「资源池不变」翻成「入池 30 Gold」）＝ **170/170 通过、退出码 0**；**M0-3 ③ 整条闭合**（同格交战 → HP 归零 → 单位移除 → 掉落进池） |
+| **v0.5.0** | 2026-09-15 | **M0-3 收口（批次 3 交付总结 · 无代码改动）**：批次 3 的 10 个 WP（`WP-3.1`~`WP-3.10`）全部完成，M0-3 的四条验收项**逐条通过**（① 存档→读档→360 日等价 ② 移动模型 R1~R7 ③ 同格交战 + 阵亡 + 掉落进池 ④ 敌方封锁格不可建造），判据与复现命令见新增的 **§18.7**（与 §18.5 的 M0-2 总结同型：里程碑判据 / 关键类型 / 交接给批次 4 的入口条件与未还债务 / 仍未做清单）。检查 **170/170、退出码 0**；本版只动文档（`log.md`），代码与上一版一致 |
 
 
 
@@ -2121,6 +2122,8 @@ WP-0.4 ─→ WP-3.5 / WP-3.8 / WP-5.3
 
 **M0-2 结论（v0.4.0）**：五条验收项全部通过，验收载具为 103 项无头断言（`dotnet run --project Tests\SciencePotato.HeadlessChecks`，退出码 0）。里程碑判据与"谁验的"见 §18.5。
 
+**M0-3 结论（v0.5.0）**：四条验收项全部通过（① 存档等价 → ② 移动模型 → ③ 同格交战 + 阵亡 + 掉落进池 → ④ 敌方封锁格），验收载具为 **170 项**无头断言（同一命令，退出码 0）。里程碑判据、批次 3 的关键类型与"交接给批次 4 的入口条件/未还债务"见 §18.7；**唯一未在生产路径成立的环节**是"应用服务尚未进组合根"（`WP-5.1`，M1 前的硬门槛 —— M0-3 的闭环目前只在验收面成立）。
+
 ## 18.2 复现命令
 
 ```powershell
@@ -2377,7 +2380,70 @@ dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessC
 4. **装配零改动**：`UnitsAppService(..., ILootSink lootSink = null)` 缺省取 `resourcesApp as ILootSink`，并暴露 `Loot` 只读出口（`Drops`/`LastGranted` 等观测口径）。
 5. **用例**：新增 `LootChecks` 4 项 + `CombatChecks` 的击杀用例由"资源池不变"翻成"入池 30 Gold" ⇒ **170/170 通过、退出码 0**；文档同步 = 本表 + `ConfigTableGuide` v1.6。
 
-**下一步**：批次 3 的 **10 个 WP 全部完成**（`WP-3.1`~`WP-3.10`）→ **M0-3 收口 v0.5.0**（§18.1.1 的四条判据 ①存档等价 / ②移动模型 / ③同格交战 + 掉落 / ④敌方封锁格**均已 ✅**；收口时冻结检查数与里程碑结论、更新版本行与 §18.5 同型的交付总结）。
+**下一步**：**批次 4 · 深度机制**（`WP-4.1`~`WP-4.14`，见 §17 工作包表）。起步前先读 **§18.7.3** 的"入口条件 / 未还债务"——批次 4 的机制（修正器宿主、范围效果、驻扎、建筑 HP、UI 门控）都要挂在批次 3 留下的接口上；**唯一硬门槛**是 `WP-5.1` 的生产路径装配（不补装配，批次 4 的机制在 M1 手测里依然看不见）。
 
 **仍然挂着（不阻塞批次 3，已登记）**：`E14`（弓箭手优先打远程，`WP-4.3`）· `E15`（单位合并，`WP-4.7`；`MaxHP` 已就位）· `E16`（驻扎加成，`WP-4.6`）· `E17`（工程师修复，`WP-4.x`）· 建筑 HP（`WP-4.8`，`D68`）· 掉落满仓提示与生产路径装配（§18.4.2 v0.3.23 两行）。
+
+**收口**：M0-3 已于 **v0.5.0** 收口（判据 / 关键类型 / 交接见 §18.7）。
+
+---
+
+## 18.7 M0-3 交付总结与批次 4 交接（v0.5.0 新增）
+
+**一句话**：批次 3（`WP-3.1`~`WP-3.10`）把"世界不丢 + 真实移动战斗"从"能跑但会散"做到"**存档等价、命令可复现、敌人可交战**"；M0-3 的四条验收项全部通过（检查 103 → **170**，退出码 0）。**尚未在生产路径成立**的只有"应用服务进组合根"（`WP-5.1`）——本批所有闭环目前只在无头验收面成立。
+
+### 18.7.1 里程碑判据（逐条可复现）
+
+| M0-3 验收项 | 判据（无头断言） | 归属 WP |
+| :--- | :--- | :--- |
+| ① 存档 → 读档 → 推进 360 日逐项等价 | 固定种子两个世界（其一第 34 日存档 → 读档），第 360 日**日期 / 人口 / 资源 / 建筑与单位 / 任务 / 迷雾逐项等价**；另：单位运行时状态（HP/MP/忙闲/攻击目标）跨档保留，读档后战斗继续到击杀；施工中建筑（未完工 + 建造者忙 + 队列）跨档保留且完工时释放重建的建造者；更高 `SaveVersion` 拒绝加载 | `WP-3.2` / `WP-3.3` |
+| ② 工人跨平原 10 日走 2 格 / 跨山地需 30 日 | `M=10` 跨平原（`MoveCost 5`）：10 日走 2 格、到达清零；跨山地（`25`）：3 个恢复周期（30 日）才移动一格；水池 `Passable=false` 阻断；目的地可随时更改并按新路径到达（`R7`） | `WP-3.5` |
+| ③ 同格交战 N 日后 HP 归零、单位移除、**掉落进池** | 近战"攻进敌格"（同格一对、第二人被拒、**不耗 MP**、战斗中不算空闲）→ 按日双向结算（剑士 8 / 野狼 6 每日，第 8 日野狼阵亡）→ 胜者占据该格 + 封锁解除 + `Invader` 清空 + `UnitDiedEvent` → **30 Gold 进击杀者资源池**；掉落口径的负向对照（玩家阵亡 / 敌方互殴 / 凶手缺失 / 空表 / 没接线）与池上限裁剪见 `LootChecks` | `WP-3.6` + `WP-3.7` |
+| ④ 敌方单位封锁格不可建造 | 敌方单位 = 该格占据物 → `StartConstruction` 拒绝 + `CanEnter`/`FindPath` 绕开 + 移除即恢复 + 随地图存档保留 + 同 seed 同布局（边际概率 + 同格降序让位） | `WP-3.8` |
+
+> 复现：`dotnet build 'Science Potato.csproj'` → `dotnet run --project Tests\SciencePotato.HeadlessChecks`（**170/170、退出码 0**）。
+
+### 18.7.2 本批次新增/改造的关键类型
+
+| 模块 | 类型 | 作用 |
+| :--- | :--- | :--- |
+| 地图 | `MapSession`（常驻内存 + 脏标记 + `Flush`）· `MapAppService : IPopulationSink` | 地图只读盘一次、存档点统一落盘；减员出口（`WP-3.1`/`WP-3.10`） |
+| 存档 | `ISaveStore`/`JsonSaveStore`/`SaveFile`/`SaveMapper`/`SaveRebuilder` · `MapSave` **v3** · `WorldSaveService.LoadWorld` | 单文件原子写 + 版本迁移链 + 逐子系统分区（任务/资源/修正器/科技/迷雾/事件/时钟）（`WP-3.3`） |
+| 地图（占用与交战） | `PlaceOccupant`/`PlaceBuilding`/`RemoveOccupant`/`RemoveOccupantByPosition` · `BeginEngagement`/`EndEngagement` · `MapCell.Invader` | 占据物与交战对的**唯一入口**（进入/退出/胜者顶位都在这里）（`WP-3.4`/`WP-3.6`，`D65`） |
+| 单位（移动） | `UnitMovementService`（`R1`~`R7` + 地形 `MoveCost` + `CanEnter`/`FindPath`） | 离散累积 MP 模型 + 通行权限（`WP-3.5`） |
+| 单位（战斗） | `UnitCombatService` · `CombatRules`（纯函数）· `Unit.MaxHP` | 同格交战 + 按日双向结算 + 目标衰减/加伤 + 敌方射程反应（`WP-3.6`，`D65`~`D68`） |
+| 单位（掉落） | `UnitLootService` + `ILootSink`（`ResourcesAppService.GrantLoot`） | 阵亡事件消费端 → 进**击杀者**资源池；实际入池量可查（`WP-3.7`，`D69`/`D70`） |
+| 地图（生成后处理） | `IMapPostProcessor` · `EnemySpawner`（表驱动的 `{地形, 概率, 掉落}`）· `NoHostileRequirement` | 按地形**边际概率**放置敌方单位 + 封锁格（`WP-3.8`，`D55`~`D58`） |
+| 经济 | `MonthlySettlementService` · `IUpkeepDemandSource`/`UpkeepDemand` · `IPopulationSink` · `BuildingMaintenanceUpkeepDemandSource` | 月结：产出汇总 → 多来源需求 → 唯一写入点扣减 → 赤字记录 → 年边界 logistic 减员（`WP-3.9`/`WP-3.10`） |
+| 配置 | `Units.{Maintenance, IsHostile, SpawnTerrain, SpawnChance, DropReward}` · `Resources.Settlement` · `Buildings.Maintenance` | 战斗/敌方/经济的填表口径（`WP-3.7`~`WP-3.10`；`ConfigTableGuide` v1.6） |
+| 领域事件 | `UnitDiedEvent` 的**首个生产消费端** | 把"阵亡"从"战斗内部动作"变成"可被外部订阅的事实"（`WP-3.7`） |
+
+### 18.7.3 交接给批次 4 的**入口条件**（已就位，可直接依赖）
+
+| # | 已就位的能力 | 证据 / 说明 |
+| :--- | :--- | :--- |
+| 1 | **占用与交战的唯一入口**（想加"格内多占据物 / 区域建筑"只改 `Map` 与 `MapCell`） | `WP-3.4`/`WP-3.6` 用例 + `D65`；`WP-4.9` 的迁移点已标注 |
+| 2 | **统一存档 + 版本迁移链**（新增字段只需进 `SaveMapper` + 升 `MapSave`/`SaveVersion`） | `WP-3.3` 用例 + `D52`/`D53`（地图仍是独立文件，有意为之） |
+| 3 | **领域事件总线**（含已带 owner/killer/position 的 `UnitDiedEvent`）与"消费端注入"的现成范式 | `WP-2.10` + `WP-3.7`（`D69`）；`WP-4.7`/`WP-4.8` 可直接照抄 |
+| 4 | **单位 HP/`MaxHP` + 每日伤害 + `CombatRules` 纯函数**（新倍率只需接 `Modifier` target） | `WP-3.6`；`E15`（合并）、`E13`（标签/条件修正）挂上去即可 |
+| 5 | **月结需求口与减员口**（`IUpkeepDemandSource` / `IPopulationSink`）：新增一类"月度开销"= 多一个来源；换人口模型 = 换实现 | `WP-3.9`/`WP-3.10`；"按玩家/按聚落"的人口模型改这两个口即可 |
+| 6 | **敌方刷新与封锁的表驱动**（新敌种只填表：地形/概率/掉落/HP/伤害） | `WP-3.8`（`D55`~`D58`）+ `ConfigTableGuide` v1.6 |
+
+| # | 仍未还的债（**不阻塞**批次 4 起步，但批次 4 一定会碰到） | 归属 |
+| :--- | :--- | :--- |
+| 1 | **生产路径装配**：`ServiceContainer` 仍未装配任何应用服务 ⇒ 掉落/月结/战斗/建造在真实 Godot 运行时都不生效 | `WP-5.1`（M1 前的硬门槛；同 §18.4.2 的"未进组合根"家族） |
+| 2 | **建筑 HP 与易主**：`E18` 只到"可瞄准 + 公式 + 记账"，伤害不产生战损 | `WP-4.8`（`D68`；难点是"谁能拆、拆了归谁"） |
+| 3 | **单位标签 / 条件化修正 / 优先打远程**（长矛兵 +20%、重装 −25%、弓箭手优先目标） | `WP-4.3`（`E13`/`E14`；加伤 target 的消费点已就位） |
+| 4 | **驻扎系统**（`E16`）与它带走的 `E21` 后半（"加成随宿主消失"） | `WP-4.6`（`UNIT-13`、`MOD-03`） |
+| 5 | **修正器宿主作用域 / 范围效果**（观星台 3 格、振动与波相邻同类） | `WP-4.1`/`WP-4.2`（`MOD-01`~`MOD-03`） |
+| 6 | **`FindPath` 的 8 邻域图**（斜穿代价被低估，与六边形立方距离不自洽） | `WP-3.5` 后续 / 生成器重做 |
+
+### 18.7.4 仍未做（不阻塞 M0-3，已登记在 §18.4.2）
+
+- 掉落被**仓储上限**吃掉时不提示玩家（只记 `LastGranted`/`TotalGranted`）—— 要 UI 才说得清（`WP-5.x`）
+- 掉落入池的**生产路径装配**（同 `WP-5.1`；`ILootSink` 缺省取资源服务，装配时零改动）
+- 建筑维护**数值**待设计稿（机制已就位、填表即生效，`D63`）
+- 产出浮动 ±20% 未参与结算（`RES-02` / `WP-4.5`）
+- 内容规模：科技 6/93 节点 · 建筑 4/24 条 · 单位 3/5 类 · 事件 3/20 条 —— 填表债务
+- 资源词汇别名（设计稿 Food / basic minerals → 原型 Gold / Wood，`D60`）—— `RES-*` 填表时一次性重映射
 
