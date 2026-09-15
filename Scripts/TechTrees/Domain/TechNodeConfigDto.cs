@@ -7,6 +7,12 @@ namespace SciencePotato.Scripts.TechTree.Domain
 	{
 		public string Id { get; set; }
 
+		/// <summary>（v0.8.1 / `WP-7.3`）设计稿中文名。</summary>
+		public string Name { get; set; }
+
+		/// <summary>（v0.8.1 / `WP-7.3`）设计稿效果原文（含尚未实现的机制，见 `ITechNodeConfig.EffectText`）。</summary>
+		public string EffectText { get; set; }
+
 		/// <summary>（v0.3 / WP-2.1）三种写法均可：`"nodeId"`（本树）、`"treeId:nodeId"`、`{ "TreeId": …, "NodeId": … }`。</summary>
 		public List<TechPrerequisite> Prerequisites { get; set; }
 		public float Cost { get; set; }
