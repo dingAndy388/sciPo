@@ -16,5 +16,30 @@ namespace SciencePotato.Scripts.Resources.Domain
 
 		/// <summary>每人每月的需求（设计稿 3 Food/月）；0 = 不向人口收维护费。</summary>
 		float PopulationUpkeepPerMonth { get; }
+
+		/// <summary>
+		/// （v0.3 / WP-3.10 / `C9`）**连续赤字触发减员的月数阈值**（设计稿：36 月 = 3 年 = 1080 日）。
+		/// <para>= <c>0</c> 或负数时按"永不减员"处理（见 <c>MonthlySettlementService</c>：阈值 ≤ 0 不做评估）。</para>
+		/// </summary>
+		int DeclineThresholdMonths { get; }
+
+		/// <summary>
+		/// （v0.3 / WP-3.10 / `C9`）**减员评估的间隔（游戏日）**（设计稿：年评估 = 360 日）。
+		/// <para>评估只在"日序号 % 本间隔 == 0"的边界发生 —— 连续赤字满 36 月不会立刻减员，
+		/// 而是等到下一个年边界（`TIME-14` 的节拍口径：所有周期以"每 N 游戏日"表达）。</para>
+		/// </summary>
+		int DeclineIntervalDays { get; }
+
+		/// <summary>（v0.3 / WP-3.10 / `C9`）logistic 曲线的陡度 k（设计稿 8）：越大越接近"缺口过半即必减员"的阶跃。</summary>
+		float DeclineLogisticK { get; }
+
+		/// <summary>（v0.3 / WP-3.10 / `C9`）logistic 概率到"期望减员比例"的系数（设计稿 0.05 = 最多饿死 5%）。</summary>
+		float DeclineExpectedFactor { get; }
+
+		/// <summary>
+		/// （v0.3 / WP-3.10 / `C9`）**实际减员的随机抖动幅度**（设计稿"实际值随机抖动"；0.25 = 期望值的 ±25%）。
+		/// <para>抖动让"同缺口率不必然减同样多的人"：期望值只决定量级，实际值 = 期望 × (1 ± 幅度)。</para>
+		/// </summary>
+		float DeclineJitterRatio { get; }
 	}
 }

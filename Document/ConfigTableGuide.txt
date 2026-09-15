@@ -1,12 +1,16 @@
 ================================================================================
   Science Potato - 配置填表指南 (Config Table Guide)
-  版本: 1.3 | 最后更新: 2026-09-14
+  版本: 1.4 | 最后更新: 2026-09-15
   v1.1 变更（v0.3 / WP-1.5）：全部时长字段的单位由「秒」重标定为「游戏日」；
   新增「时间口径」约定与附录C 的单位自检规则。
   v1.2 变更（v0.3 / WP-2.1）：`Prerequisites` 支持**跨树前置**（`"tree:node"` 或结构体），
   旧写法 `["nodeId"]` 继续有效；新增对应的填表示例与附录C 的 error 规则。
   v1.3 变更（v0.3 / WP-2.7）：建筑 Id 改为设计稿口径（camp / workshop / school /
   military_camp），数值取自设计稿"建造时间 / 效果"列；产出走 Modifiers（月结叠加）。
+  v1.4 变更（v0.3 / WP-3.9 + WP-3.10）：月度经济结算填表口径 —— Resources 新增
+  `Settlement` 段（需求资源 / 人口维护率 / 连续赤字减员的 5 个参数），Units 与 Buildings
+  新增 `Maintenance`（单位/建筑每月维护费，`{ 资源名: 数量 }`，留空 = 不维护）。
+
 ================================================================================
 
 目录:
@@ -140,6 +144,26 @@
   - 资源名区分大小写，必须与建筑/单位配置中的 ResourceCost key 一致
   - DependentModifiers 填的是 modifier 的 Target 名，不是资源名
 
+  [月度经济结算 Settlement 段]（v0.3 / WP-3.9 + WP-3.10）—— 根元素的第二个键，与 "Resources" 平级
+  ```json
+  {
+    "Settlement": {
+      "DemandResource": "Gold",          // 人口维护费从哪个资源扣（留空/缺段 = 不向人口收费）
+      "PopulationUpkeepPerMonth": 3,     // 每人每月的需求量（设计稿 3/月；0 = 不收）
+      "DeclineThresholdMonths": 36,      // 连续赤字多少个月后才开始减员（设计稿 3 年 = 36 月）
+      "DeclineIntervalDays": 360,        // 减员评估的间隔（设计稿"年评估"= 360 日）
+      "DeclineLogisticK": 8,             // 减员概率 logistic 陡度（设计稿 8）
+      "DeclineExpectedFactor": 0.05,     // 期望减员比例 = 总人口 × p × 本系数（设计稿 0.05 = 最多 5%）
+      "DeclineJitterRatio": 0.25         // 实际减员围绕期望值的随机抖动幅度（0.25 = ±25%）
+    }
+  }
+  ```
+  减员概率 p = 1/(1+e^(−k(r−0.5)))，r = 上次评估以来的「累计赤字 / 累计需求」；
+  评估只在「游戏日 % DeclineIntervalDays == 0」的边界发生，评估后窗口清零、赤字月数继续累计
+  （只要还在赤字，每个年边界都会再评估）。**减员参数省略即用设计稿缺省值**；
+  `DeclineThresholdMonths = 0` 表示显式关闭减员（记 warning，不判错）。
+
+
 ================================================================================
   三、建筑配置 (Buildings)
 ================================================================================
@@ -173,6 +197,8 @@
   UpgradeCost           { string: number }       否    升级消耗(空 = 免费)
   UpgradeDuration       float                    否    升级耗时(**游戏日**)
   UpgradeTechRequirements { string: [string] }   否    升级条件 = 已解锁科技节点(设计稿"升级条件"列)
+  Maintenance           { string: float }        否    建筑每月维护费(资源名→数量; 留空 = 不维护。
+                                                       设计稿尚未定义数值 → 原型表全部留空, 填表即生效)
 
   [完整样板 JSON]
   ```json
@@ -310,6 +336,9 @@
   AttackRadius          int                      是    攻击半径(格),0=近战
   AttackDamage          float                    是    每次攻击结算造成的伤害(每 1 **游戏日**结算一次)
   PopulationCost        int                      是    训练消耗的人口
+  Maintenance           { string: float }        否    每月维护费(资源名→数量; 留空 = 不维护)。
+                                                      敌方单位留空 —— 敌方不参与月度维护扣费
+
 
   [完整样板 JSON]
   ```json
@@ -652,6 +681,14 @@
   - Modifier：Type 不是 "Percent" / "Absolute"（其余拼写会被静默当成 Absolute，见 MOD-05）
   - 跨表：TechRequirements / TechPrerequisites 引用了不存在的科技树
   - Generator：Density<=0
+  - 月度经济（v0.3 / WP-3.9 + WP-3.10）：
+      * Settlement.DemandResource 不是 Resources 段里的资源名（维护费永远扣不到东西）
+      * Settlement.PopulationUpkeepPerMonth < 0
+      * Settlement.DeclineThresholdMonths < 0（0 = 显式关闭减员，只记 warning）
+      * Settlement.DeclineIntervalDays <= 0、DeclineLogisticK <= 0、DeclineExpectedFactor <= 0
+      * Settlement.DeclineJitterRatio 不在 [0,1]
+      * Units/Buildings.Maintenance 负值
+        （Maintenance 引用未定义的资源名只记 warning —— 与 ResourceCost 同一口径）
   （时长字段的单位是「日」，因此 Duration/GrowInterval 只判"不能为负"；
     "单位写错"由下面的自检按 warning 处理）
 

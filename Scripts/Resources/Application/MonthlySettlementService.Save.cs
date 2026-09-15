@@ -11,7 +11,7 @@ namespace SciencePotato.Scripts.Resources.Application
 	/// （v0.3 / WP-3.9）**月度结算器的存档/读档**（与 `EventAppService.SaveEvents` 同一套路）。
 	/// <para>两件事必须一起做对：</para>
 	/// <list type="number">
-	/// <item>**连续赤字月数落盘**（`settlement:{mapId}` 分区）—— 否则读档 = 减员史清零（见 <see cref="MonthlySettlementSaveDto"/>）；</item>
+	/// <item>**连续赤字月数与年度窗口落盘**（`settlement:{mapId}` 分区）—— 否则读档 = 减员史清零、缺口率被算小（见 <see cref="MonthlySettlementSaveDto"/>）；</item>
 	/// <item>**月结任务重建**（`RestoreSettlementTask`）—— `LoadWorld` 会 `ITimeService.Reset()` 清空订阅者，
 	/// 不重挂则"读档后经济从此不再结算"（与 `D54` 的事件日节拍同族）。进度按快照回填，月结时间点不整体后移。</item>
 	/// </list>
@@ -31,6 +31,15 @@ namespace SciencePotato.Scripts.Resources.Application
 			foreach (KeyValuePair<string, int> entry in _deficitMonths)
 				if (entry.Key.StartsWith(mapId + "_", StringComparison.Ordinal))
 					dto.DeficitMonths[entry.Key] = entry.Value;
+
+			// `WP-3.10`：年度窗口（累计赤字 / 累计需求）一并落盘 —— 它决定下一个年边界的缺口率 r
+			foreach (KeyValuePair<string, float> entry in _yearDeficit)
+				if (entry.Key.StartsWith(mapId + "_", StringComparison.Ordinal))
+					dto.YearDeficit[entry.Key] = entry.Value;
+
+			foreach (KeyValuePair<string, float> entry in _yearDemand)
+				if (entry.Key.StartsWith(mapId + "_", StringComparison.Ordinal))
+					dto.YearDemand[entry.Key] = entry.Value;
 
 			_store.WriteSection(SectionKey(mapId), JsonConvert.SerializeObject(dto, Formatting.Indented));
 			return true;
@@ -70,6 +79,17 @@ namespace SciencePotato.Scripts.Resources.Application
 
 			foreach (KeyValuePair<string, int> entry in dto.DeficitMonths ?? new Dictionary<string, int>())
 				_deficitMonths[entry.Key] = entry.Value;
+
+			// `WP-3.10`：年度窗口同样以盘上状态为准（清空后回填），否则读档后缺口率被算小
+			foreach (string key in _yearDeficit.Keys.Where(k => k.StartsWith(mapId + "_", StringComparison.Ordinal)).ToList())
+				_yearDeficit.Remove(key);
+			foreach (string key in _yearDemand.Keys.Where(k => k.StartsWith(mapId + "_", StringComparison.Ordinal)).ToList())
+				_yearDemand.Remove(key);
+
+			foreach (KeyValuePair<string, float> entry in dto.YearDeficit ?? new Dictionary<string, float>())
+				_yearDeficit[entry.Key] = entry.Value;
+			foreach (KeyValuePair<string, float> entry in dto.YearDemand ?? new Dictionary<string, float>())
+				_yearDemand[entry.Key] = entry.Value;
 
 			return true;
 		}

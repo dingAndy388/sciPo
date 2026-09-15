@@ -1,15 +1,26 @@
 using SciencePotato.Scripts.Common.Domain;
+using SciencePotato.Scripts.Common.Infrastructure;
 using SciencePotato.Scripts.Fog.Application;
 using SciencePotato.Scripts.Map.Domain;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace SciencePotato.Scripts.Map.Application
 {
-	public class MapAppService(IMapGenerator generator, MapSession session, IEnumerable<IMapPostProcessor> postProcessors = null)
+	public class MapAppService(IMapGenerator generator, MapSession session, IEnumerable<IMapPostProcessor> postProcessors = null, Func<int, IRandom> randomFactory = null) : IPopulationSink
 	{
 		private readonly IMapGenerator _mapGenerator = generator;
 		private readonly MapSession _session = session;
+
+		/// <summary>
+		/// （v0.3 / WP-3.10）减员用的随机源工厂（种子 → 随机源）：与 `EnemySpawner` 同一口径
+		/// （缺省 <see cref="SystemRandom"/>），测试可注入受控随机源得到确定的"谁先被扣"。
+		/// </summary>
+		private readonly Func<int, IRandom> _randomFactory = randomFactory ?? (seed => new SystemRandom(seed));
+
+		/// <summary>减员调用序号：混进随机种子，避免同一年内多次减员反复从同一格开始扣。</summary>
+		private int _lossCallCount;
 
 		/// <summary>（v0.3 / WP-3.8）生成后处理器（敌方单位刷新等）：由组合根按整表装配，缺省 = 不加工。</summary>
 		private readonly List<IMapPostProcessor> _postProcessors = postProcessors != null
@@ -145,6 +156,33 @@ namespace SciencePotato.Scripts.Map.Application
 			int consumed = map.ConsumePopulationWithin(center, radius, amount);
 			if (consumed > 0) _session.MarkDirty(mapId);
 			return consumed;
+		}
+
+		/// <summary>
+		/// （v0.3 / WP-3.10 / `C9`）**整图人口总计**（<see cref="IPopulationSink"/>）：
+		/// 与 <see cref="GetTotalPopulation"/> 同一口径，只是按契约名字暴露给经济侧（月度结算器算减员基数）。
+		/// </summary>
+		public int GetPopulation(string mapId) => GetTotalPopulation(mapId);
+
+		/// <summary>
+		/// （v0.3 / WP-3.10 / `C9`）**实施一次人口减员**（<see cref="IPopulationSink"/>）：
+		/// 按地图种子派生随机源 → 走 <see cref="Map.ApplyPopulationLoss"/> 按地块随机扣人 → 有变化即标脏
+		/// （与 <see cref="AddPopulation"/> / <see cref="ConsumePopulation"/> 同一套"唯一写入点 + 存档点"约定，
+		/// 否则"读档一次减员全复原"）。
+		/// </summary>
+		/// <returns>实际减少的人数。</returns>
+		public int ApplyPopulationLoss(string mapId, int amount)
+		{
+			var map = _session.Get(mapId);
+			if (map == null || amount <= 0) return 0;
+
+			// 种子混入调用序号（质数步进）：同一年里多次减员不该总是从同一格开始扣
+			IRandom random = _randomFactory(map.seed + _lossCallCount * 7919) ?? new SystemRandom(map.seed);
+			_lossCallCount++;
+
+			int lost = map.ApplyPopulationLoss(amount, random);
+			if (lost > 0) _session.MarkDirty(mapId);
+			return lost;
 		}
 
 		/// <summary>

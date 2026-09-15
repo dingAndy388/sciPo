@@ -217,6 +217,40 @@ namespace SciencePotato.Scripts.Map.Domain
 			return amount - remaining;
 		}
 
+		/// <summary>
+		/// （v0.3 / WP-3.10 / `C9`）**随机减少人口**：把 <paramref name="amount"/> 人**按地块随机**扣掉
+		/// （每次随机挑一个还有人的格子扣 1 人，扣空的格子退出候选）。
+		/// <para>为什么不是"从中心格开始扣"（<see cref="ConsumePopulationWithin"/> 的口径）：那条口径服务的是
+		/// 训练消耗（`E2`，从训练建筑所在聚落取人）；减员的语义是"饥荒饿死人"，不该永远先死在聚落中心 ——
+		/// 设计口径是"**按地块随机**减员"（log §9.2 `C9`），随机分布才能让玩家在地图上看到人口散着掉。</para>
+		/// <para>候选先按 (q,r) 显式排序再按 <paramref name="random"/> 抽索引 ⇒ 同一随机源必得同一结果
+		/// （确定性的一半；另一半由调用方给的随机源决定）。</para>
+		/// </summary>
+		/// <returns>实际扣除的人数（人口不足时少于 <paramref name="amount"/>，不会出现负人口）。</returns>
+		public int ApplyPopulationLoss(int amount, IRandom random)
+		{
+			if (amount <= 0 || random == null) return 0;
+
+			List<MapCell> candidates = GetAllCells()
+				.Where(cell => cell.Population > 0)
+				.OrderBy(cell => cell.Position.q)
+				.ThenBy(cell => cell.Position.r)
+				.ToList();
+
+			int lost = 0;
+			while (lost < amount && candidates.Count > 0)
+			{
+				int index = random.Next(0, candidates.Count);
+				MapCell cell = candidates[index];
+
+				cell.SetPopulation(cell.Population - 1);
+				lost++;
+
+				if (cell.Population <= 0) candidates.RemoveAt(index); // 扣空的格子不再参与抽签
+			}
+			return lost;
+		}
+
 		/// <summary>（v0.3 / WP-2.3）范围内人口**总计**（含中心格）。</summary>
 		public int GetPopulationWithin(HexCubePosition center, int radius)
 		{

@@ -170,6 +170,35 @@ namespace SciencePotato.HeadlessChecks
 		public T WeightedPick<T>(IEnumerable<T> values, IEnumerable<float> weights) => values.First();
 	}
 
+	/// <summary>
+	/// （v0.3 / WP-3.10）**循环索引随机源替身**：`Next(min, max)` 依次返回给定索引（用完后从头循环）。
+	/// <para>为什么需要它：`FixedRandom` 的 `Next` 恒返回 <c>min</c>，验证不了"按随机索引挑格"这类**索引敏感**的行为
+	/// （减员要证明"人散着掉"而不是"永远从第一格扣"）。候选集合在减员过程中只会变小，越界索引按跨度取模 ——
+	/// 替身不该在用例里抛异常。</para>
+	/// </summary>
+	internal sealed class CyclingRandom(params int[] picks) : IRandom
+	{
+		private readonly int[] _picks = picks is { Length: > 0 } ? picks : new[] { 0 };
+		private int _cursor;
+
+		public int Next(int min, int max)
+		{
+			int span = Math.Max(1, max - min);
+			int offset = ((_picks[_cursor++ % _picks.Length] % span) + span) % span;
+			return min + offset;
+		}
+
+		public int Next() => _picks[_cursor++ % _picks.Length];
+
+		public float NextFloat() => 0f;
+
+		public float NextGaussian(float mean, float std) => mean;
+
+		public bool ProbCodition(float p) => true;
+
+		public T WeightedPick<T>(IEnumerable<T> values, IEnumerable<float> weights) => values.First();
+	}
+
 	/// <summary>（v0.3 / WP-0.2）占据物替身：用于验证"占据物跨调用不丢失"。</summary>
 	internal sealed class FakeOccupant(HexCubePosition position, string id, string uid, int ownerId, float hp = 10f) : IMapOccupant
 	{

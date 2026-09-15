@@ -32,6 +32,12 @@ namespace SciencePotato.Scripts.Core.Config
 		/// </summary>
 		private static readonly HashSet<string> ModifierTypeLiterals = new(StringComparer.Ordinal) { "Percent", "Absolute" };
 
+		/// <summary>
+		/// （v0.3 / WP-3.10）减员阈值"远小于设计稿"的提示线：低于设计值的一半（18 月）就提醒 ——
+		/// 阈值越小越狠本身没有错（它是可调参数），但 18 月以下基本只可能是漏填一位数字，值得提示。
+		/// </summary>
+		private const int DefaultDeclineFloorMonths = SettlementConfigDto.DefaultDeclineThresholdMonths / 2;
+
 		public static void Validate(ConfigTables tables, ConfigReport report)
 		{
 			if (tables == null) throw new ArgumentNullException(nameof(tables));
@@ -153,6 +159,39 @@ namespace SciencePotato.Scripts.Core.Config
 				if (settlement.PopulationUpkeepPerMonth < 0f)
 					report.Error("Resources", "Settlement",
 						$"PopulationUpkeepPerMonth={settlement.PopulationUpkeepPerMonth} 不能为负（0 = 不向人口收维护费）");
+
+				// ── 连续赤字减员（v0.3 / WP-3.10 / `C9`）──
+				// 分级口径：**0 = 显式关闭**（可解释的配置，warning 提示而不是沉默）、**负数 / 非法区间 = error**
+				// （笔误级别）。阈值与间隔都是周期数字，配错会直接让减员算不出来（静默失效最难查）。
+				int threshold = settlement.DeclineThresholdMonths;
+				if (threshold < 0)
+					report.Error("Resources", "Settlement",
+						$"DeclineThresholdMonths={threshold} 不能为负（0 = 显式关闭减员）");
+				else if (threshold == 0)
+					report.Warn("Resources", "Settlement",
+						"DeclineThresholdMonths=0：连续赤字减员被显式关闭（`C9` 的惩罚不会生效）");
+				else if (threshold < DefaultDeclineFloorMonths)
+					report.Warn("Resources", "Settlement",
+						$"DeclineThresholdMonths={threshold} 远小于设计稿的 36 月：玩家几乎一开局就掉人口");
+
+				if (settlement.DeclineIntervalDays <= 0)
+					report.Error("Resources", "Settlement",
+						$"DeclineIntervalDays={settlement.DeclineIntervalDays} 必须为正（设计稿 = 360 日 = 年评估）");
+				else if (threshold > 0)
+					ValidateDayUnit(report, "Resources", "Settlement", "DeclineIntervalDays", settlement.DeclineIntervalDays);
+
+				if (settlement.DeclineLogisticK <= 0f)
+					report.Error("Resources", "Settlement",
+						$"DeclineLogisticK={settlement.DeclineLogisticK} 必须为正（logistic 陡度，设计稿 8）");
+				if (settlement.DeclineExpectedFactor <= 0f)
+					report.Error("Resources", "Settlement",
+						$"DeclineExpectedFactor={settlement.DeclineExpectedFactor} 必须为正（期望减员系数，设计稿 0.05）");
+				if (settlement.DeclineExpectedFactor > 1f)
+					report.Warn("Resources", "Settlement",
+						$"DeclineExpectedFactor={settlement.DeclineExpectedFactor} > 1：一次评估就可能饿死超过全部人口（会被人口上限截断）");
+				if (settlement.DeclineJitterRatio < 0f || settlement.DeclineJitterRatio > 1f)
+					report.Error("Resources", "Settlement",
+						$"DeclineJitterRatio={settlement.DeclineJitterRatio} 应在 [0,1]（0 = 不抖动，1 = 期望值的 0~200%）");
 			}
 		}
 
@@ -209,6 +248,10 @@ namespace SciencePotato.Scripts.Core.Config
 				ValidateActionList(report, "Buildings", key, building.Actions);
 				ValidateTrainableUnits(report, key, building, unitIds);
 				ValidateUpgrade(report, tables, key, building, resourceIds, techNodes);
+
+				// 建筑维护（v0.3 / WP-3.10 / `RES-01`）：与单位维护 **完全同一口径**
+				// （未知资源名 warning、负值 error、留空合法 = 不维护）。消费方 = `BuildingMaintenanceUpkeepDemandSource`。
+				ValidateResourceCosts(report, "Buildings", key, building.Maintenance, resourceIds, "Maintenance", warnWhenEmpty: false);
 			}
 		}
 

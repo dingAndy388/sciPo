@@ -39,5 +39,12 @@ namespace SciencePotato.Scripts.Construction.Domain
 
 		/// <summary>（v0.3 / WP-2.6）升级科技前置；表里省略时为空。</summary>
 		public Dictionary<string, List<string>> UpgradeTechRequirements { get; set; } = new Dictionary<string, List<string>>();
+
+		/// <summary>
+		/// （v0.3 / WP-3.10）建筑维护费（资源名 → 每月数量）；表里省略时为空表 = 不维护。
+		/// <para>**存量建筑表全部留空**（设计稿尚无建筑维护数值）：机制就位、数值不臆造。</para>
+		/// </summary>
+		public Dictionary<string, float> Maintenance { get; set; } = new Dictionary<string, float>();
+
 	}
 }

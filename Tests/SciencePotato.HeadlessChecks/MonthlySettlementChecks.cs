@@ -36,7 +36,8 @@ namespace SciencePotato.HeadlessChecks
 	/// <item>**需求**：人口 × 3/月 + 单位维护表（按来源与模板归因）+ 敌方单位不进经济；</item>
 	/// <item>**产出**：汇总值与资源池增量一致（账要对得上，`C12`）；</item>
 	/// <item>**扣减 / 赤字**：不足时扣到 0（不为负）、赤字按月累计、恢复盈余即归零（`WP-3.10` 的输入）；</item>
-	/// <item>**存档**：赤字月数与月结任务跨读档保留（不翻倍、不清零）。</item>
+	/// <item>**减员（`WP-3.10`）**：连续赤字 ≥ 36 月的年边界按年度缺口率做 logistic 减员（配置化 + 抖动量级 + 按地块随机落地）；</item>
+	/// <item>**存档**：赤字月数、年度窗口与月结任务跨读档保留（不翻倍、不清零）。</item>
 	/// </list>
 	/// </summary>
 	internal static class MonthlySettlementChecks
@@ -55,6 +56,14 @@ namespace SciencePotato.HeadlessChecks
 			Check.Run("WP-3.9 幂等：重复挂载只登记一条月结任务（不会一月结两次）", StartIsIdempotent);
 			Check.Run("WP-3.9 存档：连续赤字月数与月结任务跨读档保留（不翻倍、不清零）", SettlementStateSurvivesSaveLoad);
 			Check.Run("WP-3.9 校验器：`Settlement` 字段与单位维护的分级（未定义资源 / 负值 error、缺段 warning）", ValidatorGuardsSettlementConfig);
+			Check.Run("WP-3.10 减员配置：36 月 / 360 日 / k=8 / 0.05 / ±25% 与 logistic 公式", ConfigDeclaresDeclineParameters);
+			Check.Run("WP-3.10 减员触发：连续赤字满 3 年后的年边界按缺口率减员（100 人 → 96）", DeclineTriggersOnYearBoundary);
+			Check.Run("WP-3.10 减员持续：赤字不停则每个年边界都评估（不是一辈子只罚一次）", DeclineRepeatsWhileDeficitPersists);
+			Check.Run("WP-3.10 减员门槛：不满 36 月不减员，第 36 个月的边界才评估", DeclineWaitsForFullThreeYears);
+			Check.Run("WP-3.10 减员可关：阈值配 0 = 显式关闭（跑满 4 年不掉人）", DeclineCanBeDisabledByConfig);
+			Check.Run("WP-3.10 减员存档：年度窗口（累计赤字 / 需求）跨读档保留", DeclineWindowSurvivesSaveLoad);
+			Check.Run("WP-3.10 减员落点：按地块随机扣人、扣空退出候选、绝不扣成负数", MapLossIsRandomAndNeverNegative);
+			Check.Run("WP-3.10 建筑维护：Construction 侧新需求来源按模板汇总（填表即生效）", BuildingMaintenanceDemandIsCollected);
 		}
 
 		// ────────────────────────── 用例 ──────────────────────────
@@ -84,10 +93,11 @@ namespace SciencePotato.HeadlessChecks
 				Check.Assert(!h.Core.ConfigReport.HasErrors,
 					$"`Settlement` 与维护字段不应引入配置 error：{h.Core.ConfigReport.ToLines()}");
 
-				// 装配自检：两个需求来源都挂上了（否则"结算器在跑但没人上报需求"极难发现）
-				Check.AssertEqual(2, h.Settlement.DemandSourceIds.Count, "应挂上两个需求来源（人口 + 单位维护）");
+				// 装配自检：三个需求来源都挂上了（否则"结算器在跑但没人上报需求"极难发现）
+				Check.AssertEqual(3, h.Settlement.DemandSourceIds.Count, "应挂上三个需求来源（人口 + 单位维护 + 建筑维护）");
 				Check.Assert(h.Settlement.DemandSourceIds.Contains("population"), "应包含人口维护来源");
 				Check.Assert(h.Settlement.DemandSourceIds.Contains("unit"), "应包含单位维护来源");
+				Check.Assert(h.Settlement.DemandSourceIds.Contains("building"), "应包含建筑维护来源（`WP-3.10`）");
 			}
 			finally { Cleanup(h.Dir); }
 		}
@@ -330,9 +340,297 @@ namespace SciencePotato.HeadlessChecks
 			Check.Assert(hostileUpkeep.ConfigReport.Issues.Any(issue =>
 					issue.Level == ConfigIssueLevel.Warning && issue.ToString().Contains("Maintenance")),
 				$"敌方单位填了维护应给 warning：{hostileUpkeep.ConfigReport.ToLines()}");
+
+			// ⑥ 减员阈值配 0 = 显式关闭 → warning（不是静默：这条配置会关掉 `C9` 的惩罚）
+			CoreServices declineOff = BuildWith("Resources", json => json["Settlement"]["DeclineThresholdMonths"] = 0);
+			Check.Assert(!declineOff.ConfigReport.HasErrors, "阈值 0（显式关闭减员）只应 warning");
+			Check.Assert(declineOff.ConfigReport.Issues.Any(issue =>
+					issue.Level == ConfigIssueLevel.Warning && issue.Message.Contains("DeclineThresholdMonths")),
+				$"阈值 0 应给 warning：{declineOff.ConfigReport.ToLines()}");
+
+			// ⑦ 减员阈值 / 间隔 / 陡度 / 系数非法 → error（笔误级别：配错就让减员静默失效）
+			CoreServices badThreshold = BuildWith("Resources", json => json["Settlement"]["DeclineThresholdMonths"] = -1);
+			Check.Assert(badThreshold.ConfigReport.Issues.Any(issue =>
+					issue.Level == ConfigIssueLevel.Error && issue.Message.Contains("DeclineThresholdMonths")),
+				$"阈值为负应判 error：{badThreshold.ConfigReport.ToLines()}");
+
+			CoreServices badInterval = BuildWith("Resources", json => json["Settlement"]["DeclineIntervalDays"] = 0);
+			Check.Assert(badInterval.ConfigReport.Issues.Any(issue =>
+					issue.Level == ConfigIssueLevel.Error && issue.Message.Contains("DeclineIntervalDays")),
+				$"评估间隔为 0 应判 error：{badInterval.ConfigReport.ToLines()}");
+
+			CoreServices badK = BuildWith("Resources", json => json["Settlement"]["DeclineLogisticK"] = 0);
+			Check.Assert(badK.ConfigReport.Issues.Any(issue =>
+					issue.Level == ConfigIssueLevel.Error && issue.Message.Contains("DeclineLogisticK")),
+				$"陡度 k=0 应判 error：{badK.ConfigReport.ToLines()}");
+
+			CoreServices badJitter = BuildWith("Resources", json => json["Settlement"]["DeclineJitterRatio"] = 2);
+			Check.Assert(badJitter.ConfigReport.Issues.Any(issue =>
+					issue.Level == ConfigIssueLevel.Error && issue.Message.Contains("DeclineJitterRatio")),
+				$"抖动幅度越界应判 error：{badJitter.ConfigReport.ToLines()}");
+
+			// ⑧ 建筑维护：负值 error、未定义资源 warning（与单位维护同一口径）
+			CoreServices badBuildingUpkeep = BuildWith("Buildings", json =>
+				SetMaintenance((JObject)json["Buildings"]["camp"], "Gold", -1));
+			Check.Assert(badBuildingUpkeep.ConfigReport.Issues.Any(issue =>
+					issue.Level == ConfigIssueLevel.Error && issue.ToString().Contains("Maintenance")),
+				$"建筑维护为负应判 error：{badBuildingUpkeep.ConfigReport.ToLines()}");
+
+			CoreServices unknownBuildingUpkeep = BuildWith("Buildings", json =>
+				SetMaintenance((JObject)json["Buildings"]["camp"], "Food", 1));
+			Check.Assert(!unknownBuildingUpkeep.ConfigReport.HasErrors, "建筑维护引用未定义资源只应 warning");
+			Check.Assert(unknownBuildingUpkeep.ConfigReport.Issues.Any(issue =>
+					issue.Level == ConfigIssueLevel.Warning && issue.ToString().Contains("Maintenance")),
+				$"建筑维护引用未定义资源应给 warning：{unknownBuildingUpkeep.ConfigReport.ToLines()}");
+		}
+
+		// ────────────────────────── WP-3.10：连续赤字减员（`C9`） ──────────────────────────
+
+		/// <summary>`C9` 的五个减员参数必须全部来自配置（设计稿"均配置化"），公式与设计稿一致。</summary>
+		private static void ConfigDeclaresDeclineParameters()
+		{
+			Harness h = NewHarness();
+			try
+			{
+				ISettlementConfig settlement = h.Tables.Resources.GetResourcesPoolConfig().Settlement;
+				Check.Assert(settlement != null, "真实配置应填写 `Settlement` 段");
+				Check.AssertEqual(36, settlement.DeclineThresholdMonths, "连续赤字阈值 36 月（3 年，log §9.2 `C9`）");
+				Check.AssertEqual(360, settlement.DeclineIntervalDays, "评估间隔 = 年（360 日）");
+				Check.AssertEqual(8f, settlement.DeclineLogisticK, "logistic 陡度 k = 8");
+				Check.AssertEqual(0.05f, settlement.DeclineExpectedFactor, "期望减员系数 0.05");
+				Check.AssertEqual(0.25f, settlement.DeclineJitterRatio, "实际值抖动 ±25%");
+
+				// 公式：`p = 1/(1+e^(−k(r−0.5)))` —— r=0.5 恰好 0.5、越缺越大、缺口全满 ≈ 0.982
+				float half = MonthlySettlementService.DeclineProbability(0.5f, 8f);
+				float heavy = MonthlySettlementService.DeclineProbability(0.75f, 8f);
+				float total = MonthlySettlementService.DeclineProbability(1f, 8f);
+				Check.AssertEqual(0.5f, half, "缺口率 0.5 → p 恰好 0.5（logistic 中点）");
+				Check.Assert(half < heavy && heavy < total, $"缺口越大减员概率越高：{half:0.###} < {heavy:0.###} < {total:0.###}");
+				Check.Assert(Math.Abs(total - 0.982f) < 0.001f, $"缺口全满 → p ≈ 0.982，实际 {total:0.####}");
+				Check.AssertEqual(total, MonthlySettlementService.DeclineProbability(2f, 8f), "缺口率超出 [0,1] 先 clamp（>1 按 1 算）");
+
+				// 期望减员 = 总人口 × p × 0.05；实际值按抖动缩放
+				Check.AssertEqual(5, MonthlySettlementService.DeclineLoss(100, total, 0.05f, 1f),
+					"100 人 × 0.982 × 0.05 ≈ 4.91 → 5 人");
+				Check.AssertEqual(4, MonthlySettlementService.DeclineLoss(100, total, 0.05f, 0.75f),
+					"抖动 −25% ⇒ 3.68 → 4 人");
+				Check.AssertEqual(0, MonthlySettlementService.DeclineLoss(0, total, 0.05f, 1f), "没有人口 ⇒ 减员 0");
+			}
+			finally { Cleanup(h.Dir); }
+		}
+
+		/// <summary>`C9`：连续赤字满 36 月的**年边界**按缺口率减员（期望 4.91 人 × 抖动 −25% ⇒ 4 人，落在随机地块上）。</summary>
+		private static void DeclineTriggersOnYearBoundary()
+		{
+			Harness h = NewHarness(zeroGrowth: true, declineRandom: new FixedRandom(true));
+			try
+			{
+				h.Map.AddPopulation(MapId, h.Site, 1, 5000, 100); // 100 人 × 3/月，池里没钱 ⇒ 月月赤字
+				h.Settlement.StartSettlement(MapId, h.OwnerId);
+
+				h.Clock.AdvanceDays(1080); // 36 个月，正好落在年边界
+
+				MonthlySettlementReport report = h.Settlement.LastReport(MapId, h.OwnerId);
+				Check.AssertEqual(36, report.ConsecutiveDeficitMonths, "准备：已连续赤字 36 个月");
+				Check.AssertEqual(1, h.Settlement.DeclineEvaluations, "第 360 / 720 日还没满 3 年 ⇒ 只在第 1080 日评估一次");
+				Check.Assert(report.DeclineEvaluated, $"年边界 + 连续赤字满 3 年 ⇒ 应做减员评估：{report}");
+				Check.Assert(Math.Abs(report.DeficitRatio - 1f) < 0.001f, $"一年一分没付 ⇒ 缺口率 1，实际 {report.DeficitRatio:0.###}");
+				Check.Assert(Math.Abs(report.DeclineProbability - 0.982f) < 0.001f, $"p ≈ 0.982，实际 {report.DeclineProbability:0.####}");
+				Check.AssertEqual(4, report.PopulationLost, "100 × 0.982 × 0.05 × 0.75 ≈ 3.68 → 4 人");
+				Check.AssertEqual(96, h.Map.GetTotalPopulation(MapId), "地图人口真的少了 4 人");
+			}
+			finally { Cleanup(h.Dir); }
+		}
+
+		/// <summary>`C9`：只要还在赤字，**下一个年边界照常评估**（评估后只清年度窗口，不清连续赤字月数）。</summary>
+		private static void DeclineRepeatsWhileDeficitPersists()
+		{
+			Harness h = NewHarness(zeroGrowth: true, declineRandom: new FixedRandom(true));
+			try
+			{
+				h.Map.AddPopulation(MapId, h.Site, 1, 5000, 100);
+				h.Settlement.StartSettlement(MapId, h.OwnerId);
+
+				h.Clock.AdvanceDays(1080);
+				int afterFirst = h.Map.GetTotalPopulation(MapId);
+				Check.AssertEqual(96, afterFirst, "准备：第一次评估减 4 人");
+
+				h.Clock.AdvanceDays(360); // 第二个年边界：窗口从 0 重新攒，但赤字没停 ⇒ 再评估
+				MonthlySettlementReport report = h.Settlement.LastReport(MapId, h.OwnerId);
+				Check.AssertEqual(2, h.Settlement.DeclineEvaluations, "每满一年评估一次（不是一辈子只罚一次）");
+				Check.Assert(report.DeclineEvaluated && report.PopulationLost > 0, $"第二年应继续减员：{report}");
+				Check.Assert(h.Map.GetTotalPopulation(MapId) < afterFirst, "人口继续下降（饿满三年之后不是免疫）");
+			}
+			finally { Cleanup(h.Dir); }
+		}
+
+		/// <summary>`C9`：连续赤字**不满 36 月不减员**（年边界到了也等着）；第 36 个月一到就评估。</summary>
+		private static void DeclineWaitsForFullThreeYears()
+		{
+			Harness h = NewHarness(zeroGrowth: true, declineRandom: new FixedRandom(true));
+			try
+			{
+				h.Map.AddPopulation(MapId, h.Site, 1, 5000, 100);
+				h.Settlement.StartSettlement(MapId, h.OwnerId);
+
+				h.Clock.AdvanceDays(1050); // 35 个月：跨过第 360 / 720 日两个年边界，但都没满 3 年
+				MonthlySettlementReport early = h.Settlement.LastReport(MapId, h.OwnerId);
+				Check.AssertEqual(35, early.ConsecutiveDeficitMonths, "准备：已连续赤字 35 个月");
+				Check.AssertEqual(0, h.Settlement.DeclineEvaluations, "不满 36 月不做评估");
+				Check.Assert(!early.DeclineEvaluated, $"未评估的月份不应标记减员：{early}");
+				Check.AssertEqual(0, early.PopulationLost, "未评估 ⇒ 不减员");
+				Check.AssertEqual(100, h.Map.GetTotalPopulation(MapId), "人口不变");
+
+				h.Clock.AdvanceDays(30); // 第 36 个月（第 1080 日）→ 评估
+				Check.AssertEqual(1, h.Settlement.DeclineEvaluations, "第 36 个月的边界应评估一次");
+				Check.AssertEqual(96, h.Map.GetTotalPopulation(MapId), "评估后减 4 人（与不中断的路径一致）");
+			}
+			finally { Cleanup(h.Dir); }
+		}
+
+		/// <summary>阈值配 0 = 显式关闭减员（校验器给 warning 而不是静默）：跑满 4 年也不掉人。</summary>
+		private static void DeclineCanBeDisabledByConfig()
+		{
+			Harness h = NewHarness(zeroGrowth: true, declineRandom: new FixedRandom(true),
+				mutateResources: json => json["Settlement"]["DeclineThresholdMonths"] = 0);
+			try
+			{
+				h.Map.AddPopulation(MapId, h.Site, 1, 5000, 100);
+				h.Settlement.StartSettlement(MapId, h.OwnerId);
+
+				h.Clock.AdvanceDays(1440); // 4 年
+
+				Check.AssertEqual(0, h.Settlement.DeclineEvaluations, "阈值 0 ⇒ 永不评估");
+				Check.AssertEqual(100, h.Map.GetTotalPopulation(MapId), "不减员：人口保持 100");
+			}
+			finally { Cleanup(h.Dir); }
+		}
+
+		/// <summary>`C9` + 存档：年度窗口（累计赤字 / 需求）跨读档保留 —— 否则反复读档就能把缺口率压小。</summary>
+		private static void DeclineWindowSurvivesSaveLoad()
+		{
+			Harness h = NewHarness(zeroGrowth: true, declineRandom: new FixedRandom(true));
+			try
+			{
+				h.Map.AddPopulation(MapId, h.Site, 1, 5000, 100);
+				h.Settlement.StartSettlement(MapId, h.OwnerId);
+				h.Clock.AdvanceDays(300); // 10 个月全赤字（累计缺口 3000 / 需求 3000）
+
+				h.Save.ThenLoad();
+				Check.AssertEqual(100, h.Map.GetTotalPopulation(MapId), "准备：人口应跨读档保留");
+				Check.AssertEqual(10, h.Settlement.GetConsecutiveDeficitMonths(MapId, h.OwnerId), "准备：赤字月数保留");
+
+				JObject dto = JObject.Parse(h.Store.ReadSection(MonthlySettlementService.SectionKey(MapId)));
+				string key = $"{MapId}_{h.OwnerId}";
+				Check.AssertEqual(3000f, dto["YearDeficit"]?[key]?.ToObject<float>() ?? -1f,
+					"年度窗口的累计赤字应落盘（10 月 × 300）");
+				Check.AssertEqual(3000f, dto["YearDemand"]?[key]?.ToObject<float>() ?? -1f,
+					"年度窗口的累计需求应落盘（缺口率的分母）");
+
+				h.Clock.AdvanceDays(780); // 读档后继续到第 1080 日
+				MonthlySettlementReport report = h.Settlement.LastReport(MapId, h.OwnerId);
+				Check.Assert(report.DeclineEvaluated, $"读档不应打断减员评估：{report}");
+				Check.AssertEqual(4, report.PopulationLost, "窗口与赤字史跨读档保留 ⇒ 减员人数与不读档一致（4 人）");
+			}
+			finally { Cleanup(h.Dir); }
+		}
+
+		/// <summary>`C9` 的"按地块随机减员"落在领域层：随机挑格、扣空退出候选、绝不扣成负数。</summary>
+		private static void MapLossIsRandomAndNeverNegative()
+		{
+			List<MapCell> Seed()
+			{
+				var created = new List<MapCell>();
+				for (int q = 0; q < 3; q++)
+				{
+					var cell = new MapCell(new HexCubePosition(q, 0));
+					cell.SetPopulation(2);
+					created.Add(cell);
+				}
+				return created;
+			}
+
+			Map Build(List<MapCell> cells)
+			{
+				var built = new Map(20260917, 3, 1, "loss-map");
+				foreach (MapCell cell in cells) built.SetCell(cell.Position, cell);
+				return built;
+			}
+
+			// ① 恒挑索引 0 ⇒ 顺序确定：先把 (0,0) 扣空，其余两格不受影响
+			List<MapCell> ordered = Seed();
+			Check.AssertEqual(2, Build(ordered).ApplyPopulationLoss(2, new FixedRandom(true)), "应恰好扣 2 人");
+			Check.AssertEqual(0, ordered[0].Population, "恒挑索引 0 ⇒ 先把第一格扣空");
+			Check.AssertEqual(2, ordered[1].Population, "没被挑中的格子不受影响");
+			Check.AssertEqual(2, ordered[2].Population, "没被挑中的格子不受影响");
+
+			// ② 循环索引（2 → 1 → 0）⇒ 三格各 −1：人口是**散着掉**的，不是永远从第一格扣
+			List<MapCell> spread = Seed();
+			Map map = Build(spread);
+			Check.AssertEqual(3, map.ApplyPopulationLoss(3, new CyclingRandom(2, 1, 0)), "三格各扣 1 人");
+			Check.Assert(spread.All(cell => cell.Population == 1), "三格人口都变成 1（随机分散）");
+
+			// ③ 要的比有的多 ⇒ 全扣光、返回实际值、绝不出现负人口
+			Check.AssertEqual(3, map.ApplyPopulationLoss(99, new FixedRandom(true)), "人口不足时返回实际扣除数");
+			Check.Assert(spread.All(cell => cell.Population == 0), "要的比有的多 ⇒ 清零，不出现负人口");
+
+			// ④ 没人了 ⇒ 0（不是异常）
+			Check.AssertEqual(0, map.ApplyPopulationLoss(5, new FixedRandom(true)), "地图上没人时减员返回 0");
+		}
+
+		/// <summary>`WP-3.10` 建筑维护：新增第三条需求来源（Construction 侧），**填表即生效**、数值不臆造。</summary>
+		private static void BuildingMaintenanceDemandIsCollected()
+		{
+			// ① 真实表：建筑维护全部留空（设计稿只定义了单位维护数值）
+			Harness plain = NewHarness();
+			try
+			{
+				Check.Assert(plain.Tables.Buildings.GetAll().All(config => config.Maintenance.Count == 0),
+					"真实建筑表的维护费应全部留空（机制在、数值不臆造）");
+				Check.AssertEqual("building", BuildingMaintenanceUpkeepDemandSource.SourceName, "归因前缀");
+			}
+			finally { Cleanup(plain.Dir); }
+
+			// ② 填上维护费（营地 5 Gold/月）⇒ 两座自己的营地 = 10 Gold/月，归因到 `building:camp`
+			Harness h = NewHarness(mutateBuildings: json =>
+				SetMaintenance((JObject)json["Buildings"]["camp"], "Gold", 5));
+			try
+			{
+				Check.AssertEqual(5f, h.Tables.Buildings.GetBuildingConfig("camp").Maintenance["Gold"],
+					"建筑表应读到维护费（与单位维护同构的字段）");
+
+				h.SeedPopulation(1);
+				h.Settlement.StartSettlement(MapId, h.OwnerId);
+
+				var factory = new BuildingFactory(h.Tables.Buildings);
+				HexCubePosition second = h.CellAtDistance(1, h.Site);
+				HexCubePosition third = h.CellAtDistance(2, h.Site);
+				Check.Assert(h.Map.PlaceBuilding(MapId, h.Site, factory.CreateBuilding("camp", h.Site, h.OwnerId, isReady: true)),
+					"准备：第一座营地应落位");
+				Check.Assert(h.Map.PlaceBuilding(MapId, second, factory.CreateBuilding("camp", second, h.OwnerId, isReady: true)),
+					"准备：第二座营地应落位");
+				h.Map.PlaceBuilding(MapId, third, factory.CreateBuilding("camp", third, 2, isReady: true)); // 别人的营地
+
+				h.Clock.AdvanceDays(30);
+
+				MonthlySettlementReport report = h.Settlement.LastReport(MapId, h.OwnerId);
+				Check.AssertEqual(10f, report.DemandOfSource("building:camp"), "两座自己的营地 × 5 Gold/月（别人的不算）");
+				Check.AssertEqual(13f, report.TotalDemand, "人口 3 + 建筑维护 10");
+			}
+			finally { Cleanup(h.Dir); }
 		}
 
 		// ────────────────────────── 夹具 ──────────────────────────
+
+		/// <summary>
+		/// 给建筑条目填一条维护费（表里**可能还没有 `Maintenance` 字段** —— 设计稿尚未定义建筑维护数值，
+		/// 所以用例要能"从现在开始填"，不能假设字段已存在）。
+		/// </summary>
+		private static void SetMaintenance(JObject entry, string resource, float amount)
+		{
+			entry["Maintenance"] ??= new JObject();
+			entry["Maintenance"][resource] = amount;
+		}
 
 		/// <summary>读真实表 → 改一处 → 装配一遍（容错模式：便于断言 error/warning 分级）。</summary>
 		private static CoreServices BuildWith(string tableName, Action<JObject> mutate)
@@ -409,14 +707,21 @@ namespace SciencePotato.HeadlessChecks
 			}
 		}
 
-		private static Harness NewHarness(bool zeroGrowth = false, int ownerId = 1)
+		private static Harness NewHarness(bool zeroGrowth = false, int ownerId = 1,
+			IRandom declineRandom = null, Action<JObject> mutateBuildings = null, Action<JObject> mutateResources = null)
 		{
 			string dir = Path.Combine(Path.GetTempPath(), "sp-wp39-" + Guid.NewGuid().ToString("N"));
 			Directory.CreateDirectory(dir);
 
 			InMemoryConfigSource source = ConfigFixtures.RealConfigSource();
 			Shorten(source);
-			if (zeroGrowth) source.Inject("Resources", ZeroGrowthResources());
+			if (zeroGrowth || mutateResources != null) source.Inject("Resources", AdjustResources(zeroGrowth, mutateResources));
+			if (mutateBuildings != null)
+			{
+				var buildings = JObject.Parse(File.ReadAllText(ConfigFixtures.TablePath("Buildings")));
+				mutateBuildings(buildings);
+				source.Inject("Buildings", buildings.ToString());
+			}
 
 			var mapRepository = new InMemoryMapRepository();
 			CoreServices core = ConfigFixtures.BuildCore(source, mapRepository: mapRepository);
@@ -457,7 +762,8 @@ namespace SciencePotato.HeadlessChecks
 				new UnitFactory(core.Tables.Units), fog, core.Tables.Buildings, bus);
 
 			// 需求来源：人口维护（经济侧规则，参数读 `Resources.json` 的 `Settlement` 段）
-			// + 单位维护（Units 侧读自己的模板字段）—— 结算器只消费需求，不反向依赖这两个模块
+			// + 单位维护（Units 侧读自己的模板字段）+ 建筑维护（Construction 侧读建筑表的 `Maintenance`，`WP-3.10`）
+			// —— 结算器只消费需求，不反向依赖这三个模块
 			var settlement = new MonthlySettlementService(
 				resources,
 				core.Tables.Resources,
@@ -467,8 +773,11 @@ namespace SciencePotato.HeadlessChecks
 				{
 					new PopulationUpkeepDemandSource(map, core.Tables.Resources.GetResourcesPoolConfig()),
 					new UnitMaintenanceUpkeepDemandSource(map, core.Tables.Units),
+					new BuildingMaintenanceUpkeepDemandSource(map, core.Tables.Buildings),
 				},
-				store);
+				store,
+				populationSink: map,                     // `WP-3.10`：减员经地图按地块扣人（`MapAppService : IPopulationSink`）
+				random: declineRandom ?? new SystemRandom(20260917)); // 夹具给固定种子 ⇒ 减员抖动可复现
 
 			var clockRepo = new FileClockRepository(Path.Combine(dir, "clock_"), store);
 			var worldSave = new WorldSaveService(
@@ -506,13 +815,18 @@ namespace SciencePotato.HeadlessChecks
 			};
 		}
 
-		/// <summary>资源表：把所有 `BaseGrowth` 清零（产出只来自修正器），其余字段（含 `Settlement` 段）保持真实值。</summary>
-		private static string ZeroGrowthResources()
+		/// <summary>
+		/// 资源表：<paramref name="zeroGrowth"/> 时把所有 `BaseGrowth` 清零（产出只来自修正器），
+		/// 再应用用例的 <paramref name="mutate"/>（例如改减员阈值）；其余字段（含 `Settlement` 段）保持真实值。
+		/// </summary>
+		private static string AdjustResources(bool zeroGrowth, Action<JObject> mutate)
 		{
 			var resources = JObject.Parse(File.ReadAllText(ConfigFixtures.TablePath("Resources")));
-			foreach (JObject entry in resources["Resources"].Cast<JObject>())
-				entry["BaseGrowth"] = 0;
+			if (zeroGrowth)
+				foreach (JObject entry in resources["Resources"].Cast<JObject>())
+					entry["BaseGrowth"] = 0;
 
+			mutate?.Invoke(resources);
 			return resources.ToString();
 		}
 

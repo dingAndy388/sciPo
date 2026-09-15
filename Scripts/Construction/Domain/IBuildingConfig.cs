@@ -51,5 +51,14 @@ namespace SciencePotato.Scripts.Construction.Domain
 
 		/// <summary>（v0.3 / WP-2.6）升级的科技前置（设计稿"升级条件"列 = 已解锁某科技节点）。</summary>
 		Dictionary<string, List<string>> UpgradeTechRequirements { get; }
+
+		/// <summary>
+		/// （v0.3 / WP-3.10）**建筑维护费**：资源名 → 每月数量（空表 = 该建筑不维护）。
+		/// <para>与单位维护同构（<c>IUnitConfig.Maintenance</c>）：需求由**状态持有方**（这里是 Construction，
+		/// 因为它知道"图上有哪些建筑"）通过 <c>IUpkeepDemandSource</c> 上报，经济侧只消费（`D59`）。</para>
+		/// <para>**设计稿目前只有"单位维护"表（design/unit.md），没有建筑维护数值** —— 因此
+		/// `Config/Buildings.json` 里**全部留空**（不臆造数字），机制先就位：填表即生效。</para>
+		/// </summary>
+		Dictionary<string, float> Maintenance { get; }
 	}
 }

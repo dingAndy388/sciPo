@@ -30,6 +30,11 @@
   ],
   "Settlement": {
     "DemandResource": "Gold",
-    "PopulationUpkeepPerMonth": 3
+    "PopulationUpkeepPerMonth": 3,
+    "DeclineThresholdMonths": 36,
+    "DeclineIntervalDays": 360,
+    "DeclineLogisticK": 8,
+    "DeclineExpectedFactor": 0.05,
+    "DeclineJitterRatio": 0.25
   }
 }

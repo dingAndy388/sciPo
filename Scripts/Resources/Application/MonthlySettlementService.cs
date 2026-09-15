@@ -1,5 +1,6 @@
 using SciencePotato.Scripts.Common.Application;
 using SciencePotato.Scripts.Common.Domain;
+using SciencePotato.Scripts.Common.Infrastructure;
 using SciencePotato.Scripts.Core.Time;
 using SciencePotato.Scripts.Resources.Domain;
 using System;
@@ -27,6 +28,13 @@ namespace SciencePotato.Scripts.Resources.Application
 	/// <para><b>与产出任务的次序</b>：产出仍由各资源的 `ResourceGrowth` 任务入账（`WP-2.7` 已接线），本结算器只做
 	/// **需求 / 扣减 / 赤字**。二者同为 30 日周期、按注册顺序派发，池子先建（资源首次写入时）→ 结算器后注册，
 	/// 因此"先产出、后收账"；即便次序反转也只会把某个月的产出记到下个月，不会算错总量。</para>
+	/// <para><b>减员惩罚（`WP-3.10` / `C9` / `RES-01`）</b>：连续赤字 ≥ <c>DeclineThresholdMonths</c>（36 月 = 3 年）
+	/// 之后，在年边界（`DeclineIntervalDays` = 360 日，即设计稿的"年评估"）按**年度窗口的缺口率**
+	/// `r = Σ赤字 / Σ需求` 算 logistic 减员概率 `p = 1/(1+e^(−k(r−0.5)))`，期望减员 = 总人口 × p × 系数（0.05），
+	/// 实际值按 `DeclineJitterRatio` 抖动后交给 <see cref="IPopulationSink"/> **按地块随机**扣人。
+	/// 五个参数全部来自 `Resources.json` 的 `Settlement` 段（设计稿"均配置化"）。评估后年度窗口清零、
+	/// 连续赤字月数保留 ⇒ 只要还在赤字，每一年都会再评估一次（饿满三年之后不是免疫）。</para>
+
 	/// </summary>
 	public sealed partial class MonthlySettlementService
 	{
@@ -43,8 +51,24 @@ namespace SciencePotato.Scripts.Resources.Application
 		private readonly List<IUpkeepDemandSource> _demandSources;
 		private readonly ISaveStore _store;
 
+		/// <summary>（v0.3 / WP-3.10）人口出口（可空 = 不做减员：减员评估整体跳过，年度窗口继续累计）。</summary>
+		private readonly IPopulationSink _populationSink;
+
+		/// <summary>（v0.3 / WP-3.10）减员抖动的随机源（可注入以求受控；缺省 = 系统随机）。</summary>
+		private readonly IRandom _random;
+
 		/// <summary>连续赤字月数：键 = `{mapId}_{ownerId}`（读档由 `RestoreSettlement` 覆盖）。</summary>
 		private readonly Dictionary<string, int> _deficitMonths = new(StringComparer.Ordinal);
+
+		/// <summary>
+		/// （v0.3 / WP-3.10）**年度窗口的累计赤字**：键 = `{mapId}_{ownerId}`，值是上次评估以来各月赤字之和。
+		/// <para>为什么不用"本月赤字"当缺口：饿了三年的玩家某个月刚好凑够维护费，本月缺口是 0，但它显然还在这场饥荒里。
+		/// 用窗口累计的 赤字/需求 比值当 r 才能反映"这段时间总体缺了多少"。</para>
+		/// </summary>
+		private readonly Dictionary<string, float> _yearDeficit = new(StringComparer.Ordinal);
+
+		/// <summary>（v0.3 / WP-3.10）**年度窗口的累计需求**（与 <see cref="_yearDeficit"/> 同一窗口，分母）。</summary>
+		private readonly Dictionary<string, float> _yearDemand = new(StringComparer.Ordinal);
 
 		/// <summary>各玩家最近一次结算的报告（UI / 调试用）。</summary>
 		private readonly Dictionary<string, MonthlySettlementReport> _lastReports = new(StringComparer.Ordinal);
@@ -55,19 +79,26 @@ namespace SciencePotato.Scripts.Resources.Application
 		/// <summary>累计结算次数（验收/调试用：证明"每 30 日恰好一次"而不是每帧一次）。</summary>
 		public int SettledCount { get; private set; }
 
+		/// <summary>（v0.3 / WP-3.10）累计减员评估次数（验收/调试用：证明"每 360 日最多评估一次"）。</summary>
+		public int DeclineEvaluations { get; private set; }
+
 		/// <param name="resources">资源池应用服务（池读取 + 唯一写入点）。</param>
-		/// <param name="configRepo">资源表（产出汇总用 `DependentModifiers`/`BaseGrowth`）。</param>
+		/// <param name="configRepo">资源表（产出汇总用 `DependentModifiers`/`BaseGrowth`，减员参数读 `Settlement` 段）。</param>
 		/// <param name="modifier">修正器读取（产出汇总；可空 = 只算基础产出）。</param>
 		/// <param name="time">游戏日节拍总线（挂月结任务）。</param>
-		/// <param name="demandSources">需求来源（人口 / 单位维护 …）；缺省 = 无需求（只汇报产出）。</param>
-		/// <param name="store">统一存档单元（可空 = 赤字月数只在内存）。</param>
+		/// <param name="demandSources">需求来源（人口 / 单位维护 / 建筑维护 …）；缺省 = 无需求（只汇报产出）。</param>
+		/// <param name="store">统一存档单元（可空 = 赤字月数与年度窗口只在内存）。</param>
+		/// <param name="populationSink">人口出口（`WP-3.10` 减员用；可空 = 不评估减员）。</param>
+		/// <param name="random">减员抖动的随机源（可空 = 系统随机；测试注入受控随机源以复现数值）。</param>
 		public MonthlySettlementService(
 			ResourcesAppService resources,
 			IResourcesConfigRepository configRepo,
 			ModifierAppService modifier,
 			ITimeService time,
 			IEnumerable<IUpkeepDemandSource> demandSources = null,
-			ISaveStore store = null)
+			ISaveStore store = null,
+			IPopulationSink populationSink = null,
+			IRandom random = null)
 		{
 			_resources = resources;
 			_configRepo = configRepo;
@@ -75,6 +106,8 @@ namespace SciencePotato.Scripts.Resources.Application
 			_time = time;
 			_demandSources = demandSources?.Where(s => s != null).ToList() ?? new List<IUpkeepDemandSource>();
 			_store = store;
+			_populationSink = populationSink;
+			_random = random ?? new SystemRandom(Environment.TickCount);
 		}
 
 		/// <summary>（`WP-2.10` 家族）结算完成推送：UI 与后续 `WP-3.10` 的减员评估据此订阅。</summary>
@@ -143,10 +176,19 @@ namespace SciencePotato.Scripts.Resources.Application
 			int months = totalDeficit > 0f ? _deficitMonths.GetValueOrDefault(key) + 1 : 0;
 			_deficitMonths[key] = months;
 
+			// ⑤ 年度窗口累计（`WP-3.10`）：分母 = 本月需求总量，分子 = 本月赤字总量；
+			//    被减员评估消费（评估时清零）。需求为 0 的月份两边都不加，不影响比值。
+			_yearDeficit[key] = _yearDeficit.GetValueOrDefault(key) + totalDeficit;
+			_yearDemand[key] = _yearDemand.GetValueOrDefault(key) + demands.Sum(d => d.Amount);
+
+			// ⑥ 减员评估（`WP-3.10`）：只在年边界 + 连续赤字达阈值时发生；不做时返回全 0 结果
+			DeclineOutcome decline = EvaluateDecline(mapId, ownerId, key, months);
+
 			SettledCount++;
 			var report = new MonthlySettlementReport(
 				mapId, ownerId, _time?.CurrentDay ?? 0f,
-				production, demands, demandByResource, paidByResource, deficitByResource, months);
+				production, demands, demandByResource, paidByResource, deficitByResource, months,
+				decline.Evaluated, decline.DeficitRatio, decline.Probability, decline.PopulationLost);
 
 			_lastReports[key] = report;
 			Settled?.Invoke(report);
@@ -185,6 +227,93 @@ namespace SciencePotato.Scripts.Resources.Application
 					if (demand.Amount > 0f && !string.IsNullOrWhiteSpace(demand.Resource)) demands.Add(demand);
 			}
 			return demands;
+		}
+
+		// ────────────────────────── 减员评估（v0.3 / WP-3.10 / `C9`） ──────────────────────────
+
+		/// <summary>
+		/// （v0.3 / WP-3.10 / `C9`）**减员概率** `p = 1/(1+e^(−k(r−0.5)))`（设计稿 logistic 口径）。
+		/// <para>`r = 0.5` 时恰好 `p = 0.5`：缺口一半以上开始"多数年份会减员"，缺口全满时 `p → 1`；
+		/// `k` 越大越接近阶跃（设计稿 8）。公开成静态方法是为了让 UI/用例直接算这条曲线，不必先造一次结算。</para>
+		/// </summary>
+		/// <param name="deficitRatio">缺口率 r（0 = 足额付清，1 = 完全付不出；超出区间会先 clamp）。</param>
+		/// <param name="k">曲线陡度（设计稿 8）。</param>
+		public static float DeclineProbability(float deficitRatio, float k)
+			=> 1f / (1f + (float)Math.Exp(-k * (Math.Clamp(deficitRatio, 0f, 1f) - 0.5f)));
+
+		/// <summary>
+		/// （v0.3 / WP-3.10 / `C9`）**实际减员人数** = 总人口 × p × 系数，再按 <paramref name="jitter"/> 抖动量级
+		/// （设计稿：期望值 = 总人口 × p × 0.05，**实际值随机抖动**）。
+		/// </summary>
+		/// <param name="population">总人口（评估基数）。</param>
+		/// <param name="probability">减员概率 p（见 <see cref="DeclineProbability"/>）。</param>
+		/// <param name="factor">期望减员系数（设计稿 0.05）。</param>
+		/// <param name="jitter">抖动系数（1 = 不抖；调用方按 `1 ± 幅度` 取值）。</param>
+		/// <returns>取整后的减员人数（≥ 0；期望不足半人时可以是 0 —— 小聚落不会被四舍五入成"必减 1 人"）。</returns>
+		public static int DeclineLoss(int population, float probability, float factor, float jitter)
+		{
+			if (population <= 0 || probability <= 0f || factor <= 0f) return 0;
+
+			float expected = population * probability * factor;
+			int loss = (int)Math.Round(expected * Math.Max(0f, jitter), MidpointRounding.AwayFromZero);
+			return loss < 0 ? 0 : loss;
+		}
+
+		/// <summary>
+		/// **到期就评估一次减员**（`C9`）：连续赤字 ≥ 阈值 + 落在年边界（`日 % 间隔 == 0`）时才发生。
+		/// <list type="number">
+		/// <item>**r** = 年度窗口累计赤字 / 累计需求（clamp `[0,1]`；窗口没有需求 → 0）；</item>
+		/// <item>**p** = logistic(r)；**期望减员** = 总人口 × p × 系数；</item>
+		/// <item>**实际减员** = 期望 × 随机抖动 → 经 <see cref="IPopulationSink"/> 按地块随机扣人；</item>
+		/// <item>评估后**年度窗口清零**（下一次评估只看新的一年），但**连续赤字月数不清零** ——
+		/// 只要还在赤字，下一个年边界照常评估（"连续 3 年不足 → 年评估"，不是"一辈子只罚一次"）。</item>
+		/// </list>
+		/// <para>**不评估的三种情形**（都返回全 0 结果，且不动年度窗口）：没挂人口出口 / 阈值或间隔 ≤ 0 /
+		/// 未到年边界或连续赤字不足阈值。</para>
+		/// </summary>
+		private DeclineOutcome EvaluateDecline(string mapId, int ownerId, string key, int months)
+		{
+			ISettlementConfig settlement = _configRepo?.GetResourcesPoolConfig()?.Settlement;
+			int threshold = settlement?.DeclineThresholdMonths ?? SettlementConfigDto.DefaultDeclineThresholdMonths;
+			int interval = settlement?.DeclineIntervalDays ?? SettlementConfigDto.DefaultDeclineIntervalDays;
+
+			// 没挂人口出口 = 这次运行时不做减员：窗口继续累计（不清零），避免"事后接上出口却少了三年的账"
+			if (_populationSink == null || threshold <= 0 || interval <= 0) return default;
+
+			float day = _time?.CurrentDay ?? 0f;
+			if (day <= 0f || day % interval != 0f) return default;      // 只在年边界评估（`TIME-14` 节拍口径）
+			if (months < threshold) return default;                     // 连续赤字不足 3 年：不评估（窗口继续攒）
+
+			float demand = _yearDemand.GetValueOrDefault(key);
+			float deficit = _yearDeficit.GetValueOrDefault(key);
+			float ratio = demand > 0f ? Math.Clamp(deficit / demand, 0f, 1f) : 0f;
+
+			float k = settlement?.DeclineLogisticK ?? SettlementConfigDto.DefaultDeclineLogisticK;
+			float factor = settlement?.DeclineExpectedFactor ?? SettlementConfigDto.DefaultDeclineExpectedFactor;
+			float jitterRatio = Math.Clamp(
+				settlement?.DeclineJitterRatio ?? SettlementConfigDto.DefaultDeclineJitterRatio, 0f, 1f);
+
+			float probability = DeclineProbability(ratio, k);
+			int population = _populationSink.GetPopulation(mapId);
+			float jitter = 1f + jitterRatio * (2f * _random.NextFloat() - 1f);
+			int loss = DeclineLoss(population, probability, factor, jitter);
+			int lost = loss > 0 ? _populationSink.ApplyPopulationLoss(mapId, loss) : 0;
+
+			// 窗口清零：新的一年从 0 开始攒（连续赤字月数保持累加，下个年边界照常评估）
+			_yearDeficit[key] = 0f;
+			_yearDemand[key] = 0f;
+			DeclineEvaluations++;
+
+			return new DeclineOutcome(true, ratio, probability, lost);
+		}
+
+		/// <summary>（v0.3 / WP-3.10）一次减员评估的结果（内部传球用：报告要把它摊成四个字段）。</summary>
+		private readonly struct DeclineOutcome(bool evaluated, float deficitRatio, float probability, int populationLost)
+		{
+			public readonly bool Evaluated = evaluated;
+			public readonly float DeficitRatio = deficitRatio;
+			public readonly float Probability = probability;
+			public readonly int PopulationLost = populationLost;
 		}
 
 		private static string Key(string mapId, int ownerId) => $"{mapId}_{ownerId}";
