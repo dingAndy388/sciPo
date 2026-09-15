@@ -9,7 +9,7 @@
 | 层 | 命令 | 判据 | 覆盖什么 | 覆盖不到什么 |
 | :--- | :--- | :--- | :--- | :--- |
 | ① 构建 | `dotnet build 'Science Potato.csproj'` | **0 error** | 类型/接口/命名空间口径 | 运行期行为 |
-| ② 无头检查 | `powershell -ExecutionPolicy Bypass -File Tools/verify.ps1`（或直跑 `Tests\…\bin\Debug\net8.0\SciencePotato.HeadlessChecks.exe`） | **退出码 0**，末尾 `结果：通过 N / 失败 0`（当前 **211** 条） | 纯 C# 核心：时钟/配置/地图/建造/单位/战斗/月结/存档/**装配**/玩家表/**开局**/**胜负**/i18n | 引擎适配层（资源加载、autoload、场景、`user://`） |
+| ② 无头检查 | `powershell -ExecutionPolicy Bypass -File Tools/verify.ps1`（或直跑 `Tests\…\bin\Debug\net8.0\SciencePotato.HeadlessChecks.exe`） | **退出码 0**，末尾 `结果：通过 N / 失败 0`（当前 **216** 条） | 纯 C# 核心：时钟/配置/地图/建造/单位/战斗/月结/存档/**装配**/玩家表/**开局**/**胜负**/i18n | 引擎适配层（资源加载、autoload、场景、`user://`） |
 | ③ Godot 无头冒烟 | 见 §2 | **退出码 0** 且 stdout 含 `[SMOKE] 汇总：通过 18 / 失败 0` | 真引擎：装配自检、**外观配置链路比对**、资源加载、**143×73 生成**、**开局布置（出生点 + 开局单位）**、逐 owner 子系统启动、`user://` 存档往返、**表现层端到端（实例化主场景 + 渲染 10439 格）** | 视觉/手感/数值体感/AI 像不像人 |
 
 人只看四类主观项（`log.md` §19.1 的 **N1**~**N4**）：视觉与操作手感、数值手感、AI 行为、美术与发布。
