@@ -73,6 +73,11 @@ namespace SciencePotato.Scripts.Core
 
 			// 全灭（第二半）：单位阵亡是唯一"无月结也要立刻判"的推送（建筑被毁在 `WP-4.8` 里补同一个调用）
 			events?.Subscribe<UnitDiedEvent>(evt => Evaluate(evt.MapId, "UnitWiped"));
+
+			// （v0.7.0 / WP-4.8）建筑侧的资产变化：被拆 / HP 归零（转为可夺取）都要重算一次；
+			// 夺取（易主）也要——"谁还活着"的答案可能因此改变
+			events?.Subscribe<BuildingRemovedEvent>(evt => Evaluate(evt.MapId, "BuildingLost"));
+			events?.Subscribe<BuildingCapturedEvent>(evt => Evaluate(evt.MapId, "BuildingCaptured"));
 		}
 
 		/// <summary>该地图上各势力的存活状态（按 ownerId 升序）。</summary>

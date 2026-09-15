@@ -12,18 +12,56 @@ namespace SciencePotato.Scripts.Construction.Domain
 	/// <para>队列口径（设计稿）：上限 <see cref="TrainingQueueLimit"/>（默认 5，来自配置）、**同时只训练 1 个**（队列头）。
 	/// 排队不生成单位对象，只锁定单位 uid（见 <see cref="TrainingOrder"/>）；完成时由应用服务落位。</para>
 	/// </summary>
-	public class Building(HexCubePosition coord, string id, string uid, int ownerId, string name, int trainingQueueLimit = BuildingConfigDto.DefaultTrainingQueueLimit) : IMapOccupant
+	public class Building(HexCubePosition coord, string id, string uid, int ownerId, string name, int trainingQueueLimit = BuildingConfigDto.DefaultTrainingQueueLimit, float hp = 0f) : IMapOccupant, IDamageable
 	{
 		private MapOccupantInfo info;
 
 		private readonly HexCubePosition _pos = coord;
 		private readonly string _uid = uid;
-		private readonly int _ownerId = ownerId;
+
+		/// <summary>归属（**可易主**：`WP-4.8` 的夺取会改它，所以不是 readonly）。</summary>
+		private int _ownerId = ownerId;
+
 		private readonly List<TrainingOrder> _trainingQueue = new();
 		private string _id = id;
 		private string _name = name;
 
 		public bool IsReady { get; set; } = false;
+
+		// ────────────── HP 与夺取（v0.7.0 / WP-4.8 / `D73`）──────────────
+
+		/// <summary>是否使用 HP 模型（配置 `HasHP`：设计稿里**住房与军事建筑**有 HP、可被夺取）。</summary>
+		public bool HasHP { get; } = hp > 0f;
+
+		public float MaxHP { get; } = hp > 0f ? hp : 0f;
+
+		public float HP { get; private set; } = hp > 0f ? hp : 0f;
+
+		/// <summary>HP ≤ 0 ⇒ **可夺取**：建筑还在（仍是原主人的资产），但不再占住格子（单位可以站上来）。</summary>
+		public bool IsCapturable => HasHP && HP <= 0f;
+
+		/// <summary>当前归属（夺取后会变）。</summary>
+		public int OwnerId => _ownerId;
+
+		/// <summary>扣血；返回剩余 HP（无 HP 模型的建筑不受影响，恒为 0）。</summary>
+		public float TakeDamage(float damage)
+		{
+			if (!HasHP || damage <= 0f) return HP;
+
+			HP = System.Math.Max(0f, HP - damage);
+			info = BuildInfo();
+			return HP;
+		}
+
+		/// <summary>易主（夺取）：归属改写 + HP 恢复到 <c>MaxHP × 0.5</c>。</summary>
+		public void CaptureBy(int newOwnerId)
+		{
+			if (newOwnerId < 1) return; // ownerId < 1 = 中立/野怪，不参与夺取（与 `PlayerContext.FirstOwnerId` 同口径）
+
+			_ownerId = newOwnerId;
+			HP = HasHP ? System.Math.Max(1f, MaxHP * 0.5f) : 0f;
+			info = BuildInfo();
+		}
 
 		/// <summary>训练队列上限（配置 `TrainingQueueLimit`）。</summary>
 		public int TrainingQueueLimit { get; } = trainingQueueLimit > 0 ? trainingQueueLimit : BuildingConfigDto.DefaultTrainingQueueLimit;
@@ -69,14 +107,21 @@ namespace SciencePotato.Scripts.Construction.Domain
 		{
 			_id = buildingId;
 			_name = name;
-			info = new MapOccupantInfo(_pos, _id, _uid, _ownerId, _name, IsReady, -1f, OccupantType.Building);
+			info = BuildInfo();
 		}
 
 		public MapOccupantInfo GetInfo()
 		{
-			info = new MapOccupantInfo(_pos, _id,_uid,_ownerId,_name, IsReady, -1f, OccupantType.Building);
+			info = BuildInfo();
 			return info;
 		}
+
+		/// <summary>
+		/// 组装占据物信息（v0.7.0 / WP-4.8）：有 HP 模型的建筑返回**当前血量**，否则沿用旧口径 <c>-1</c>
+		/// （`MapOccupantInfo.HP` 的注释即"单位为正、建筑为 -1"，这里是那条约定的唯一出处）。
+		/// </summary>
+		private MapOccupantInfo BuildInfo()
+			=> new(_pos, _id, _uid, _ownerId, _name, IsReady, HasHP ? HP : -1f, OccupantType.Building);
 
 		/// <summary>入队（队列满则拒绝）。返回是否入队成功。</summary>
 		public bool TryEnqueueTraining(TrainingOrder order)

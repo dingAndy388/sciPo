@@ -53,6 +53,15 @@ namespace SciencePotato.Scripts.Construction.Domain
 		Dictionary<string, List<string>> UpgradeTechRequirements { get; }
 
 		/// <summary>
+		/// （v0.7.0 / WP-4.8）是否使用 **HP 模型**（设计稿：住房与军事建筑有 HP 且可被夺取）。
+		/// <para>HP 归零 ⇒ 该建筑转为"可夺取"；此后单位站上该格即易主（`D73`）。</para>
+		/// </summary>
+		bool HasHP { get; }
+
+		/// <summary>（v0.7.0 / WP-4.8）最大 HP（仅 <see cref="HasHP"/> 为 true 时有意义）。</summary>
+		float HP { get; }
+
+		/// <summary>
 		/// （v0.3 / WP-3.10）**建筑维护费**：资源名 → 每月数量（空表 = 该建筑不维护）。
 		/// <para>与单位维护同构（<c>IUnitConfig.Maintenance</c>）：需求由**状态持有方**（这里是 Construction，
 		/// 因为它知道"图上有哪些建筑"）通过 <c>IUpkeepDemandSource</c> 上报，经济侧只消费（`D59`）。</para>

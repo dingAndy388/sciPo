@@ -107,14 +107,17 @@ namespace SciencePotato.Scripts.Core
 
 			// 6) 应用服务（v0.6.0 / WP-5.1：全部到齐；顺序 = 依赖的拓扑序，不引入 DI 容器）
 			// 6.1) 资源 / 修正器 / 科技（资源池是三者共同的下游）
+			// 修正器仓储：**全进程一个实例**（`ModifierRepository` 每次调用都会重读分区，多实例不会读错；
+			// 统一成一个只是让"谁持有仓储"清楚，将来换实现/加缓存时少一个坑）
+			var modifierRepo = new ModifierRepository(saveRoot + "modifiers_", store);
+			var modifiers = new ModifierAppService(modifierRepo);
+
 			var resources = new ResourcesAppService(
 				new ResourcesRepository(saveRoot + "resources_", store),
 				tables.Resources,
 				timeService,
-				new ModifierRepository(saveRoot + "modifiers_", store),
+				modifierRepo,
 				domainEvents); // v0.6.3 / WP-7.2a：订阅建筑落成/升级 → 立刻重算存储上限（仓库）
-
-			var modifiers = new ModifierAppService(new ModifierRepository(saveRoot + "modifiers_", store));
 
 			TechTreesAppService tech = tables.TechTrees == null ? null : new TechTreesAppService(
 				new TechTreesRepository(saveRoot + "techtrees_", tables.TechTrees, store),
@@ -133,7 +136,7 @@ namespace SciencePotato.Scripts.Core
 			if (dependencies.EnableEnemySpawn && tables.Units != null)
 				postProcessors.Add(new EnemySpawner(tables.Units, new UnitFactory(tables.Units)));
 
-			var mapService = new MapAppService(mapGenerator, maps, postProcessors);
+			var mapService = new MapAppService(mapGenerator, maps, postProcessors, null, domainEvents);
 
 			// 6.4) 建造 / 单位（单位服务内部再分派移动与战斗：移动与战斗互相需要，构造期互相注入会成环）
 			ConstructionAppService construction = tables.Buildings == null ? null : new ConstructionAppService(

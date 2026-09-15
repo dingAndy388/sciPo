@@ -45,6 +45,27 @@ namespace SciencePotato.Scripts.Construction.Application
 			_modifier = modifierAppService;
 			_fog = fogAppService;
 			_events = eventBus;
+
+			// （v0.7.0 / WP-4.8）夺取 ⇒ **修正器换主人**：不换的话，被抢走的房子会继续给原主人加成
+			//（那是玩家一眼能看见的错）。修正器以 uid 为源，所以"移除旧主人的 + 按新主人重挂"就是全部工作。
+			_events?.Subscribe<BuildingCapturedEvent>(evt => TransferModifiersOnCapture(evt));
+		}
+
+		/// <summary>
+		/// （v0.7.0 / WP-4.8）**夺取后的修正器移交**：从原主人名下摘掉（按 uid），按新主人重新挂上。
+		/// <para>视野（`FogAppService`）暂不随建筑易主迁移 —— 迷雾目前是**单 owner 实例**，按 owner 拆分
+		/// 属 `WP-4.10`（`FOG-01` 收口）；这条缺口登记在 §19.5 `U10`。</para>
+		/// </summary>
+		private void TransferModifiersOnCapture(BuildingCapturedEvent evt)
+		{
+			IBuildingConfig config = _buildingRepo.GetBuildingConfig(evt.BuildingId);
+			if (config == null) return;
+
+			_modifier.RemoveModifiersBySourceId(evt.MapId, evt.PreviousOwnerId, evt.BuildingUId);
+			if (config.Modifiers == null || config.Modifiers.Count == 0) return;
+
+			// 夺下来的房子按"已完工"计：它的产出/上限加成照旧生效，只是归新主人
+			_modifier.AddModifiers(evt.MapId, evt.NewOwnerId, evt.BuildingUId, config.Modifiers);
 		}
 
 		public bool StartConstruction(string mapId, string buildingId, HexCubePosition position, int ownerId, BuilderBinding builder = null)

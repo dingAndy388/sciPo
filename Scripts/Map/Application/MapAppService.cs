@@ -1,3 +1,4 @@
+using SciencePotato.Scripts.Common.Application;
 using SciencePotato.Scripts.Common.Domain;
 using SciencePotato.Scripts.Common.Infrastructure;
 using SciencePotato.Scripts.Fog.Application;
@@ -8,10 +9,18 @@ using System.Linq;
 
 namespace SciencePotato.Scripts.Map.Application
 {
-	public class MapAppService(IMapGenerator generator, MapSession session, IEnumerable<IMapPostProcessor> postProcessors = null, Func<int, IRandom> randomFactory = null) : IPopulationSink
+	public class MapAppService(IMapGenerator generator, MapSession session, IEnumerable<IMapPostProcessor> postProcessors = null, Func<int, IRandom> randomFactory = null, IDomainEventBus events = null) : IPopulationSink
 	{
 		private readonly IMapGenerator _mapGenerator = generator;
 		private readonly MapSession _session = session;
+
+		/// <summary>
+		/// （v0.7.0 / WP-4.8）领域事件总线（可空）：推送**夺取**（`BuildingCapturedEvent`）与**建筑离开**
+		/// （`BuildingRemovedEvent`）—— 前者让"修正器换主人"，后者让"胜负重算"。
+		/// <para>为什么归属变化在服务层比而不是让 `Map` 自己推：`Map` 是纯领域（不认识总线、也不该认识），
+		/// 而"移动前后归属变了没变"在服务层一眼可见（`ownerBefore != ownerAfter`）。</para>
+		/// </summary>
+		private readonly IDomainEventBus _events = events;
 
 		/// <summary>
 		/// （v0.3 / WP-3.10）减员用的随机源工厂（种子 → 随机源）：与 `EnemySpawner` 同一口径
@@ -137,14 +146,37 @@ namespace SciencePotato.Scripts.Map.Application
 		/// <para>（v0.3 / WP-3.6）**交战中的进攻方也计入**：攻进敌格的单位仍然是"图上存在、仍在吃粮"的单位，
 		/// 漏掉它会让单位维护费少算（它在 `Invader` 槽位而不是 `Occupant`）。</para>
 		/// </summary>
+		/// <summary>
+		/// （v0.7.0 / WP-4.8）**建筑伤害的应用入口**（战斗服务调用）：扣血；HP 归零 ⇒ 该建筑转为"可夺取"。
+		/// </summary>
+		/// <returns>是否命中了一个有 HP 模型的建筑（false = 调用方沿用"只记账"的旧口径）。</returns>
+		public bool ApplyBuildingDamage(string mapId, IMapOccupant building, float damage)
+		{
+			var map = _session.Get(mapId);
+			if (map == null || building == null) return false;
+
+			HexCubePosition position = building.GetInfo().Position;
+			if (!map.ApplyBuildingDamage(position, damage)) return false;
+
+			_session.MarkDirty(mapId);
+			return true;
+		}
+
+		/// <summary>
+		/// 地图上全部占据物（含**正在交战的进攻方**与**已转为可夺取的建筑**）。
+		/// <para>（v0.7.0 / WP-4.8）第三个来源 `cell.Building` 必须计入：HP 归零后被摘下的是"
+		/// 占据物槽位"，建筑本身还在图上（仍是原主人的资产）—— 漏掉它会让"胜负判定"把守着一栋
+		/// 零血房子的人判成"全灭"，也会让建筑维护费凭空消失。</para>
+		/// </summary>
 		public IEnumerable<IMapOccupant> GetOccupants(string mapId)
 		{
 			var map = _session.Get(mapId);
 			if (map == null) return Enumerable.Empty<IMapOccupant>();
 
 			return map.GetAllCells()
-				.SelectMany(cell => new[] { cell.Occupant, cell.Invader })
-				.Where(occupant => occupant != null);
+				.SelectMany(cell => new[] { cell.Occupant, cell.Invader, cell.Building })
+				.Where(occupant => occupant != null)
+				.Distinct();
 		}
 
 		/// <summary>
@@ -288,8 +320,17 @@ namespace SciencePotato.Scripts.Map.Application
 		public void RemoveBuilding(string mapId, HexCubePosition position)
 		{
 			var map = _session.Get(mapId);
+			if (map == null) return;
+
+			// （v0.7.0 / WP-4.8）先取快照再移除：胜负判定需要知道"哪一方的资产少了一栋"（`D95` ③）
+			IMapOccupant building = map.GetCell(position)?.Building;
+			MapOccupantInfo? before = building?.GetInfo();
+
 			map.RemoveBuilding(position);
 			_session.MarkDirty(mapId);
+
+			if (before.HasValue)
+				_events?.Publish(new BuildingRemovedEvent(mapId, before.Value.OwnerId, before.Value.UId, before.Value.Id));
 		}
 
 		/// <summary>
@@ -301,9 +342,23 @@ namespace SciencePotato.Scripts.Map.Application
 		{
 			var map = _session.Get(mapId);
 			if (map == null) return false;
+
+			// （v0.7.0 / WP-4.8 / `D73`）夺取的**观测点**：移动前后同一格建筑的归属变了 ⇒ 发生了易主。
+			// `Map` 内部已把归属改好（那是"占位"的一部分），这里只负责把它变成一条可订阅的事实。
+			IMapOccupant buildingBefore = map.GetCell(to)?.Building;
+			int ownerBefore = buildingBefore?.GetInfo().OwnerId ?? 0;
+
 			if (!map.MoveOccupant(occupant, from, to)) return false;
 
 			_session.MarkDirty(mapId);
+
+			IMapOccupant buildingAfter = map.GetCell(to)?.Building;
+			if (buildingAfter != null && buildingAfter.GetInfo().OwnerId != ownerBefore)
+			{
+				MapOccupantInfo info = buildingAfter.GetInfo();
+				_events?.Publish(new BuildingCapturedEvent(mapId, ownerBefore, info.OwnerId, info.UId, info.Id, to));
+			}
+
 			return true;
 		}
 

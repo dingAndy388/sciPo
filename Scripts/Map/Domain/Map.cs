@@ -54,6 +54,9 @@ namespace SciencePotato.Scripts.Map.Domain
 
 			cell.SetOccupant(occupant);
 			_occupants[occupant.GetInfo().UId] = occupant;
+
+			// （v0.7.0 / WP-4.8 / `D73`）站上一栋"可夺取"的敌方建筑 ⇒ 易主（训练完成落位也走这里）
+			TryCaptureAt(cell, occupant);
 			return true;
 		}
 
@@ -200,10 +203,50 @@ namespace SciencePotato.Scripts.Map.Domain
 		}
 
 		/// <summary>
+		/// （v0.7.0 / WP-4.8 / `D73`）**对建筑造成伤害的唯一入口**：扣血；HP 归零 ⇒ 把建筑从占据物槽位摘下
+		/// （格子因此变成**可进入**），但建筑仍在 `cell.Building` 与 `_occupants` 索引里 —— 它还是原主人的资产，
+		/// 只是"等着被占"。
+		/// <para>为什么摘的是占据物槽位而不是删掉建筑：设计稿的夺取口径是"**HP 归零不自动易主**，
+		/// 我方单位**站上该格**才易主" —— 若不摘掉槽位，格子永远是"被占"的，单位永远上不去。</para>
+		/// </summary>
+		/// <returns>是否命中了一个有 HP 的建筑（无 HP 的建筑返回 false：调用方沿用"只记账"的旧口径）。</returns>
+		public bool ApplyBuildingDamage(HexCubePosition position, float damage)
+		{
+			if (!_cells.TryGetValue(position, out MapCell cell)) return false;
+			if (cell.Building is not IDamageable building || !building.HasHP) return false;
+
+			building.TakeDamage(damage);
+
+			// 归零 ⇒ 转"可夺取"：摘下占据物槽位（建筑槽位与索引保留）
+			if (building.IsCapturable && ReferenceEquals(cell.Occupant, cell.Building))
+				cell.RemoveOccupant();
+
+			return true;
+		}
+
+		/// <summary>
+		/// （v0.7.0 / WP-4.8 / `D73`）**夺取**：单位进入某格时，若该格立着一栋**可夺取**的敌方建筑，
+		/// 则归属改为进入者的主人，HP 恢复到半血。
+		/// </summary>
+		/// <returns>被夺取的建筑（未发生夺取返回 null）。</returns>
+		private IMapOccupant TryCaptureAt(MapCell cell, IMapOccupant incoming)
+		{
+			if (cell.Building is not IDamageable captive || !captive.IsCapturable) return null;
+			if (incoming == null || incoming.GetInfo().Type != OccupantType.Unit) return null; // 只有单位能占，建筑之间不互相夺取
+
+			int newOwner = incoming.GetInfo().OwnerId;
+			if (newOwner == cell.Building.GetInfo().OwnerId) return null; // 自家单位站上去不是"夺取"
+
+			captive.CaptureBy(newOwner);
+			return cell.Building;
+		}
+
+		/// <summary>
 		/// （v0.3 / WP-3.8 / `UNIT-14`）**占据物移动的唯一入口**：从 <paramref name="from"/> 摘除、落到
 		/// <paramref name="to"/>（目标被**别的**占据物占着则拒绝且保持原状 —— 一格一占据物）。
 		/// <para>旧实现的移动只改 <c>Unit.Position</c>，地图索引与格子仍指着**旧格**（僵尸占据物）：
 		/// 于是"下一格有没有敌人""同格交战"这类判定全部失真。移动与落位现在共用同一套占用权威。</para>
+		/// <para>（v0.7.0 / WP-4.8）落位成功后检查**夺取**：站上一栋 HP 归零的敌方建筑 ⇒ 易主。</para>
 		/// </summary>
 		/// <returns>是否移动成功。</returns>
 		public bool MoveOccupant(IMapOccupant occupant, HexCubePosition from, HexCubePosition to)
@@ -220,6 +263,7 @@ namespace SciencePotato.Scripts.Map.Domain
 			string uid = occupant.GetInfo().UId;
 			if (!string.IsNullOrEmpty(uid)) _occupants[uid] = occupant;
 
+			TryCaptureAt(target, occupant);
 			return true;
 		}
 

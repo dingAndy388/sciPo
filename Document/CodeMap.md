@@ -35,6 +35,7 @@
 | :--- | :--- | :--- | :--- |
 | 时间 | `CoreServices.Time`（`Register`/`Reset`）、`GameClock` | `IntervalTask` / `LinearTask` / `IProgressTask` | `Clock`、`TimeBaseline`、`TaskLifecycle` |
 | 地图 | `MapAppService`（`GenerateMap`/`GetAllCells`/`SetOccupant`/`IsClear`/`GetTerrainRequirement`） | `Map`、`MapCell`、`MapSession`、`TerrainSetRequirement` | `MapSession`、`Occupancy`、`Movement` |
+| 建造（含 HP/夺取） | `ConstructionAppService`（捕获消费：修正器移交给新主人） | `IDamageable`、`Building.HP/CaptureBy`、`Map.ApplyBuildingDamage`、`BuildingCapturedEvent`/`BuildingRemovedEvent` | `BuildingHp`、`ContentBuilding` |
 | 建造 | `ConstructionAppService`（`StartConstruction`/`UpgradeBuilding`/`RemoveBuilding`） | `Building`、`BuildingFactory`、`BuilderBinding` | `Builder`、`Upgrade`、`ContentBuilding` |
 | 单位 | `UnitsAppService`（`TrainUnit`/`CreateUnit`/`PlaceInitialUnit`/`ExcuteAction`） | `Unit`、`UnitFactory`、`UnitMovementService`、`UnitCombatService`、`UnitLootService` | `TrainingQueue`、`Movement`、`Combat`、`Loot` |
 | 资源 | `ResourcesAppService`（`GetOrCreatePool`/`AddResource`/`RefreshLimits`） | `ResourcesPool`、`ResourcesConsumption` | `ConfigTable`、`ContentBuilding` |

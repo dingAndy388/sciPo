@@ -46,5 +46,14 @@ namespace SciencePotato.Scripts.Construction.Domain
 		/// </summary>
 		public Dictionary<string, float> Maintenance { get; set; } = new Dictionary<string, float>();
 
+		/// <summary>
+		/// （v0.7.0 / WP-4.8）是否使用 **HP 模型**：设计稿里**住房与军事建筑**有 HP 且可被夺取。
+		/// <para>与 <see cref="HP"/> 联动：<c>HasHP=false</c> 时 HP 字段被忽略（该建筑免疫伤害，攻击只记账）。</para>
+		/// </summary>
+		public bool HasHP { get; set; }
+
+		/// <summary>最大 HP（设计稿未给数值 ⇒ 见 `log.md` §19.5 `U9`；`WP-7.6` 平衡时复核）。</summary>
+		public float HP { get; set; }
+
 	}
 }

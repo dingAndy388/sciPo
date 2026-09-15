@@ -2,6 +2,8 @@
   "Buildings": {
     "camp": {
       "BuildingId": "camp",
+      "HasHP": true,
+      "HP": 200,
       "Name": "营地",
       "ResourceCost": { "BasicMinerals": 20 },
       "TerrainRequirements": ["plain"],
@@ -23,6 +25,8 @@
     },
     "camp_ii": {
       "BuildingId": "camp_ii",
+      "HasHP": true,
+      "HP": 300,
       "Name": "营地 lv.II",
       "ResourceCost": { "BasicMinerals": 20 },
       "TerrainRequirements": ["plain"],
@@ -44,6 +48,8 @@
     },
     "camp_iii": {
       "BuildingId": "camp_iii",
+      "HasHP": true,
+      "HP": 400,
       "Name": "营地 lv.III",
       "ResourceCost": { "BasicMinerals": 40 },
       "TerrainRequirements": ["plain"],
@@ -201,6 +207,8 @@
     },
     "military_camp": {
       "BuildingId": "military_camp",
+      "HasHP": true,
+      "HP": 250,
       "Name": "军营",
       "ResourceCost": { "Food": 80, "BasicMinerals": 40 },
       "TerrainRequirements": ["plain"],
@@ -222,6 +230,8 @@
     },
     "military_camp_ii": {
       "BuildingId": "military_camp_ii",
+      "HasHP": true,
+      "HP": 400,
       "Name": "军营 lv.II",
       "ResourceCost": { "BasicMinerals": 80, "Food": 80 },
       "TerrainRequirements": ["plain"],
@@ -245,6 +255,8 @@
     },
     "military_camp_iii": {
       "BuildingId": "military_camp_iii",
+      "HasHP": true,
+      "HP": 600,
       "Name": "军营 lv.III",
       "ResourceCost": { "BasicMinerals": 160, "Food": 150 },
       "TerrainRequirements": ["plain"],

@@ -96,6 +96,11 @@ namespace SciencePotato.Scripts.Units.Application
 		/// <summary>最近一次对建筑算出的伤害（打一次即可断言 `E12` 的 0.5 衰减）。</summary>
 		public float LastBuildingDamage { get; private set; }
 
+		/// <summary>
+		/// （v0.7.0 / WP-4.8）最近一次打建筑是否把它打成了**可夺取**状态（HP 归零）。
+		/// <para>给 UI / 用例一个可读的观测点：\"这一击之后，那栋房子是不是可以占了\"。</para>
+		/// </summary>
+		public bool LastBuildingCapturable { get; private set; }
 		/// <summary>当前在跑的交战循环数（读档/泄漏排查用）。</summary>
 		public int ActiveLoops => _loops.Count;
 
@@ -505,11 +510,26 @@ namespace SciencePotato.Scripts.Units.Application
 				return;
 			}
 
-			// `E18`/`E12`：建筑是合法目标，衰减系数已生效；**建筑 HP 归 `WP-4.8`**（`D7`），
-			// 因此本轮只记账（`BuildingHits`/`LastBuildingDamage`）—— 不臆造"拆掉一栋还没有 HP 的建筑"。
+			// `E18`/`E12`：建筑是合法目标，衰减系数已生效。
+			// （v0.7.0 / WP-4.8 / `D73`）**有 HP 模型的建筑**（住房/军事）真的掉血：归零 ⇒ 转为"可夺取"
+			// （单位站上该格即易主）；**没有 HP 模型的建筑**（生产/存储）沿用"只记账"的旧口径 —— 不臆造数值。
 			BuildingHits++;
 			LastBuildingDamage = damage;
 			TotalDamage += damage;
+
+			if (target is IDamageable damageable && damageable.HasHP)
+			{
+				_map.ApplyBuildingDamage(mapId, target, damage);
+				if (damageable.IsCapturable)
+				{
+					LastBuildingCapturable = true;
+
+					// 归零 ⇒ 该建筑离开"占位"（`Map` 内部已摘槽位），与"被拆"一样要触发一次胜负重算：
+					// 若进攻方的最后一击发生在一栋**唯一资产**上，那一方此刻就该出局（`D95` ③）
+					MapOccupantInfo info = target.GetInfo();
+					_events?.Publish(new BuildingRemovedEvent(mapId, info.OwnerId, info.UId, info.Id));
+				}
+			}
 		}
 
 		/// <summary>

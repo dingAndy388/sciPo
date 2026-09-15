@@ -68,4 +68,31 @@ namespace SciencePotato.Scripts.Common.Domain
 		public readonly string Name = name;
 		public readonly int Duration = duration; // 0 = 永久（`WP-2.8` 口径）
 	}
+
+	/// <summary>
+	/// （v0.7.0 / WP-4.8）**建筑易主（夺取）**：某栋房的 HP 归零后被敌方单位站上，归属改写。
+	/// <para>消费场景：胜负判定重算（`VictoryService`）、表现层提示、以及"夺取后修正器/视野要换主人"的联动
+	/// （`WP-4.8` 首批只做归属，修正器归属移交登记在 §19.5）。</para>
+	/// </summary>
+	public sealed class BuildingCapturedEvent(string mapId, int previousOwnerId, int newOwnerId, string buildingUId, string buildingId, HexCubePosition position)
+	{
+		public readonly string MapId = mapId;
+		public readonly int PreviousOwnerId = previousOwnerId;
+		public readonly int NewOwnerId = newOwnerId;
+		public readonly string BuildingUId = buildingUId;
+		public readonly string BuildingId = buildingId;
+		public readonly HexCubePosition Position = position;
+	}
+
+	/// <summary>
+	/// （v0.7.0 / WP-4.8）**建筑离开地图**（被拆 / 被摧毁）—— 胜负判定的"资产减少"推送
+	/// （`D95` ③：全灭判定除了单位阵亡，建筑消失也必须触发重算）。
+	/// </summary>
+	public sealed class BuildingRemovedEvent(string mapId, int ownerId, string buildingUId, string buildingId)
+	{
+		public readonly string MapId = mapId;
+		public readonly int OwnerId = ownerId;
+		public readonly string BuildingUId = buildingUId;
+		public readonly string BuildingId = buildingId;
+	}
 }
