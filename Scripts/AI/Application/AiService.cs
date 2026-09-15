@@ -41,11 +41,26 @@ namespace SciencePotato.Scripts.AI.Application
 
 		private readonly HashSet<string> _started = new(StringComparer.Ordinal);
 		private readonly Dictionary<string, List<AiDecision>> _decisions = new(StringComparer.Ordinal);
-		/// <summary>（v0.7.4 / WP-6.3）行动出口（可空）：判断完就交给它下单（建造/科研）。</summary>
-		private IAiActionSink _sink;
+		/// <summary>（v0.7.4 / WP-6.3）行动出口（可空）：判断完就交给它下单（建造/科研/军事）。</summary>
+		private readonly List<IAiActionSink> _sinks = new();
 
-		/// <summary>（v0.7.4 / WP-6.3）挂上行动出口（由组合根在装配末尾调用；不挂 = 只判断不动手）。</summary>
-		public void AttachActionSink(IAiActionSink sink) => _sink = sink;
+		/// <summary>（v0.7.6 / WP-6.6）胜负判定（可空）：出局势力**不再决策**（自己把 tick 摘掉）。</summary>
+		private VictoryService _victory;
+
+		/// <summary>
+		/// （v0.7.6 / WP-6.6）挂上胜负判定：出局后 `Evaluate` 返回 <c>null</c>，tick 自摘
+		/// （否则"僵尸 AI"还会继续研究/造兵，玩家会觉得 AI 死了还在动）。
+		/// </summary>
+		public void AttachVictory(VictoryService victory) => _victory = victory;
+
+		/// <summary>因"已出局"被跳过的决策次数（验收/调试用：证明出局后真的停了）。</summary>
+		public int EliminatedSkips { get; private set; }
+
+		/// <summary>（v0.7.4 / WP-6.3）挂上行动出口（由组合根在装配末尾调用；可挂多个：经济 + 军事）。</summary>
+		public void AttachActionSink(IAiActionSink sink)
+		{
+			if (sink != null) _sinks.Add(sink);
+		}
 
 
 		/// <summary>累计决策次数（验收/调试：证明"按节拍"而不是"每帧"）。</summary>
@@ -95,7 +110,11 @@ namespace SciencePotato.Scripts.AI.Application
 
 			float interval = Math.Max(1, _config.DecisionIntervalDays);
 			var task = new IntervalTask(0f, interval, $"ai_{mapId}_{ownerId}", "AiDecision", "none", mapId, ownerId);
-			task.OnCompleted += () => Evaluate(mapId, ownerId);
+			// 出局（`Evaluate` 返回 null）⇒ **自己把 tick 摘掉**：不留"僵尸 AI"在时间轴上空转（`WP-6.6`）
+			task.OnCompleted += () =>
+			{
+				if (Evaluate(mapId, ownerId) == null) _time.Unregister(task);
+			};
 			_time.Register(task);
 			return true;
 		}
@@ -152,7 +171,7 @@ namespace SciencePotato.Scripts.AI.Application
 		public AiDecision Decide(AiObservation observation)
 		{
 			AiThreatLevel threat = ClassifyThreat(observation.VisibleEnemies);
-			float militaryShare = observation.Day >= _config.NoMilitaryDays ? _config.ResourceSplit.Military : 0f;
+			int noMilitaryDays = _config.NoMilitaryDays;
 
 			// ① 生存：口粮撑不到最低保留月数，或没有住房（人口无从增长）
 			if (observation.FoodMonthsLeft < _config.ReserveMonths || !observation.HasHousing)
@@ -167,21 +186,32 @@ namespace SciencePotato.Scripts.AI.Application
 			// ② 威胁：看得见敌人 ⇒ 按等级调整军事投入（仍受"前期不造兵"窗口约束）
 			if (threat != AiThreatLevel.None)
 			{
-				string reason = observation.Day < _config.NoMilitaryDays
-					? $"威胁：可见 {observation.VisibleEnemies} 个敌方单位（{threat}），但仍在 {_config.NoMilitaryDays} 日不造兵窗口内"
-					: $"威胁：可见 {observation.VisibleEnemies} 个敌方单位（{threat}），军事投入 {militaryShare:0.##}";
+				float share = AiMilitaryPolicy.ShareFor(observation.Day, noMilitaryDays, threat, AiFocus.Threat);
+				string reason = observation.Day < noMilitaryDays
+					? $"威胁：可见 {observation.VisibleEnemies} 个敌方单位（{threat}），但仍在 {noMilitaryDays} 日不造兵窗口内"
+					: $"威胁：可见 {observation.VisibleEnemies} 个敌方单位（{threat}），军事投入 {share:0.##}";
 
-				return Build(observation, AiFocus.Threat, threat, militaryShare, reason);
+				return Build(observation, AiFocus.Threat, threat, share, reason);
 			}
 
-			// ③ 发展：无威胁 ⇒ 建造与科研优先（`design/AI.md`"无威胁或低威胁时优先建造与科研"）
-			return Build(observation, AiFocus.Development, threat, 0f,
-				$"发展：视野内无敌方单位，建造/科研 {_config.ResourceSplit.Build:0.##}/{_config.ResourceSplit.Research:0.##}");
+			// ③ 发展：无威胁 ⇒ 建造与科研优先（`design/AI.md`"无威胁或低威胁时优先建造与科研"）；
+			//    窗口过后仍保留**基础守备**军费（`AiMilitaryPolicy.BaseShare`），否则"和平期一夜无兵"
+			float baseShare = AiMilitaryPolicy.ShareFor(observation.Day, noMilitaryDays, threat, AiFocus.Development);
+			return Build(observation, AiFocus.Development, threat, baseShare,
+				$"发展：视野内无敌方单位，建造/科研 {_config.ResourceSplit.Build:0.##}/{_config.ResourceSplit.Research:0.##}" +
+				(baseShare > 0f ? $"，基础守备 {baseShare:0.##}" : "，不造兵窗口内"));
 		}
 
-		/// <summary>**观测 + 判断 + 记录**（tick 与用例都走它）。</summary>
+		/// <summary>**观测 + 判断 + 记录**（tick 与用例都走它）。<returns>出局时返回 <c>null</c>（不记录、不下单）。</returns></summary>
 		public AiDecision Evaluate(string mapId, int ownerId)
 		{
+			// 出局即停（`WP-6.6`）：胜负判定说"既无单位也无建筑" ⇒ 不再决策、不再下单
+			if (_victory != null && !_victory.IsAlive(mapId, ownerId))
+			{
+				EliminatedSkips++;
+				return null;
+			}
+
 			AiDecision decision = Decide(Observe(mapId, ownerId));
 			DecisionCount++;
 
@@ -194,11 +224,11 @@ namespace SciencePotato.Scripts.AI.Application
 			list.Add(decision);
 
 			// 判断完立刻下单（`D100` 的两段式：这里是第二段的入口）。异常不能掀掉 tick。
-			if (_sink != null)
+			foreach (IAiActionSink sink in _sinks)
 			{
 				try
 				{
-					_sink.Execute(decision);
+					sink.Execute(decision);
 				}
 				catch (Exception) { /* 单个 AI 的异常不能中断时间轴（与月结/事件同口径） */ }
 			}

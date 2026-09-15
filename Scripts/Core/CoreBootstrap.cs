@@ -200,8 +200,15 @@ namespace SciencePotato.Scripts.Core
 			var aiEconomy = new AiEconomyService(session, mapService, resources, construction, tech, tables.Units, tables.Buildings, tables.TechTrees, tables.Resources, aiConfig);
 			ai.AttachActionSink(aiEconomy);
 
+			// 6.12) AI 军事（v0.7.5 / WP-6.4）：军费分级 → 训练 + 威胁升级时守家（同样只走玩家同一套服务）
+			var aiMilitary = new AiMilitaryService(session, mapService, resources, units, tables.Units, tables.Buildings, aiConfig);
+			ai.AttachActionSink(aiMilitary);
+
 			// 6.9) 胜负判定（v0.7.0 / WP-4.19）：每月判定（吃月结推送）+ 全灭（吃单位阵亡推送）
 			var victory = new VictoryService(session, mapService, settlement, domainEvents);
+
+			// 6.13) AI 与胜负（v0.7.6 / WP-6.6）：出局即停（不再决策/下单）
+			ai.AttachVictory(victory);
 
 			return new CoreServices
 			{
@@ -231,6 +238,7 @@ namespace SciencePotato.Scripts.Core
 				Ai = aiConfig,
 				AiService = ai,
 				AiEconomy = aiEconomy,
+				AiMilitary = aiMilitary,
 				I18n = i18n,
 			};
 		}

@@ -172,7 +172,8 @@ namespace SciencePotato.HeadlessChecks
 
 			AiDecision late = core.AiService.Evaluate(MapId, 2);
 			Check.AssertEqual(AiFocus.Threat, late.Focus, "过了窗口仍看得见敌人 ⇒ 仍以威胁为重");
-			Check.AssertEqual(core.Ai.ResourceSplit.Military, late.PlannedMilitaryShare, "窗口过后按配置投入军事");
+			Check.AssertEqual(AiMilitaryPolicy.ShareFor(AiThreatLevel.Low), late.PlannedMilitaryShare,
+				"窗口过后按**威胁分级**投军费（`WP-6.4` 起：低威胁 = 10%，不再是配置上限）");
 		}
 
 		private static void HumanHasNoAiEngine()

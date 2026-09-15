@@ -151,6 +151,10 @@ namespace SciencePotato.Scripts.Dev
 				}
 				GD.Print($"[SMOKE] AI 决策：共 {core.AiService.DecisionCount} 次 —— {string.Join(" | ", aiDecisionLines)}");
 				Check("编排：AI 势力已按节拍产出决策（WP-6.2）", core.AiService.DecisionCount >= aiPlayers);
+				GD.Print($"[SMOKE] AI 经济：{core.AiEconomy?.LastResult}");
+				GD.Print($"[SMOKE] AI 军事：{core.AiMilitary?.LastResult}");
+				Check("编排：AI 前期不造兵（窗口内军事 = 0，WP-6.4）",
+					core.AiMilitary?.LastResult == null || core.AiMilitary.LastResult.MilitaryShare <= 0f);
 			}
 
 			// ⑤ 存档点 → 读档点（真实 user:// 落盘 + 任务恢复）

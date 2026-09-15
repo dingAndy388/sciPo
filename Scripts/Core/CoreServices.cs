@@ -139,6 +139,11 @@ namespace SciencePotato.Scripts.Core
 		public AiEconomyService AiEconomy { get; init; }
 
 		/// <summary>
+		/// （v0.7.5 / WP-6.4）**AI 军事**：按威胁分级投军费（训练）+ 优先防御（把人叫回自家聚落）。
+		/// </summary>
+		public AiMilitaryService AiMilitary { get; init; }
+
+		/// <summary>
 		/// （v0.6.5 / WP-5.10）**多语言（i18n）**：UI 文案的键 → 文本解析器（缺键可见、可回退到默认语言）。
 		/// <para>表现层今后**只允许**写键（如 <c>i18n.T("ui.generate")</c>），不允许写死文案（`R4`）。</para>
 		/// </summary>
