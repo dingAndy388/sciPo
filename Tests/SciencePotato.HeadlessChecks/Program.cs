@@ -53,6 +53,7 @@ namespace SciencePotato.HeadlessChecks
 			("ContentCoverage", ContentCoverageChecks.RunAll),
 			("ModifierConsumer", ModifierConsumerChecks.RunAll),
 			("DepthMechanic", DepthMechanicChecks.RunAll),
+			("StructureMechanic", StructureMechanicChecks.RunAll),
 			};
 
 			// `--list-groups`：只输出组名（不给脚本混进横幅），供 `Tools/verify.ps1` 分片

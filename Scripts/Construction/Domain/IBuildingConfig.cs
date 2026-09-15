@@ -58,7 +58,22 @@ namespace SciencePotato.Scripts.Construction.Domain
 		/// </summary>
 		bool HasHP { get; }
 
-		/// <summary>（v0.7.0 / WP-4.8）最大 HP（仅 <see cref="HasHP"/> 为 true 时有意义）。</summary>
+		/// <summary>
+		/// （v0.8.8 / `WP-4.16`）**建造前置（建筑维度）**：设计稿「前置」列不只含科技，也含建筑
+		/// （如 日晷 ← 学院）。这里放"必须存在**本势力已完工**的这些建筑 Id"；空 = 无建筑前置。
+		/// </summary>
+		List<string> BuildingPrerequisites { get; }
+
+		/// <summary>
+		/// （v0.8.8 / `WP-4.9`）**是否附属建筑**：附属建筑只能建在**宿主建筑所在格**
+		/// （设计稿「附属建筑需建造于区域建筑当中」，宿主 = <see cref="BuildingPrerequisites"/> 的第一项）。
+		/// <para>区域建筑升级（`ApplyUpgrade`）只换自己的 Id ⇒ 附属建筑不受影响、不会消失。</para>
+		/// </summary>
+		bool IsAttachment { get; }
+
+		/// <summary>
+		/// （v0.7.0 / WP-4.8）最大 HP（仅 <see cref="HasHP"/> 为 true 时有意义）。
+		/// </summary>
 		float HP { get; }
 
 		/// <summary>（v0.8.5 / `WP-4.5`）**产出浮动幅度**（0.2 = ±20%；0 = 不浮动）。设计稿：农田 lv.I ±20% / lv.II ±15% / lv.III ±10%；上下限可被 `OutputVarianceUpper`/`OutputVarianceLower` 改写（观星台）。</summary>

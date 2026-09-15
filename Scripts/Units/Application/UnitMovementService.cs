@@ -143,7 +143,7 @@ namespace SciencePotato.Scripts.Units.Application
 			{
 				HexCubePosition next = unit.MovePath[0];
 
-				if (!CanEnter(mapId, next))
+				if (!CanEnter(mapId, unit.GetInfo().OwnerId, next))
 				{
 					// v0.3 / WP-3.6（`E9`）：敌方格不再是"死路" —— 能打的单位**攻进去**（进入敌格即交战，
 					// 一格一对）；打不动（无伤害 / 该格已有入侵者）或地形不可通行 → 保持封锁、就地停下。
@@ -154,7 +154,7 @@ namespace SciencePotato.Scripts.Units.Application
 					return;
 				}
 
-				float cost = TerrainCost(mapId, next);
+				float cost = TerrainCost(mapId, unit.GetInfo().OwnerId, next);
 				if (unit.CurrentMP < cost)
 				{
 					WaitingForMp++; // 不足则等下一个周期（不做"部分位移"）
@@ -198,6 +198,18 @@ namespace SciencePotato.Scripts.Units.Application
 		}
 
 		/// <summary>下一格地形消耗（`Terrains.MoveCost`；缺地形按 1 处理以免死循环）。</summary>
+		/// <summary>（v0.8.8 / `WP-4.11`）带 owner 的地形消耗：`TerrainCost:{terrainId}` 有修正器则**改写**成本（浮力定律：水域 5.0）。</summary>
+		public float TerrainCost(string mapId, int ownerId, HexCubePosition position)
+		{
+			MapCell cell = _map.GetMapCell(mapId, position);
+			float baseCost = cell?.Terrain?.MoveCost ?? 1f;
+			if (_modifiers == null || cell?.Terrain == null) return baseCost;
+
+			string target = "TerrainCost:" + cell.Terrain.Id;
+			return _modifiers.HasTarget(mapId, ownerId, target) ? Math.Max(0f, _modifiers.GetValue(mapId, ownerId, target, 0f)) : baseCost;
+		}
+
+		/// <summary>**下一格地形消耗**（`Terrains.MoveCost`；缺地形按 1 处理以免死循环）。</summary>
 		public float TerrainCost(string mapId, HexCubePosition position)
 		{
 			MapCell cell = _map.GetMapCell(mapId, position);
@@ -215,6 +227,27 @@ namespace SciencePotato.Scripts.Units.Application
 		/// 那条路径走 <see cref="UnitCombatService.EnterEnemyCell"/>（占据物进入交战的唯一入口），
 		/// 而不是普通位移，因此本方法对敌方格仍然返回 `false`（普通位移挤不进去，这是"一格一个占据物"的机制）。</para>
 		/// <para>地图外（格不存在）视为不可进入：寻路一旦把越界格排进路径，位移就会试图"走出地图"。</para>
+		/// </summary>
+		/// <summary>
+		/// （v0.8.8 / `WP-4.11`）**带 owner 的通行判定**：默认不可通行的地形（`Terrains.Passable=false`）
+		/// 只要该 owner 有 `Passable:{terrainId}` 修正器（科技解锁，如浮力定律解锁水域）就放行。
+		/// </summary>
+		public bool CanEnter(string mapId, int ownerId, HexCubePosition position)
+		{
+			MapCell cell = _map.GetMapCell(mapId, position);
+			if (cell == null || cell.Terrain == null) return false;
+
+			if (!cell.Terrain.Passable && !IsTerrainUnlocked(mapId, ownerId, cell.Terrain.Id)) return false;
+
+			return !_map.IsHostileAt(mapId, position);
+		}
+
+		/// <summary>（v0.8.8 / `WP-4.11`）该 owner 是否已解锁这种地形（`Passable:{terrainId}` 修正器存在即解锁）。</summary>
+		public bool IsTerrainUnlocked(string mapId, int ownerId, string terrainId)
+			=> _modifiers != null && !string.IsNullOrWhiteSpace(terrainId) && _modifiers.HasTarget(mapId, ownerId, "Passable:" + terrainId);
+
+		/// <summary>
+		/// **能否进入该格**（owner 缺省 = 不查解锁；旧调用方与寻路的"纯几何"判定继续用它）。
 		/// </summary>
 		public bool CanEnter(string mapId, HexCubePosition position)
 		{

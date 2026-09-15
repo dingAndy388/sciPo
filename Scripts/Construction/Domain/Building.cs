@@ -75,6 +75,12 @@ namespace SciencePotato.Scripts.Construction.Domain
 		public bool HasActiveTraining => _trainingQueue.Any(order => order.IsActive);
 
 		/// <summary>（v0.3 / WP-2.4）当前绑定的建造者（null = 无建造者 / 已释放）。</summary>
+		/// <summary>（v0.8.8 / WP-4.9）**宿主建筑 uid**（非空 = 本建筑是附属建筑，挂在宿主格上）。</summary>
+		public string HostUId { get; set; }
+
+		/// <summary>（v0.8.8 / WP-4.9）**挂在自己身上的附属建筑**（区域建筑升级时它们原地不动）。</summary>
+		public List<IMapOccupant> Attachments { get; } = new List<IMapOccupant>();
+
 		public BuilderBinding BuilderBinding { get; private set; }
 
 		/// <summary>

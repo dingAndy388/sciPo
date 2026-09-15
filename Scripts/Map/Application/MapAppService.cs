@@ -173,8 +173,10 @@ namespace SciencePotato.Scripts.Map.Application
 			var map = _session.Get(mapId);
 			if (map == null) return Enumerable.Empty<IMapOccupant>();
 
+			// （v0.8.8 / WP-4.9）附属建筑也要算进来（它不在 cell.Occupant/cell.Building 上，只在 cell.Attachments 里）
 			return map.GetAllCells()
-				.SelectMany(cell => new[] { cell.Occupant, cell.Invader, cell.Building })
+				.SelectMany(cell => new[] { cell.Occupant, cell.Invader, cell.Building }
+					.Concat(cell.Attachments ?? Enumerable.Empty<IMapOccupant>()).ToArray())
 				.Where(occupant => occupant != null)
 				.Distinct();
 		}
@@ -279,6 +281,17 @@ namespace SciencePotato.Scripts.Map.Application
 		/// （v0.3 / WP-3.4）**放置建筑**：同时写 `cell.Building` 与占据物槽位（修 `MAP-04`：旧实现只写后者，
 		/// 于是 `GetBuildingInfo`/拆除全部失效）。目标格已被别的实体占用时拒绝。
 		/// </summary>
+		/// <summary>（v0.8.8 / WP-4.9）**附属建筑落位**（不动宿主）：走 `Map.PlaceAttachment`。</summary>
+		public bool PlaceAttachment(string mapId, HexCubePosition position, IMapOccupant attachment)
+		{
+			var map = _session.Get(mapId);
+			if (map == null) return false;
+
+			if (!map.PlaceAttachment(attachment, position)) return false;
+			_session.MarkDirty(mapId);
+			return true;
+		}
+
 		public bool PlaceBuilding(string mapId, HexCubePosition position, IMapOccupant building)
 		{
 			var map = _session.Get(mapId);
@@ -327,6 +340,7 @@ namespace SciencePotato.Scripts.Map.Application
 			MapOccupantInfo? before = building?.GetInfo();
 
 			map.RemoveBuilding(position);
+			map.ClearAttachments(position); // WP-4.9：附属建筑随宿主一起消失（避免僵尸索引）
 			_session.MarkDirty(mapId);
 
 			if (before.HasValue)

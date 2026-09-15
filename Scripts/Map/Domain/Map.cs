@@ -1,4 +1,5 @@
 using SciencePotato.Scripts.Common.Domain;
+using SciencePotato.Scripts.Construction.Domain;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -58,6 +59,59 @@ namespace SciencePotato.Scripts.Map.Domain
 			// （v0.7.0 / WP-4.8 / `D73`）站上一栋"可夺取"的敌方建筑 ⇒ 易主（训练完成落位也走这里）
 			TryCaptureAt(cell, occupant);
 			return true;
+		}
+
+		/// <summary>
+		/// （v0.8.8 / `WP-4.9`）**附属建筑进入的入口**：与 <see cref="PlaceBuilding"/> 的区别是**不动
+		/// `cell.Building`**（宿主留在原位），只把附属建筑挂到宿主的 `Attachments` 与本格的 `Attachments`，
+		/// 并进 `_occupants` 索引（产出/迷雾/AI 与 uid 查询都能看到它）。
+		/// </summary>
+		public bool PlaceAttachment(IMapOccupant attachment, HexCubePosition position)
+		{
+			if (attachment == null) return false;
+			if (!_cells.TryGetValue(position, out MapCell cell)) return false;
+			if (cell.Building is not Building host) return false;
+
+			if (attachment is Building building) building.HostUId = host.GetInfo().UId;
+
+			host.Attachments.Add(attachment);
+			cell.Attachments.Add(attachment);
+			_occupants[attachment.GetInfo().UId] = attachment;
+			return true;
+		}
+
+		/// <summary>（v0.8.8 / `WP-4.9`）移除附属建筑（拆宿主时一并清，避免僵尸索引）。</summary>
+		public IMapOccupant RemoveAttachment(HexCubePosition position, string uid)
+		{
+			if (!_cells.TryGetValue(position, out MapCell cell)) return null;
+
+			IMapOccupant removed = cell.Attachments.FirstOrDefault(a => a.GetInfo().UId == uid);
+			if (removed == null) return null;
+
+			cell.Attachments.Remove(removed);
+			if (cell.Building is Building host) host.Attachments.RemoveAll(a => a.GetInfo().UId == uid);
+			_occupants.Remove(uid);
+			return removed;
+		}
+
+		/// <summary>（v0.8.8 / `WP-4.9`）清掉某格的**全部附属建筑**（宿主被拆时调用）：返回被清掉的 uid 列表。</summary>
+		public List<string> ClearAttachments(HexCubePosition position)
+		{
+			var cleared = new List<string>();
+			if (!_cells.TryGetValue(position, out MapCell cell)) return cleared;
+
+			foreach (IMapOccupant attachment in cell.Attachments.ToList())
+			{
+				string uid = attachment?.GetInfo().UId;
+				if (!string.IsNullOrEmpty(uid))
+				{
+					_occupants.Remove(uid);
+					cleared.Add(uid);
+				}
+			}
+			cell.Attachments.Clear();
+			if (cell.Building is Building host) host.Attachments.Clear();
+			return cleared;
 		}
 
 		/// <summary>

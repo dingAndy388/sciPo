@@ -158,7 +158,7 @@ namespace SciencePotato.HeadlessChecks
 			}
 
 			// 24 条建筑里已落地 21 条（12 旧 + 9 新）；缺口归 WP-7.2b
-			Check.AssertEqual(23, core.Tables.AllBuildings().Count(), "当前建筑条目数（含观星台/骨笛工坊；24 条全表归 WP-7.2b）");
+			Check.AssertEqual(24, core.Tables.AllBuildings().Count(), "当前建筑条目数 = 设计稿全表 24");
 		}
 
 		/// <summary>

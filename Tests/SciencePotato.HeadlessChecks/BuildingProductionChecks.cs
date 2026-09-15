@@ -38,7 +38,7 @@ namespace SciencePotato.HeadlessChecks
 		{
 			ConfigTables tables = ConfigFixtures.BuildRealCore().Tables;
 
-			Check.AssertEqual(23, tables.AllBuildings().Count(), "建筑条目数（12 + 9 + 观星台/骨笛工坊 = 23；日晷属附属建筑归 WP-4.9/WP-7.2b，24 条全表归 WP-7.2b）");
+			Check.AssertEqual(24, tables.AllBuildings().Count(), "建筑条目数 = 设计稿全表 24（住房/工坊/学院/军营 ×3 + 农田/矿场/仓库 ×3 + 观星台/骨笛工坊/日晷）；数值复核归 N2/`WP-7.6`");
 
 			IBuildingConfig camp = tables.Buildings.GetBuildingConfig("camp");
 			Check.AssertEqual("营地", camp.Name, "营地名称");

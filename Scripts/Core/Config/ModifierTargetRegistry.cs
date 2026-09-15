@@ -1,3 +1,4 @@
+using SciencePotato.Scripts.Map.Domain;
 using SciencePotato.Scripts.Resources.Domain;
 using SciencePotato.Scripts.Units.Domain;
 using System.Collections.Generic;
@@ -61,7 +62,15 @@ namespace SciencePotato.Scripts.Core.Config
 		{
 			var targets = new HashSet<string>(Canonical);
 
-			IResourcesPoolConfig resources = tables?.Resources?.GetResourcesPoolConfig();
+			// （v0.8.8 / WP-4.11）地形派生名：`Passable:{id}` / `TerrainCost:{id}`（水域/山地由科技解锁）
+			foreach (ITerrainData terrain in tables?.Terrains?.GetAll() ?? System.Linq.Enumerable.Empty<ITerrainData>())
+			{
+				if (string.IsNullOrWhiteSpace(terrain.Id)) continue;
+				targets.Add($"Passable:{terrain.Id}");
+				targets.Add($"TerrainCost:{terrain.Id}");
+			}
+
+		IResourcesPoolConfig resources = tables?.Resources?.GetResourcesPoolConfig();
 			if (resources?.Resources != null)
 				foreach (IResourceConfig resource in resources.Resources)
 				{

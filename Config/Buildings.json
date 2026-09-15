@@ -1,5 +1,35 @@
 {
   "Buildings": {
+    "sundial": {
+      "BuildingId": "sundial",
+      "Name": "日晷",
+      "IsAttachment": true,
+      "BuildingPrerequisites": [ "school" ],
+      "OutputVariance": 0,
+      "ModifierRange": 0,
+      "ResourceCost": { "BasicMinerals": 500 },
+      "TerrainRequirements": [ "plain" ],
+      "TechRequirements": {},
+      "Modifiers": [
+        { "Target": "IdeaGrowth", "Type": "Absolute", "Value": 150 }
+      ],
+      "Duration": 30,
+      "Actions": [],
+      "VisionRadius": 3,
+      "IsHousing": false,
+      "PopulationRadius": 0,
+      "PopulationCap": 0,
+      "PopulationGrowthInterval": 0,
+      "TrainableUnits": [],
+      "TrainingQueueLimit": 0,
+      "UpgradeTo": "",
+      "UpgradeCost": {},
+      "UpgradeDuration": 0,
+      "UpgradeTechRequirements": {},
+      "Maintenance": {},
+      "HasHP": false,
+      "HP": 0
+    },
     "observatory": {
       "BuildingId": "observatory",
       "Name": "观星台",

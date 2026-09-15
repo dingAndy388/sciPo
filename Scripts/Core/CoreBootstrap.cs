@@ -210,6 +210,10 @@ namespace SciencePotato.Scripts.Core
 			// 6.9) 胜负判定（v0.7.0 / WP-4.19）：每月判定（吃月结推送）+ 全灭（吃单位阵亡推送）
 			var victory = new VictoryService(session, mapService, settlement, domainEvents);
 
+			// 6.14) 人口模型（v0.8.8 / WP-4.17）：聚落级容量（多住房不叠加）+ 拆住房减员
+			var populationModel = tables.Buildings == null ? null : new PopulationModelService(mapService, tables.Buildings, domainEvents);
+			construction?.AttachPopulationModel(populationModel);
+
 			// 6.13) AI 与胜负（v0.7.6 / WP-6.6）：出局即停（不再决策/下单）
 			ai.AttachVictory(victory);
 
@@ -242,6 +246,7 @@ namespace SciencePotato.Scripts.Core
 				AiService = ai,
 				AiEconomy = aiEconomy,
 				AiMilitary = aiMilitary,
+				Population = populationModel,
 				I18n = i18n,
 			};
 		}

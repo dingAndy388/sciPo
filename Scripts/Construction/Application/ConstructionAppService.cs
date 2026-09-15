@@ -20,6 +20,9 @@ namespace SciencePotato.Scripts.Construction.Application
 		private readonly IBuildingConfigRepository _buildingRepo;
 		private readonly ITimeService _time;
 		private readonly ModifierAppService _modifier;
+
+		/// <summary>（v0.8.8 / `WP-4.17`）聚落级人口容量（可空 = 退回单建筑上限）。</summary>
+		private PopulationModelService _populationModel;
 		private readonly FogAppService _fog;
 
 		/// <summary>（v0.3 / WP-2.10）领域事件总线（可空 = 无人订阅，发布变成空操作）。</summary>
@@ -34,7 +37,8 @@ namespace SciencePotato.Scripts.Construction.Application
 			ITimeService time,
 			ModifierAppService modifierAppService,
 			FogAppService fogAppService,
-			IDomainEventBus eventBus = null)
+			IDomainEventBus eventBus = null,
+			PopulationModelService populationModel = null)
 		{
 			_map = mapAppService;
 			_resource = resourceAppService;
@@ -43,6 +47,7 @@ namespace SciencePotato.Scripts.Construction.Application
 			_buildingRepo = buildingRepo;
 			_time = time;
 			_modifier = modifierAppService;
+			_populationModel = populationModel;
 			_fog = fogAppService;
 			_events = eventBus;
 
@@ -73,6 +78,15 @@ namespace SciencePotato.Scripts.Construction.Application
 		/// <para>设计稿两种写法（`-30 日` = Absolute、`-10%` = Percent）用同一公式结算，
 		/// 所以 base 传"基础天数"：`(base + ΣAbsolute) × (1 + ΣPercent)`；下限 0.1 日防负/归零。</para>
 		/// </summary>
+		/// <summary>（v0.8.8 / `WP-4.16`）自己是否已有**已完工**的指定建筑之一（设计稿「前置」的建筑维度）。</summary>
+		private bool HasCompletedBuilding(string mapId, int ownerId, List<string> buildingIds)
+			=> _map.GetOccupants(mapId).Any(o => o != null
+					&& o.GetInfo().OwnerId == ownerId && o.GetInfo().Type == OccupantType.Building && o.IsReady
+					&& buildingIds.Contains(o.GetInfo().Id));
+
+		/// <summary>（v0.8.8 / `WP-4.17`）挂上人口模型（组合根在装配末尾调用；不挂 = 退回单建筑上限）。</summary>
+		public void AttachPopulationModel(PopulationModelService model) => _populationModel = model;
+
 		private float ScaledBuildDays(float baseDays, string mapId, int ownerId)
 			=> _modifier == null ? baseDays : Math.Max(0.1f, _modifier.GetValue(mapId, ownerId, "BuildingSpeed", baseDays));
 
@@ -94,6 +108,21 @@ namespace SciencePotato.Scripts.Construction.Application
 				   select _resource.CreateResourceConsumption(item, mapId, ownerId),
 			];
 
+			// （v0.8.8 / WP-4.9 + WP-4.16）**建筑前置 + 附属建筑宿主**
+			// 设计稿「前置」列不只含科技也含建筑（日晷 ← 学院）；附属建筑只能建在**宿主所在格**。
+			IMapOccupant host = null;
+			if (config.BuildingPrerequisites != null && config.BuildingPrerequisites.Count > 0)
+			{
+				if (!HasCompletedBuilding(mapId, ownerId, config.BuildingPrerequisites)) return false;
+
+				if (config.IsAttachment)
+				{
+					host = _map.GetOccupantAt(mapId, position);
+					if (host is not Building hostBuilding || !hostBuilding.IsReady) return false;
+					if (!config.BuildingPrerequisites.Contains(hostBuilding.GetInfo().Id)) return false;
+				}
+			}
+
 			// （v0.6.3 / WP-7.2a）设计稿的"可建地块"是**列表 = 任一匹配**：必须整体判定，
 			// 而不能把列表逐项 AND 起来（那样"平原或山地"会变成"同时是平原和山地" → 永远建不了）
 			IRequirement terrainRequirement = _map.GetTerrainRequirement(mapId, position, config.TerrainRequirements);
@@ -104,7 +133,7 @@ namespace SciencePotato.Scripts.Construction.Application
 			var noHostileRequirement = _map.GetNoHostileRequirement(mapId, position);
 
 			if (contracts.All(c => c.IsConsumable())
-				&& _map.IsClear(mapId, position)
+				&& (host != null || _map.IsClear(mapId, position)) // WP-4.9：附属建筑建在宿主格上（该格当然不空）
 				&& noHostileRequirement.IsMet() // v0.3 / WP-3.8（`B8`/`UNIT-14`）：敌方封锁格不可建造（M0-3 ④）
 				&& terrainRequirement.IsMet()
 				&& techRequirements.All(c => c.IsMet()))
@@ -120,8 +149,10 @@ namespace SciencePotato.Scripts.Construction.Application
 
 				LinearTask buildTask = new(0, ScaledBuildDays(config.Duration, mapId, ownerId), config.BuildingId, "Construction", false, uid, mapId, ownerId);
 
-				// v0.3 / WP-3.4：建筑落位走统一入口（同时写 cell.Building 与占据物槽位 → 修 MAP-04）
-				_map.PlaceBuilding(mapId, position, building);
+// v0.3 / WP-3.4：建筑落位走统一入口（同时写 cell.Building 与占据物槽位 → 修 MAP-04）
+				// v0.8.8 / WP-4.9：附属建筑走 `PlaceAttachment`（**不动** cell.Building，宿主留在原位）
+				if (host != null) _map.PlaceAttachment(mapId, position, building);
+				else _map.PlaceBuilding(mapId, position, building);
 
 				buildTask.OnCompleted += () => CompleteConstruction(mapId, uid, ownerId, position, config, null, buildTask);
 
@@ -160,7 +191,7 @@ namespace SciencePotato.Scripts.Construction.Application
 			}
 
 			_modifier.AddModifiers(mapId, ownerId, uid, config.Modifiers);
-			_fog.RevealArea(position, config.VisionRadius);
+			_fog.RevealArea(position, Math.Max(2, config.VisionRadius)); // WP-4.9：设计稿"建筑两格内无迷雾" ⇒ 至少 2 格
 
 			// 人口任务：同一建筑同时只允许一条（升级会换间隔/上限，必须先把旧任务摘掉）
 			_time.UnregisterByUId(uid);
@@ -250,6 +281,11 @@ namespace SciencePotato.Scripts.Construction.Application
 
 		public void RemoveBuildingByPosition(string mapId, HexCubePosition position)
 		{
+			// （v0.8.8 / WP-4.17）拆住房 ⇒ 该区域人口压到重算后的容量（多出来的人减员；`D114`）
+			IMapOccupant removing = _map.GetOccupantAt(mapId, position);
+			IBuildingConfig removingConfig = _buildingRepo.GetBuildingConfig(removing?.GetInfo().Id);
+			if (removingConfig?.IsHousing == true && removingConfig.PopulationCap > 0)
+				_populationModel?.TrimAfterHousingLost(mapId, removing.GetInfo().OwnerId, position, Math.Max(1, removingConfig.PopulationRadius));
 			var info = _map.GetBuildingInfo(mapId, position);
 			if (info.HasValue)
 			{
@@ -327,7 +363,9 @@ namespace SciencePotato.Scripts.Construction.Application
 
 				// 余量先扣掉：人口受上限约束，超出的部分不会排队等待（与设计稿"总量封顶"一致）
 				pending -= whole;
-				_map.AddPopulation(mapId, center, config.PopulationRadius, config.PopulationCap, whole);
+				// （v0.8.8 / WP-4.17）容量改走**聚落级**口径（多住房不叠加）：相邻营地共享的格子不再各算一份
+				int capacity = _populationModel?.CapacityAt(mapId, ownerId, center) ?? config.PopulationCap;
+				_map.AddPopulation(mapId, center, config.PopulationRadius, capacity, whole);
 			};
 
 			_time.Register(task);

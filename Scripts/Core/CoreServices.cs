@@ -133,6 +133,9 @@ namespace SciencePotato.Scripts.Core
 		/// </summary>
 		public AiService AiService { get; init; }
 
+		/// <summary>（v0.8.8 / WP-4.17）人口模型：聚落级容量（多住房不叠加）+ 拆住房减员。</summary>
+		public PopulationModelService Population { get; init; }
+
 		/// <summary>
 		/// （v0.7.4 / WP-6.3）**AI 经济分配**：把决策变成建造/科研订单（走玩家同一套应用服务 ⇒ 不作弊）。
 		/// </summary>

@@ -17,6 +17,8 @@ namespace SciencePotato.Scripts.Construction.Domain
 		public float Duration { get; set; }
 		public List<string> Actions { get; set; }
 		public int VisionRadius { get; set; }
+		public List<string> BuildingPrerequisites { get; set; } = new List<string>();
+		public bool IsAttachment { get; set; }
 		public bool IsHousing { get; set; }
 		public int PopulationRadius { get; set; }
 		public int PopulationCap { get; set; }

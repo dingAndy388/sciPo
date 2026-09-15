@@ -40,7 +40,10 @@ namespace SciencePotato.Scripts.Map.Domain
             Building = building;
         }
 
-        public void RemoveBuilding()
+        /// <summary>（v0.8.8 / WP-4.9）本格上的**附属建筑**（宿主是 <see cref="Building"/>）。</summary>
+		public List<IMapOccupant> Attachments { get; } = new List<IMapOccupant>();
+
+		public void RemoveBuilding()
 		{
 			Building = null;
 		}
