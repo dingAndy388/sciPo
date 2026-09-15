@@ -55,5 +55,8 @@ namespace SciencePotato.Scripts.Construction.Domain
 		/// <summary>最大 HP（设计稿未给数值 ⇒ 见 `log.md` §19.5 `U9`；`WP-7.6` 平衡时复核）。</summary>
 		public float HP { get; set; }
 
+		/// <summary>（v0.8.5 / WP-4.5）产出浮动幅度（0.2 = ±20%；0 = 不浮动）。</summary>
+		public float OutputVariance { get; set; }
+
 	}
 }

@@ -34,6 +34,7 @@ namespace SciencePotato.Scripts.Core.Config
 			"EnemyAttack", "EnemyDefense", "BuildingDamage",
 			// （v0.8.1 / `WP-7.3`）科技效果新增：升级造价折扣 / 食物消耗（93 节点里有若干条用它们）
 			"BuildingUpgradeCost", "FoodConsumption",
+			"OutputVarianceUpper", "OutputVarianceLower",
 		};
 
 		private readonly HashSet<string> _targets = new();

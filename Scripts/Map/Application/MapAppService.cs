@@ -9,7 +9,7 @@ using System.Linq;
 
 namespace SciencePotato.Scripts.Map.Application
 {
-	public class MapAppService(IMapGenerator generator, MapSession session, IEnumerable<IMapPostProcessor> postProcessors = null, Func<int, IRandom> randomFactory = null, IDomainEventBus events = null) : IPopulationSink
+	public class MapAppService(IMapGenerator generator, MapSession session, IEnumerable<IMapPostProcessor> postProcessors = null, Func<int, IRandom> randomFactory = null, IDomainEventBus events = null) : IPopulationSink, IOccupantQuery
 	{
 		private readonly IMapGenerator _mapGenerator = generator;
 		private readonly MapSession _session = session;

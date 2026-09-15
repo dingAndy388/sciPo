@@ -32,12 +32,16 @@ namespace SciencePotato.Scripts.Units.Application
 		MapAppService map,
 		FogAppService fog,
 		IUnitsRepository configs,
-		ITimeService time)
+		ITimeService time,
+		ModifierAppService modifiers = null)
 	{
 		private readonly MapAppService _map = map ?? throw new ArgumentNullException(nameof(map));
 		private readonly FogAppService _fog = fog;
 		private readonly IUnitsRepository _configs = configs ?? throw new ArgumentNullException(nameof(configs));
 		private readonly ITimeService _time = time ?? throw new ArgumentNullException(nameof(time));
+
+		/// <summary>（v0.8.5 / `WP-4.4`）修正器入口（可空）：`UnitSpeed` 的消费点。</summary>
+		private readonly ModifierAppService _modifiers = modifiers;
 
 		/// <summary>最近累计的"因 MP 不足而未移动"次数（观测/调试用）。</summary>
 		public int WaitingForMp { get; private set; }
@@ -51,9 +55,17 @@ namespace SciencePotato.Scripts.Units.Application
 		public UnitCombatService Combat { get; set; }
 
 		/// <summary>单位每个回复周期的 MP 总量（R1；缺配置时按 1 处理，避免死锁）。</summary>
-		public float MovementOf(Unit unit)
+		/// <param name="mapId">
+		/// （v0.8.5 / `WP-4.4`）地图 Id：传入时按 `UnitSpeed` 修正器结算（`Movement × (1 + ΣPercent) + ΣAbsolute`）；
+		/// 传 <c>null</c> 表示"不查修正器"（旧调用方/纯几何计算用的兼容路径）。
+		/// </param>
+		public float MovementOf(Unit unit, string mapId = null)
 		{
 			float movement = _configs.GetUnitConfig(unit?.GetInfo().Id)?.Movement ?? 1f;
+
+			if (_modifiers != null && unit != null && !string.IsNullOrWhiteSpace(mapId))
+				movement = _modifiers.GetValue(mapId, unit.GetInfo().OwnerId, "UnitSpeed", movement);
+
 			return movement > 0f ? movement : 1f;
 		}
 
@@ -97,7 +109,7 @@ namespace SciencePotato.Scripts.Units.Application
 		{
 			if (_map.FindOccupantByUId(mapId, unitUid) is not Unit unit) return;
 
-			float movement = MovementOf(unit);
+			float movement = MovementOf(unit, mapId); // （v0.8.5 / WP-4.4）带地图 → 结算 UnitSpeed 修正器
 			unit.CurrentMP += movement; // R2：每满一个回复周期 +M
 
 			if (!IsMoving(unit))

@@ -27,6 +27,9 @@ namespace SciencePotato.Scripts.Units.Application
 		private readonly FogAppService _fog;
 		private readonly IBuildingConfigRepository _buildingRepo;
 
+		/// <summary>（v0.8.5 / `WP-4.4`）修正器入口：`UnitTrainingSpeed` 的消费点（可空 = 不结算加成）。</summary>
+		private readonly ModifierAppService _modifier;
+
 		/// <summary>（v0.3 / WP-2.10）领域事件总线（可空 = 无人订阅）。</summary>
 		private readonly IDomainEventBus _events;
 		private readonly UnitMovementService _movement;
@@ -67,8 +70,9 @@ namespace SciencePotato.Scripts.Units.Application
 			_fog = fogAppService;
 			_buildingRepo = buildingRepo;
 			_events = eventBus;
+			_modifier = modifierApp; // （v0.8.5 / WP-4.4）训练耗时读 `UnitTrainingSpeed`
 			// v0.3 / WP-3.5：移动模型（R1~R7）独立成服务，避免继续堆在应用服务里
-			_movement = new UnitMovementService(mapApp, fogAppService, repo, timeService);
+			_movement = new UnitMovementService(mapApp, fogAppService, repo, timeService, modifierApp); // v0.8.5 / WP-4.4：移动力读 `UnitSpeed`
 			// v0.3 / WP-3.6：战斗独立成服务；两者互相需要（战斗要"接近/通行"，移动要"攻进去/受击"），
 			// 因此用可空属性回连而不是构造注入（构造期互相注入会成环）
 			_combat = new UnitCombatService(mapApp, repo, _movement, timeService, fogAppService, eventBus, modifierApp);
@@ -157,7 +161,7 @@ namespace SciencePotato.Scripts.Units.Application
 			Unit unit = _factory.CreateUnit(unitId, position, ownerId);
 				string uid = unit.GetInfo().UId;
 
-				LinearTask trainingTask = new(0, config.Duration, config.UnitId, "Training", false, uid, mapId, ownerId);
+				LinearTask trainingTask = new(0, ScaledTrainingDays(config.Duration, mapId, ownerId), config.UnitId, "Training", false, uid, mapId, ownerId);
 
 				_map.SetOccupant(mapId, position, unit); // v0.3 / WP-3.4：唯一入口起效（占位冲突会被拒绝）
 
@@ -192,6 +196,10 @@ namespace SciencePotato.Scripts.Units.Application
 		/// <param name="buildingUid">训练建筑（工坊 / 军营 …）的 uid —— 训练与建筑绑定的锚点。</param>
 		/// <param name="unitId">要训练的单位模板 Id。</param>
 		/// <returns>是否成功入队。</returns>
+		/// <summary>（v0.8.5 / `WP-4.4`）**训练耗时**：读 `UnitTrainingSpeed`（工坊/军营 lv.II +20%、lv.III +50%）。</summary>
+		private float ScaledTrainingDays(float baseDays, string mapId, int ownerId)
+			=> _modifier == null ? baseDays : Math.Max(0.1f, _modifier.GetValue(mapId, ownerId, "UnitTrainingSpeed", baseDays));
+
 		public bool TrainUnit(string mapId, string buildingUid, string unitId)
 		{
 			if (_buildingRepo == null) return false;
@@ -252,7 +260,7 @@ namespace SciencePotato.Scripts.Units.Application
 			order.IsActive = true;
 
 			// 任务键 = `Training:{unitUid}:{unitId}`（`WP-2.2`）：同名单位的不同实例各自独立
-			LinearTask trainingTask = new(0, order.Duration, unitConfig.UnitId, "Training", false, order.UId, mapId, building.GetInfo().OwnerId);
+			LinearTask trainingTask = new(0, ScaledTrainingDays(order.Duration, mapId, building.GetInfo().OwnerId), unitConfig.UnitId, "Training", false, order.UId, mapId, building.GetInfo().OwnerId);
 
 			trainingTask.OnCompleted += () =>
 			{

@@ -61,6 +61,9 @@ namespace SciencePotato.Scripts.Construction.Domain
 		/// <summary>（v0.7.0 / WP-4.8）最大 HP（仅 <see cref="HasHP"/> 为 true 时有意义）。</summary>
 		float HP { get; }
 
+		/// <summary>（v0.8.5 / `WP-4.5`）**产出浮动幅度**（0.2 = ±20%；0 = 不浮动）。设计稿：农田 lv.I ±20% / lv.II ±15% / lv.III ±10%；上下限可被 `OutputVarianceUpper`/`OutputVarianceLower` 改写（观星台）。</summary>
+		float OutputVariance { get; }
+
 		/// <summary>
 		/// （v0.3 / WP-3.10）**建筑维护费**：资源名 → 每月数量（空表 = 该建筑不维护）。
 		/// <para>与单位维护同构（<c>IUnitConfig.Maintenance</c>）：需求由**状态持有方**（这里是 Construction，

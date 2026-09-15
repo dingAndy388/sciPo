@@ -279,6 +279,7 @@
     },
     "farm": {
       "BuildingId": "farm",
+    "OutputVariance": 0.2,
       "Name": "农田 lv.I",
       "ResourceCost": { "BasicMinerals": 600 },
       "TerrainRequirements": ["plain"],
@@ -303,6 +304,7 @@
     },
     "farm_ii": {
       "BuildingId": "farm_ii",
+    "OutputVariance": 0.15,
       "Name": "农田 lv.II",
       "ResourceCost": { "BasicMinerals": 1200 },
       "TerrainRequirements": ["plain"],
@@ -327,6 +329,7 @@
     },
     "farm_iii": {
       "BuildingId": "farm_iii",
+    "OutputVariance": 0.1,
       "Name": "农田 lv.III",
       "ResourceCost": { "BasicMinerals": 2400 },
       "TerrainRequirements": ["plain"],

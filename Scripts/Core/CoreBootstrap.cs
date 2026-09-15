@@ -154,7 +154,7 @@ namespace SciencePotato.Scripts.Core
 
 			UnitsAppService units = tables.Units == null ? null : new UnitsAppService(
 				mapService, tech, resources, construction, timeService, tables.Units,
-				new UnitFactory(tables.Units), fog, tables.Buildings, domainEvents);
+				new UnitFactory(tables.Units), fog, tables.Buildings, domainEvents, modifiers); // WP-4.4：训练耗时/移动力读修正器
 
 			// 6.5) 月度结算（`WP-3.9`/`WP-3.10`）：需求来源 = 人口维护 + 单位维护 + 建筑维护；
 			//      缺哪张表就少挂哪一项（配置缺失已在报告里记 error，这里不制造二次异常）
@@ -172,6 +172,8 @@ namespace SciencePotato.Scripts.Core
 				demandSources,
 				store,
 				populationSink: mapService,                        // 减员经地图按地块扣人（`MapAppService : IPopulationSink`）
+				buildingRepo: tables.Buildings,                  // WP-4.5：产出浮动读建筑 OutputVariance
+				occupantQuery: mapService,                       // WP-4.5：按建筑算浮动（IOccupantQuery）
 				random: dependencies.Random ?? new SystemRandom(20260914));
 
 			// 6.6) 事件引擎（**只对人类玩家启动**，见 `SessionOrchestrator`）；事件表缺失时不装配

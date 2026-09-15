@@ -1,5 +1,6 @@
 using SciencePotato.Scripts.Common.Application;
 using SciencePotato.Scripts.Common.Domain;
+using SciencePotato.Scripts.Construction.Domain;
 using SciencePotato.Scripts.Common.Infrastructure;
 using SciencePotato.Scripts.Core.Time;
 using SciencePotato.Scripts.Resources.Domain;
@@ -54,6 +55,10 @@ namespace SciencePotato.Scripts.Resources.Application
 		/// <summary>（v0.3 / WP-3.10）人口出口（可空 = 不做减员：减员评估整体跳过，年度窗口继续累计）。</summary>
 		private readonly IPopulationSink _populationSink;
 
+		/// <summary>（v0.8.5 / `WP-4.5`）建筑表（读 `OutputVariance`）+ 占据物查询；可空 = 不浮动。</summary>
+		private readonly IBuildingConfigRepository _buildingRepo;
+		private readonly IOccupantQuery _occupantQuery;
+
 		/// <summary>（v0.3 / WP-3.10）减员抖动的随机源（可注入以求受控；缺省 = 系统随机）。</summary>
 		private readonly IRandom _random;
 
@@ -98,6 +103,8 @@ namespace SciencePotato.Scripts.Resources.Application
 			IEnumerable<IUpkeepDemandSource> demandSources = null,
 			ISaveStore store = null,
 			IPopulationSink populationSink = null,
+			IBuildingConfigRepository buildingRepo = null,
+			IOccupantQuery occupantQuery = null,
 			IRandom random = null)
 		{
 			_resources = resources;
@@ -107,6 +114,8 @@ namespace SciencePotato.Scripts.Resources.Application
 			_demandSources = demandSources?.Where(s => s != null).ToList() ?? new List<IUpkeepDemandSource>();
 			_store = store;
 			_populationSink = populationSink;
+			_buildingRepo = buildingRepo;
+			_occupantQuery = occupantQuery;
 			_random = random ?? new SystemRandom(Environment.TickCount);
 		}
 
@@ -203,6 +212,46 @@ namespace SciencePotato.Scripts.Resources.Application
 		}
 
 		/// <summary>
+		/// （v0.8.5 / `WP-4.5`）**产出浮动**：`value × (1 + roll)`，`roll ∈ [-lower, +upper]`。
+		/// <para>幅度 = 自家已完成建筑里**最大**的 `OutputVariance`（聚落级口径）；`OutputVarianceUpper` / `OutputVarianceLower`
+		/// 一旦有修正器就**改写**该侧边界（观星台"上限 +5% / 下限 -1%"，范围效果归 `WP-4.2`）。</para>
+		/// </summary>
+		private float ApplyOutputVariance(string mapId, int ownerId, float value)
+		{
+			float variance = MaxOutputVariance(mapId, ownerId);
+			if (variance <= 0f) return value;
+
+			float upper = BoundOrDefault(mapId, ownerId, "OutputVarianceUpper", variance);
+			float lower = BoundOrDefault(mapId, ownerId, "OutputVarianceLower", variance);
+			float roll = (_random.NextFloat() * (upper + lower)) - lower;
+			return Math.Max(0f, value * (1f + roll));
+		}
+
+		/// <summary>上下限：有对应修正器就**改写**（取修正器值），否则用建筑浮动幅度。</summary>
+		private float BoundOrDefault(string mapId, int ownerId, string target, float fallback)
+			=> _modifier != null && _modifier.HasTarget(mapId, ownerId, target)
+				? Math.Max(0f, _modifier.GetValue(mapId, ownerId, target, 0f))
+				: fallback;
+
+		/// <summary>自家**已完成**建筑里最大的 `OutputVariance`（没有建筑/没有表 ⇒ 0 = 不浮动）。</summary>
+		private float MaxOutputVariance(string mapId, int ownerId)
+		{
+			if (_buildingRepo == null || _occupantQuery == null) return 0f;
+
+			float max = 0f;
+			foreach (IMapOccupant occupant in _occupantQuery.GetOccupants(mapId))
+			{
+				if (occupant == null || occupant.GetInfo().OwnerId != ownerId) continue;
+				if (occupant.GetInfo().Type != OccupantType.Building || !occupant.IsReady) continue;
+
+				float variance = _buildingRepo.GetBuildingConfig(occupant.GetInfo().Id)?.OutputVariance ?? 0f;
+				if (variance > max) max = variance;
+			}
+
+			return max;
+		}
+
+		/// <summary>
 		/// **产出汇总**（观测口径）：与资源 `ResourceGrowth` 任务同一公式 ——
 		/// <c>(BaseGrowth + ΣAbsolute) × (1 + ΣPercent)</c>，修正器名取资源表的 `DependentModifiers`。
 		/// </summary>
@@ -214,9 +263,11 @@ namespace SciencePotato.Scripts.Resources.Application
 				if (resource == null || string.IsNullOrWhiteSpace(resource.Name)) continue;
 
 				float baseGrowth = resource.BaseGrowth;
-				production[resource.Name] = _modifier != null
+				float summarized = _modifier != null
 					? _modifier.GetValue(mapId, ownerId, resource.DependentModifiers, baseGrowth)
 					: baseGrowth;
+				// （v0.8.5 / WP-4.5）产出浮动：幅度取自家建筑的最大 OutputVariance，上下限可被修正器改写
+				production[resource.Name] = ApplyOutputVariance(mapId, ownerId, summarized);
 			}
 			return production;
 		}
