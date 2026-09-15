@@ -102,10 +102,16 @@ namespace SciencePotato.Scripts.Core
 		public WorldSaveService WorldSave { get; init; }
 
 		/// <summary>
-		/// （v0.6.0 / WP-4.18）**会话级子系统编排器**：按玩家表逐 owner 启动资源池 / 月结 / 事件引擎。
+		/// （v0.6.0 / WP-5.1）**会话级子系统编排器**：按玩家表逐 owner 启动资源池 / 月结 / 事件引擎。
 		/// <para>开局、生成地图、读档后的"把一局跑起来"都走它 —— 表现层与 AI 只需要拿玩家表遍历。</para>
 		/// </summary>
 		public SessionOrchestrator Orchestrator { get; init; }
+
+		/// <summary>
+		/// （v0.6.4 / WP-5.9）**开局布置**：出生点（间距约束）/ 开局单位（人类与 AI 同待遇）/ 开局资源 / 人类开局视野。
+		/// <para>由 <see cref="SessionOrchestrator.StartMap"/> 内部调用，因此"生成地图 → 布局"不会再被漏掉。</para>
+		/// </summary>
+		public SessionSetupService Setup { get; init; }
 	}
 }
 

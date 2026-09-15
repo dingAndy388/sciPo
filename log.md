@@ -2588,7 +2588,7 @@ dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessC
 | **WP-4.18** | **会话 / 玩家表**（`PlayerContext` + `GameSession.Players` + `SessionOrchestrator` 逐 owner 启动） | ✅ 完成（v0.6.0） | M1 |
 | WP-4.19 | 胜负判定（每月判定 + 全灭；AI 与人类同一套） | ☐ 未开始 | M2 |
 
-### 批次 5 · 底座 / UI / 性能（11 WP · 完成 4 / 未开始 7）
+### 批次 5 · 底座 / UI / 性能（11 WP · 完成 5 / 未开始 6）
 
 | WP | 内容 | 状态 | M |
 | :--- | :--- | :--- | :--- |
@@ -2600,7 +2600,7 @@ dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessC
 | WP-5.6 | 地图存档性能（脏格子增量写 + `DeleteMap`/`ListMaps` 补全） | ☐ 未开始 | M2 |
 | WP-5.7 | 意图契约（`PlayerIntent` + `IActionHandler`：UI 只表达意图，不再直接调应用服务） | ☐ 未开始 | M2 |
 | WP-5.8 | **73×143（10439 格）基线**：生成/渲染/存档/迷雾耗时与内存基线（行长口径一并在本 WP 定死） | ✅ 完成（v0.6.2） | M1 |
-| WP-5.9 | 开局布置（人类与 AI 的出生点：规则相同、距离随机且足够远 + 初始单位/资源） | ☐ 未开始 | M1 |
+| WP-5.9 | 开局布置（人类与 AI 的出生点：规则相同、距离随机且足够远 + 初始单位/资源） | ✅ 完成（v0.6.5） | M1 |
 | WP-5.10 | i18n 框架（中/英双语；字符串外置 + 缺键可视） | ☐ 未开始 | M1 |
 | WP-5.11 | 会话入口（新开局 / 存档 / 读档 / 退出 + 自动存档点） | ☐ 未开始 | M2 |
 
@@ -2675,8 +2675,8 @@ dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessC
 
 ## 19.6 进度总览与复现命令
 
-**进度**：批次 0~3 ✅（29 WP）· 批次 4 **1/19** · 批次 5 **4/11** · 批次 6 **0/6** · 批次 7 **2/7** · 批次 8 **0/4** → **已完成 36 / 剩余 40**（到 M2 还差 **M1 的 2 个 + M2 的 33 个**，M3 另 5 个）。
-最近一次更新：**v0.6.4**（`WP-7.2a` 农田/矿场/仓库落地：设计稿造价与耗时、`FoodGrowth`/`MineralGrowth` 产出、仓库 `BasicMineralsLimit` 抬升（落成即生效）；**顺带修掉"多点地块建筑永远建不了"的真实缺陷**；检查 **194/194**、冒烟 **17/17、退出码 0**）。
+**进度**：批次 0~3 ✅（29 WP）· 批次 4 **1/19** · 批次 5 **5/11** · 批次 6 **0/6** · 批次 7 **2/7** · 批次 8 **0/4** → **已完成 37 / 剩余 39**（到 M2 还差 **M1 的 1 个 + M2 的 33 个**，M3 另 5 个）。
+最近一次更新：**v0.6.5**（`WP-5.9` 开局布置：出生点（间距 ≥ 20、人类先挑）/ 开局单位（人类与 AI **同数量、不收费**）/ 人类开局视野；`StartMap` 内部调用布置（生成地图即开局）；顺带修掉 Newtonsoft 集合 append 与图外邻格查表两处崩溃；检查 **199/199**、冒烟 **18/18、退出码 0**）。
 > *勘误（v0.6.3）：v0.6.1/v0.6.2 两行曾把批次 5 记成 5/11、6/11（实为 3/11、4/11）并把总进度记成 36/40、37/39；正确为 33/43、34/42、35/41。*
 
 ```powershell
@@ -2722,6 +2722,8 @@ $exe = 'E:\Godot_v4.6-stable_mono_win64\Godot_v4.6-stable_mono_win64.exe'
 | `D85` | 2026-09-15 | **无头用例支持分组过滤**：`SciencePotato.HeadlessChecks.exe <组名子串>` 只跑匹配的组（不带参数 = 全部）；旧的"一次全跑"行为不变 | 全套已到 40~60 秒，排错时为了看一组失败要等整轮；"迭代慢"会让人少跑测试。这也是我第一次需要它的原因（本机 30 s 命令上限） | `Tests/…/Program.cs`、`Document/TestPlan.md` |
 | `D86` | 2026-09-15 | **"可建/可行地块"列表 = 任一匹配（OR）**：新增 `TerrainSetRequirement` + `MapAppService.GetTerrainRequirement(mapId, pos, IEnumerable<string>)` 重载，建筑与单位都改走它；空列表 = 不限地块；`"*"` = 任意地形 | **真缺陷**（不是设计选择）：旧实现把列表逐项包成单地块需求再用 `All()` 合并，"平原、山地"因此变成"同时是平原和山地" ⇒ **任何 2+ 地块的建筑/单位永远做不出来**。旧表恰好全是单地块，所以一直没暴露 —— 直到农田/矿场/仓库（矿场 = 平原、山地）落地才现形 | `Scripts/Map/Domain/TerrainSetRequirement.cs`、`MapAppService`、`ConstructionAppService`、`UnitsAppService`、`Config/Buildings.json`（矿场）、回归用例 `ContentBuildingChecks.MultiTerrainIsAnyNotAll` |
 | `D87` | 2026-09-15 | **存储上限是"派生值 + 事件驱动重算"**：`ResourcesAppService.RefreshLimits(mapId, ownerId)` 按 `配置 BaseLimit + 修正器 {资源名}Limit / ResourceLimit` **重算**（幂等，新增 `ResourcesPool.SetLimit`），并订阅 `BuildingCompletedEvent`/`BuildingUpgradedEvent` → **仓库落成即生效**（不等月结）；上限下调时把库存夹回上限内 | 用 `AddLimit` 累加的话，拆仓库不回落、读档几次会翻倍；而"等下一次月结才涨上限"玩家会以为没生效。派生值口径让上限永远等于"配置 + 当前修正器"，与产出公式同源 | `ResourcesPool.SetLimit`、`ResourcesAppService.RefreshLimits` + 总线订阅、`ModifierTargetRegistry` 派生 `{资源名}Limit`、`Config/Buildings.json` 仓库三级、用例 `ContentBuildingChecks.WarehouseRaisesLimit` |
+| `D88` | 2026-09-15 | **开局布置口径（`WP-5.9`）**：① **出生点规则对所有人相同** —— 可通行地形、无占据物、两两间距 ≥ `Start.MinSpawnDistance`（默认 20），人类先挑、AI 依次挑（`ownerId` 决定性索引 → 同 seed 同玩家表必然同一布局）；② **开局单位不收费、人类与 AI 同数量**（`UnitsAppService.PlaceInitialUnit` 专用入口，**不**复用 `CreateUnit` 的成本校验）；③ 布置**幂等**；④ 由 `SessionOrchestrator.StartMap` 内部调用（"生成地图 → 布置 → 启动子系统"是一条不可省略的链）；⑤ 参数放 `Config/Generator.json` 的 `Start` 段（不为 4 个字段开第 8 张表） | "不作弊"是第一承诺：AI 的出生点若更差、单位若更少，那条承诺就是空话。"开局单位复用生产入口"会让"初始储备不够 ⇒ 谁都没单位"这种荒谬结果成为可能；而把布置放在编排器内部调用，是为了让"忘了布置"在结构上不可能发生 | `Scripts/Core/SessionSetupService.cs`、`UnitsAppService.PlaceInitialUnit`、`SessionOrchestrator.AttachSetup`、`Config/Generator.json`、`ConfigTableGuide` v1.10、用例 `SessionSetupChecks`（5 条） |
+| `D89` | 2026-09-15 | **两条"配置/地图边界"陷阱写进口径**：① **JSON 集合字段不得预置默认值**（Newtonsoft 默认对已存在的集合做 **append**，`StartSetupDto.InitialUnits` 预置 `{"worker"}` 再读 `["worker"]` 会得到两条 → 开局白送一个单位）；② **`GetNeighbor()` 会给出图外坐标**，任何按格坐标查表前必须先 `Map.TryGetCell`（否则 `KeyNotFoundException`，出生点选位就踩到了） | 两条都是"看起来正常、只在特定数据/边界下炸"的类型：① 多一个单位很难被发现（数值错觉）；② 建在大图边上时才会崩。都已加用例锁住（`SessionSetupChecks.ConfigDefaultsMatch` / `SpotsRespectDistanceAndTerrain`） | `Scripts/Map/Domain/GeneratorConfigDto.cs`、`Scripts/Core/SessionSetupService.cs`、`ConfigTableGuide` v1.10 的"集合字段"注意 |
 
 > **下一步**（按 §19.2 状态推进，M1 剩余 4 个）：`WP-5.8` 73×143 基线 → `WP-7.1` 资源重映射 → `WP-7.2a` 农田/矿场/仓库 → `WP-5.9` 开局布置 → `WP-5.10` i18n → 交 **N1**（视觉与操作手感）复看。
 

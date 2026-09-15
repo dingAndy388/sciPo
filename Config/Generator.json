@@ -1,3 +1,10 @@
 {
-  "Density": 4.0
+  "Density": 4.0,
+  "Start": {
+    "MinSpawnDistance": 20,
+    "RevealRadius": 3,
+    "InitialUnits": ["worker"],
+    "InitialResources": {}
+  }
 }
+

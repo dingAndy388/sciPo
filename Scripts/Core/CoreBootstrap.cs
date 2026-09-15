@@ -158,6 +158,11 @@ namespace SciencePotato.Scripts.Core
 
 			var orchestrator = new SessionOrchestrator(session, resources, settlement, events);
 
+			// 6.8) 开局布置（v0.6.4 / WP-5.9）：出生点 / 开局单位 / 开局资源 / 人类开局视野。
+			//      交给编排器在 StartMap 里调用 —— "生成地图 → 布置 → 启动子系统"成为一条不可省略的链。
+			var setup = new SessionSetupService(session, mapService, units, resources, fog, tables.Start);
+			orchestrator.AttachSetup(setup);
+
 			return new CoreServices
 			{
 				Session = session,
@@ -181,6 +186,7 @@ namespace SciencePotato.Scripts.Core
 				Settlement = settlement,
 				WorldSave = worldSave,
 				Orchestrator = orchestrator,
+				Setup = setup,
 			};
 		}
 

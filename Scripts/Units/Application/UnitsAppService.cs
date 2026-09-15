@@ -4,6 +4,7 @@ using SciencePotato.Scripts.Construction.Application;
 using SciencePotato.Scripts.Core.Time;
 using SciencePotato.Scripts.Fog.Application;
 using SciencePotato.Scripts.Map.Application;
+using SciencePotato.Scripts.Map.Domain;
 using SciencePotato.Scripts.Resources.Application;
 using SciencePotato.Scripts.TechTree.Application;
 using SciencePotato.Scripts.Construction.Domain;
@@ -77,6 +78,33 @@ namespace SciencePotato.Scripts.Units.Application
 			// （`ResourcesAppService : ILootSink`，与 `MapAppService : IPopulationSink` 同一手法 `D62`）。
 			// `lootSink` 显式传入时优先（表现层/测试想换实现不必换整个资源服务）。
 			_loot = new UnitLootService(mapApp, repo, lootSink ?? resourcesApp as ILootSink, eventBus);
+		}
+
+		/// <summary>
+		/// （v0.6.4 / WP-5.9）**开局布置专用**：直接放一个单位，**不检查资源/人口/科技**（也不再收费）。
+		/// <para>为什么单独开一个入口而不是复用 <see cref="CreateUnit"/>：开局布置不是"生产" —— 它发生在 t=0、
+		/// 由地图生成流程驱动，人类与 AI 拿到的数量完全一样（`D88` 的"不作弊"第一条）。
+		/// 复用 <see cref="CreateUnit"/> 会让"初始储备不够就没人有单位"这种荒谬结果成为可能。</para>
+		/// </summary>
+		/// <returns>放下后的单位 UId；放不下（格被占/地形不可通行/未知单位 Id）返回 <c>null</c>。</returns>
+		public string PlaceInitialUnit(string mapId, string unitId, HexCubePosition position, int ownerId)
+		{
+			if (_repo.GetUnitConfig(unitId) == null) return null;
+			if (!_map.IsClear(mapId, position)) return null;
+
+			ITerrainData terrain = _map.GetMapCell(mapId, position)?.Terrain;
+			if (terrain != null && !terrain.Passable) return null;
+
+			Unit unit = _factory.CreateUnit(unitId, position, ownerId);
+			string uid = unit.GetInfo().UId;
+
+			_map.SetOccupant(mapId, position, unit); // v0.3 / WP-3.4：唯一入口（占位冲突会被拒绝）
+			unit.IsReady = true;                     // 开局单位直接就绪（不走训练队列）
+
+			IUnitConfig config = _repo.GetUnitConfig(unitId);
+			_fog?.RevealArea(position, config?.VisionRadius ?? 0);
+
+			return uid;
 		}
 
 		/// <summary>（v0.3 / WP-3.6）战斗引擎（UI / 用例可直接查询"在打谁""开了几条循环"）。</summary>

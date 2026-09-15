@@ -1,3 +1,4 @@
+using SciencePotato.Scripts.Common.Domain;
 using SciencePotato.Scripts.Events.Application;
 using SciencePotato.Scripts.Resources.Application;
 using System;
@@ -33,8 +34,15 @@ namespace SciencePotato.Scripts.Core
 		/// <summary>本次是否为"重复启动"（同一 `(mapId, ownerId)` 已经启动过 → 只做幂等补充）。</summary>
 		public bool Repeat { get; set; }
 
+		/// <summary>（v0.6.4 / WP-5.9）出生点（布置未做时为 <c>null</c>）。</summary>
+		public HexCubePosition? Spawn { get; set; }
+
+		/// <summary>（v0.6.4 / WP-5.9）开局放下的单位数（人类与 AI 应相同）。</summary>
+		public int InitialUnitCount { get; set; }
+
 		public override string ToString()
-			=> $"{DisplayName}(owner={OwnerId},{(IsHuman ? "人类" : "AI")}) 资源池={ResourcesPoolStarted} 月结={SettlementStarted} 事件={EventsStarted}{(Repeat ? " [重复启动]" : string.Empty)}";
+			=> $"{DisplayName}(owner={OwnerId},{(IsHuman ? "人类" : "AI")}) 资源池={ResourcesPoolStarted} 月结={SettlementStarted} 事件={EventsStarted}" +
+			   $"{(Spawn.HasValue ? $" 出生点=({Spawn.Value.q},{Spawn.Value.r}) 单位×{InitialUnitCount}" : string.Empty)}{(Repeat ? " [重复启动]" : string.Empty)}";
 	}
 
 	/// <summary>
@@ -58,6 +66,15 @@ namespace SciencePotato.Scripts.Core
 
 		/// <summary>`mapId` → `ownerId` → 最近一次启动明细（重复启动时被覆盖为本次结果）。</summary>
 		private readonly Dictionary<string, Dictionary<int, PlayerStartReport>> _reports = new(StringComparer.Ordinal);
+
+		/// <summary>（v0.6.4 / WP-5.9）开局布置（可空 = 不做布置，只启动子系统）。</summary>
+		private SessionSetupService _setup;
+
+		/// <summary>（v0.6.4 / WP-5.9）挂上开局布置（由组合根在装配末尾调用，避免"忘了布置"）。</summary>
+		public void AttachSetup(SessionSetupService setup) => _setup = setup;
+
+		/// <summary>（v0.6.4 / WP-5.9）某势力的出生点（未布置过返回 <c>null</c>）。</summary>
+		public PlayerSpawn SpawnOf(string mapId, int ownerId) => _setup?.SpawnOf(mapId, ownerId);
 
 		public SessionOrchestrator(
 			GameSession session,
@@ -131,6 +148,10 @@ namespace SciencePotato.Scripts.Core
 				return started;
 			}
 
+			// ⑨ 开局布置（v0.6.4 / WP-5.9）：出生点 / 开局单位 / 开局资源 / 人类视野。
+			//    放在"逐玩家启动子系统"之前：先把势力摆到图上，再给他们各自的资源池与节拍（幂等，重复调用无副作用）
+			IReadOnlyList<PlayerSpawn> spawns = _setup?.Setup(mapId) ?? new List<PlayerSpawn>();
+
 			if (!_reports.TryGetValue(mapId, out Dictionary<int, PlayerStartReport> byOwner))
 			{
 				byOwner = new Dictionary<int, PlayerStartReport>();
@@ -148,6 +169,8 @@ namespace SciencePotato.Scripts.Core
 					IsHuman = player.IsHuman,
 					DisplayName = player.DisplayName,
 					Repeat = repeat,
+					Spawn = spawns.FirstOrDefault(s => s.OwnerId == player.OwnerId)?.Position,
+					InitialUnitCount = spawns.FirstOrDefault(s => s.OwnerId == player.OwnerId)?.UnitUIds.Count ?? 0,
 				};
 
 				// ① 资源池：缺省池 + 成长任务（每个势力各自一套，互不影响）

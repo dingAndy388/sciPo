@@ -50,6 +50,12 @@ namespace SciencePotato.Scripts.Core
 		public IMapAppearanceConfig Appearance
 			=> Terrains as IMapAppearanceConfig ?? TerrainAppearance.Defaults;
 
+		/// <summary>
+		/// （v0.6.4 / WP-5.9）**开局布置参数**（出生点间距 / 开局单位 / 开局资源 / 揭示半径）：来自 Generator 表的 `Start` 段；
+		/// 表缺失时返回内置缺省（间距 20 / 揭示 3 / 1 个工人），绝不返回 null。
+		/// </summary>
+		public IStartSetupConfig Start => Generator as IStartSetupConfig ?? new GeneratorConfigDto();
+
 		public bool IsLoaded(string tableName)
 		{
 			return tableName switch

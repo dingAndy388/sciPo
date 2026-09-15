@@ -88,7 +88,14 @@ namespace SciencePotato.Scripts.Dev
 			IReadOnlyList<PlayerStartReport> started = core.Orchestrator.StartMap(MapId);
 			_timings["start"] = Time.GetTicksMsec() - startedMs;
 			Check("编排：每个势力都启动了资源池与月结", started.Count == core.Session.Players.Count);
+			Check("开局：人类拿到了出生点与开局单位", started[0].Spawn.HasValue && started[0].InitialUnitCount > 0);
 			foreach (PlayerStartReport report in started) GD.Print($"[SMOKE] {report}");
+
+			// 出生点明细（M1 的"看得见自己家"依赖它）
+			var humanReport = started[0];
+			if (humanReport.Spawn.HasValue)
+				GD.Print($"[SMOKE] 出生点：人类 ({humanReport.Spawn.Value.q},{humanReport.Spawn.Value.r})" +
+						 $"，间距配置 ≥ {core.Tables.Start.MinSpawnDistance}，开局单位 {humanReport.InitialUnitCount} 个");
 
 			// 周期任务明细：每个势力 = 月结 1 条 + 每个可成长资源 1 条（资源表 `GrowInterval`）；事件引擎只有人类有
 			int growthTasksPerPlayer = 0;

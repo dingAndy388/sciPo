@@ -79,26 +79,44 @@ public partial class DevMapUi : CanvasLayer
 		_map.GenerateMap(seed, width, height, mapId);
 		ulong generateMs = Time.GetTicksMsec() - startedMs;
 
+		// （v0.6.4 / WP-5.9）生成之后**把这一局跑起来**：开局布置（出生点/单位/视野）+ 逐势力启动月结与资源池。
+		// 不调这一步的话，玩家看到的是一张"没有自己、也没有对手"的地图（M1 的"看得见、点得动"就不成立）。
+		var orchestrator = ServiceContainer.Instance?.Orchestrator;
+		var started = orchestrator?.StartMap(mapId);
+		string spawnInfo = string.Empty;
+		if (started != null && started.Count > 0)
+		{
+			int humanOwner = ServiceContainer.Instance?.Session?.HumanOwnerId ?? 1;
+			var spawn = orchestrator.SpawnOf(mapId, humanOwner);
+			if (spawn != null) spawnInfo = $"；出生点=({spawn.Position.q},{spawn.Position.r}) 开局单位×{spawn.UnitUIds.Count}";
+		}
+
 		if (_mapView != null)
 		{
 			_mapView.MapId = mapId;
 			_mapView.UpdateAllCells();
 		}
 
-		FocusCameraOnMapCenter(width, height);
-		GD.Print($"[DevMapUi] 完成：生成 {generateMs} ms，渲染 {_mapView?.RenderedCellCount ?? 0} 格");
+		FocusCameraOnMapCenter(width, height, mapId);
+		GD.Print($"[DevMapUi] 完成：生成 {generateMs} ms，渲染 {_mapView?.RenderedCellCount ?? 0} 格{spawnInfo}");
 	}
 
 	/// <summary>
-	/// 把相机移到地图几何中心。`WP-5.9` 之后"开局就看得见自家领地"会换成按出生点对中，
-	/// 在那之前让 73×143 的地图**一开局就在视野里**，否则玩家看到的是空白。
+	/// 把相机移到**人类出生点**（`WP-5.9` 之后开局就有出生点了）；没有出生点时退化为地图几何中心。
+	/// <para>这一步是 M1 手感的直接来源：开局看不见自己家的地图，玩家第一件事就得手动找。</para>
 	/// </summary>
-	private void FocusCameraOnMapCenter(int width, int height)
+	private void FocusCameraOnMapCenter(int width, int height, string mapId)
 	{
 		if (_camera == null) return;
 
-		var center = new HexCubePosition(width / 2, height / 2);
-		Vector2 worldCenter = _mapView.CellLayoutPosition(center);
+		var orchestrator = ServiceContainer.Instance?.Orchestrator;
+		int humanOwner = ServiceContainer.Instance?.Session?.HumanOwnerId ?? 1;
+		var spawn = orchestrator?.SpawnOf(mapId, humanOwner);
+
+		var target = spawn?.Position ?? new HexCubePosition(width / 2, height / 2);
+		Vector2 worldCenter = _mapView != null
+			? _mapView.CellLayoutPosition(target)
+			: new Vector2(target.q * 366f, target.r * 317.25f);
 
 		if (_camera is CameraController controller) controller.FocusOn(worldCenter);
 		else _camera.Position = worldCenter;
