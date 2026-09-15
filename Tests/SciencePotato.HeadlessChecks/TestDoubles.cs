@@ -72,13 +72,40 @@ namespace SciencePotato.HeadlessChecks
 		public int LoadCount { get; private set; }
 		public int SaveCount { get; private set; }
 
+		/// <summary>（v0.9.7 / WP-5.6）与真实仓库同口径：上一次存档的脏格数 / 总格数 / 是否跳过写盘 / 耗时。</summary>
+		public int LastSavedDirtyCells { get; private set; }
+		public int LastSavedTotalCells { get; private set; }
+		public bool LastSaveSkippedWrite { get; private set; }
+		public long LastSaveMilliseconds { get; private set; }
+
 		/// <summary>读档时的实体重建器（与真实仓库一致：缺省为 null = 只恢复地形）。</summary>
 		public SaveRebuilder Rebuilder { get; set; }
 
 		public void SaveMap(Map map)
 		{
+			if (map == null) return;
+
+			var watch = System.Diagnostics.Stopwatch.StartNew();
+
+			MapSave current = SaveMapper.ToSave(map);
+			_store.TryGetValue(map.Id, out MapSave previous);
+			(MapSave merged, int dirtyCells, int totalCells) = MapSaveMerger.Merge(previous, current);
+
+			LastSavedDirtyCells = dirtyCells;
+			LastSavedTotalCells = totalCells;
+			_store[map.Id] = merged;
+
+			// 与上次落盘逐格等价 ⇒ 不计数、不写（与真实仓库一致；`SaveCount` 只统计真正落盘的次数）
+			if (previous != null && dirtyCells == 0)
+			{
+				LastSaveSkippedWrite = true;
+				LastSaveMilliseconds = watch.ElapsedMilliseconds;
+				return;
+			}
+
+			LastSaveSkippedWrite = false;
 			SaveCount++;
-			_store[map.Id] = SaveMapper.ToSave(map); // 深拷贝：之后对活动地图的改动不会渗进"存档"
+			LastSaveMilliseconds = watch.ElapsedMilliseconds;
 		}
 
 		public Map LoadMap(string id)

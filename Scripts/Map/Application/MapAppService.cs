@@ -484,6 +484,24 @@ namespace SciencePotato.Scripts.Map.Application
 			return !map.IsHostileAt(pos);
 		}
 
+		// ────────────────────────── 存档的补全（v0.9.7 / WP-5.6） ──────────────────────────
+
+		/// <summary>
+		/// （v0.9.7 / `WP-5.6` / `MAP-08`）**删除地图**：移出缓存 + 删掉盘上的存档。
+		/// <para>此前应用层只有"生成/读写"，没有"删"—— 测试与调试想清档只能绕到仓储层（`MAP-08` 的口子）。</para>
+		/// </summary>
+		public bool DeleteMap(string mapId) => _session.Delete(mapId);
+
+		/// <summary>
+		/// （v0.9.7 / `WP-5.6` / `MAP-08`）**盘上现存的地图列表**：给"读档选择"与调试面板用（不读进内存缓存）。
+		/// </summary>
+		public List<Domain.Map> ListMaps() => _session.ListMaps();
+
+		/// <summary>（v0.9.7 / `WP-5.6`）上一次存档的统计（脏格数 / 总格数 / 是否跳过写盘 / 耗时）。</summary>
+		public (int DirtyCells, int TotalCells, bool Skipped, long Milliseconds) LastSaveStats
+			=> (_session.Repository?.LastSavedDirtyCells ?? 0, _session.Repository?.LastSavedTotalCells ?? 0,
+				_session.Repository?.LastSaveSkippedWrite ?? false, _session.Repository?.LastSaveMilliseconds ?? 0);
+
 		private static float GetMoveCost(Domain.Map map, HexCubePosition pos)
 		{
 			if (!map.TryGetCell(pos, out MapCell cell))

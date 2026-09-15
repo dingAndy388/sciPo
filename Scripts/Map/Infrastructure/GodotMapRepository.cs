@@ -33,8 +33,26 @@ namespace SciencePotato.Scripts.Map.Infrastructure
 		/// <summary>（v0.3 / WP-3.2）补挂实体重建器（组合根在拿到配置表后调用，见 `CoreBootstrap.AttachRebuilder`）。</summary>
 		public void AttachRebuilder(SaveRebuilder rebuilder) => _rebuilder = rebuilder;
 
+		/// <summary>（v0.9.7 / `WP-5.6`）上一次落盘的 DTO：增量合并的**比较基线**（也是"无变化则跳过写盘"的依据）。</summary>
+		private readonly Dictionary<string, MapSave> _cache = new(StringComparer.OrdinalIgnoreCase);
+
+		/// <inheritdoc />
+		public int LastSavedDirtyCells { get; private set; }
+
+		/// <inheritdoc />
+		public int LastSavedTotalCells { get; private set; }
+
+		/// <inheritdoc />
+		public bool LastSaveSkippedWrite { get; private set; }
+
+		/// <inheritdoc />
+		public long LastSaveMilliseconds { get; private set; }
+
 		public void DeleteMap(Domain.Map map)
 		{
+			if (map == null) return;
+			_cache.Remove(map.Id); // （v0.9.7 / WP-5.6）缓存也要清：否则删档后下一次存档会拿旧基线做增量
+
 			string path = $"{_mapDir}{map.Id}.json";
 			if (FileAccess.FileExists(path)) DirAccess.RemoveAbsolute(path);
 		}
@@ -91,24 +109,45 @@ namespace SciencePotato.Scripts.Map.Infrastructure
 					GD.PushWarning($"[GodotMapRepository] 交战进攻方「{cellSave.Invader.Id}」(uid={cellSave.Invader.UId}) 无法恢复：配置缺失或该格已有一对？");
 			}
 
+			_cache[Id] = mapSave; // （v0.9.7 / WP-5.6）读档即建立增量基线：读档后的首次存档也能按脏格写
 			return map;
 		}
-
 		public void SaveMap(Domain.Map map)
 		{
-			string path = $"{_mapDir}{map.Id}.json";
+			if (map == null) return;
 
-			// 地形 + 人口 + 占据物统一走 SaveMapper（v0.3 / WP-3.2）
-			MapSave mapSave = SaveMapper.ToSave(map);
+			var watch = System.Diagnostics.Stopwatch.StartNew();
+
+			// 地形 + 人口 + 占据物统一走 SaveMapper（v0.3 / WP-3.2），再与上次落盘做**增量合并**（v0.9.7 / WP-5.6）
+			MapSave current = SaveMapper.ToSave(map);
+			_cache.TryGetValue(map.Id, out MapSave previous);
+			(MapSave merged, int dirtyCells, int totalCells) = MapSaveMerger.Merge(previous, current);
+
+			LastSavedDirtyCells = dirtyCells;
+			LastSavedTotalCells = totalCells;
+			_cache[map.Id] = merged;
+
+			// 与上次落盘逐格等价 ⇒ 整次跳过写盘（空闲存档点不再产生 2.4 MB 的文本重写）
+			if (previous != null && dirtyCells == 0)
+			{
+				LastSaveSkippedWrite = true;
+				LastSaveMilliseconds = watch.ElapsedMilliseconds;
+				return;
+			}
+			LastSaveSkippedWrite = false;
+
+			string path = $"{_mapDir}{map.Id}.json";
 
 			if (!DirAccess.DirExistsAbsolute(_mapDir))
 			{
 				DirAccess.MakeDirAbsolute(_mapDir);
 			}
 
-			string json = JsonSerializer.Serialize(mapSave, new JsonSerializerOptions { WriteIndented = true });
+			string json = JsonSerializer.Serialize(merged, new JsonSerializerOptions { WriteIndented = true });
 			using var file = FileAccess.Open(path, FileAccess.ModeFlags.Write);
 			file.StoreString(json);
+
+			LastSaveMilliseconds = watch.ElapsedMilliseconds;
 		}
 
 		public IEnumerable<Domain.Map> ListMaps()

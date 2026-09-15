@@ -27,7 +27,25 @@ namespace SciencePotato.Scripts.Fog.Application
 		{
 			public readonly Dictionary<HexCubePosition, byte> Matrix = new();
 			public readonly Dictionary<HexCubePosition, short> VisionCount = new();
+
+			/// <summary>（v0.9.7 / `WP-5.5`）自上次落盘以来**矩阵值变过**的格子（增量存档的比较集合）。</summary>
+			public readonly HashSet<HexCubePosition> Dirty = new();
+
+			/// <summary>（v0.9.7 / `WP-5.5`）上次落盘时的矩阵基线：既用于算脏格，也让"读档后立刻存档"也是增量。</summary>
+			public readonly Dictionary<HexCubePosition, byte> SavedMatrix = new();
 		}
+
+		/// <summary>（v0.9.7 / `WP-5.5`）上一次存档的**脏格数**（0 ⇒ 整次跳过写盘）。</summary>
+		public int LastSavedDirtyCells { get; private set; }
+
+		/// <summary>（v0.9.7 / `WP-5.5`）上一次存档是否因"矩阵没变"而**跳过写盘**。</summary>
+		public bool LastSaveSkippedWrite { get; private set; }
+
+		/// <summary>（v0.9.7 / `WP-5.5`）上一次存档写出的**紧凑文本字节数**（与旧 JSON 口径对比用）。</summary>
+		public int LastSavedBytes { get; private set; }
+
+		/// <summary>（v0.9.7 / `WP-5.5`）矩阵里的格子总数（= 已探索过的格子数）。</summary>
+		public int LastSavedTotalCells { get; private set; }
 
 		private readonly int _ownerId;
 		private readonly IFogRepository _repo;
@@ -78,17 +96,30 @@ namespace SciencePotato.Scripts.Fog.Application
 			FogState state = State(ownerId);
 			state.Matrix.Clear();
 			state.VisionCount.Clear();
+			state.Dirty.Clear();
+			state.SavedMatrix.Clear();
 
-			if (data?.MatrixData == null) return;
+			if (data == null) return;
 
-			foreach (var kvp in data.MatrixData)
+			// （v0.9.7 / WP-5.5）优先读紧凑格式；为空时回退到旧的 `MatrixData`（老存档不破）
+			if (!string.IsNullOrEmpty(data.Compact))
 			{
-				var parts = kvp.Key.Split(',');
-				if (parts.Length == 2 && int.TryParse(parts[0], out int q) && int.TryParse(parts[1], out int r))
+				foreach (var cell in FogCodec.Decode(data.Compact))
+					state.Matrix[cell.Key] = cell.Value;
+			}
+			else if (data.MatrixData != null)
+			{
+				foreach (var kvp in data.MatrixData)
 				{
-					state.Matrix[new HexCubePosition(q, r)] = kvp.Value;
+					var parts = kvp.Key.Split(',');
+					if (parts.Length == 2 && int.TryParse(parts[0], out int q) && int.TryParse(parts[1], out int r))
+						state.Matrix[new HexCubePosition(q, r)] = kvp.Value;
 				}
 			}
+
+			// 读档即建立增量基线：读档后第一次存档也只写"变过的那几格"
+			foreach (var kvp in state.Matrix) state.SavedMatrix[kvp.Key] = kvp.Value;
+			LastSavedTotalCells = state.Matrix.Count;
 		}
 
 		public byte GetVisibility(HexCubePosition pos) => GetVisibility(_ownerId, pos);
@@ -113,21 +144,29 @@ namespace SciencePotato.Scripts.Fog.Application
 		{
 			if (radius <= 0) return;
 
-			foreach (var pos in GetHexPositionsInRadius(center, radius))
+			// （v0.9.7 / WP-5.5）半径模板复用：只做"中心 + 偏移"，不再每次现算坐标
+			foreach ((int dq, int dr) in FogGeometry.DiscOffsets(radius))
 			{
-				byte oldValue = state.Matrix.GetValueOrDefault(pos, Unexplored);
-				if (oldValue < Visible)
+				var pos = new HexCubePosition(center.q + dq, center.r + dr);
+				if (state.Matrix.GetValueOrDefault(pos, Unexplored) < Visible)
+				{
 					state.Matrix[pos] = Visible;
+					state.Dirty.Add(pos);
+				}
 
 				short count = state.VisionCount.GetValueOrDefault(pos, (short)0);
 				state.VisionCount[pos] = (short)(count + 1);
 			}
 
 			// Outer fogged ring: positions exactly at radius+1
-			foreach (var pos in GetHexRing(center, radius + 1))
+			foreach ((int dq, int dr) in FogGeometry.RingOffsets(radius + 1))
 			{
+				var pos = new HexCubePosition(center.q + dq, center.r + dr);
 				if (state.Matrix.GetValueOrDefault(pos, Unexplored) == Unexplored)
+				{
 					state.Matrix[pos] = Fogged;
+					state.Dirty.Add(pos);
+				}
 			}
 		}
 
@@ -135,8 +174,9 @@ namespace SciencePotato.Scripts.Fog.Application
 		{
 			if (radius <= 0) return;
 
-			foreach (var pos in GetHexPositionsInRadius(center, radius))
+			foreach ((int dq, int dr) in FogGeometry.DiscOffsets(radius))
 			{
+				var pos = new HexCubePosition(center.q + dq, center.r + dr);
 				short count = state.VisionCount.GetValueOrDefault(pos, (short)0);
 				if (count <= 0) continue;
 
@@ -147,7 +187,10 @@ namespace SciencePotato.Scripts.Fog.Application
 				{
 					state.VisionCount.Remove(pos);
 					if (state.Matrix.GetValueOrDefault(pos, Unexplored) == Visible)
+					{
 						state.Matrix[pos] = Fogged;
+						state.Dirty.Add(pos);
+					}
 				}
 			}
 		}
@@ -158,47 +201,43 @@ namespace SciencePotato.Scripts.Fog.Application
 		public void Save(string mapId, int ownerId)
 		{
 			FogState state = State(ownerId);
+
+			// （v0.9.7 / WP-5.5）**增量比较**：只把"值真的变了"的格子并入基线（并计数）
+			int dirtyCells = 0;
+			foreach (HexCubePosition pos in state.Dirty)
+			{
+				byte now = state.Matrix.GetValueOrDefault(pos, Unexplored);
+				if (!state.SavedMatrix.TryGetValue(pos, out byte saved) || saved != now)
+				{
+					state.SavedMatrix[pos] = now;
+					dirtyCells++;
+				}
+			}
+			state.Dirty.Clear();
+
+			LastSavedDirtyCells = dirtyCells;
+			LastSavedTotalCells = state.SavedMatrix.Count;
+
+			// 矩阵没变 ⇒ 整次跳过写盘（空闲存档点不再产生迷雾分区写）
+			if (dirtyCells == 0 && LastSavedBytes > 0)
+			{
+				LastSaveSkippedWrite = true;
+				return;
+			}
+			LastSaveSkippedWrite = false;
+
+			// （v0.9.7 / WP-5.5）**紧凑存档**：~3 字节/格的 Base64（旧格式是 `"q,r": v` 文本）
 			var data = new FogSaveData
 			{
 				OwnerId = ownerId,
-				MatrixData = new Dictionary<string, byte>()
+				Compact = FogCodec.Encode(state.SavedMatrix),
+				Encoding = FogCodec.Version,
+				MatrixData = new Dictionary<string, byte>(),
 			};
 
-			foreach (var kvp in state.Matrix)
-			{
-				var (q, r) = kvp.Key.ToCoordinate();
-				data.MatrixData[$"{q},{r}"] = kvp.Value;
-			}
-
+			LastSavedBytes = FogCodec.MeasureBytes(data.Compact);
 			_repo.SaveFog(mapId, ownerId, data);
 		}
 
-		private IEnumerable<HexCubePosition> GetHexPositionsInRadius(HexCubePosition center, int radius)
-		{
-			for (int dq = -radius; dq <= radius; dq++)
-			{
-				int minDr = Math.Max(-radius, -dq - radius);
-				int maxDr = Math.Min(radius, -dq + radius);
-				for (int dr = minDr; dr <= maxDr; dr++)
-					yield return new HexCubePosition(center.q + dq, center.r + dr);
-			}
-		}
-
-		private IEnumerable<HexCubePosition> GetHexRing(HexCubePosition center, int radius)
-		{
-			if (radius <= 0) yield break;
-
-			for (int dq = -radius; dq <= radius; dq++)
-			{
-				int minDr = Math.Max(-radius, -dq - radius);
-				int maxDr = Math.Min(radius, -dq + radius);
-				for (int dr = minDr; dr <= maxDr; dr++)
-				{
-					int dist = (Math.Abs(dq) + Math.Abs(dr) + Math.Abs(-dq - dr)) / 2;
-					if (dist == radius)
-						yield return new HexCubePosition(center.q + dq, center.r + dr);
-				}
-			}
-		}
 	}
 }

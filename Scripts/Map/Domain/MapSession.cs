@@ -26,6 +26,9 @@ namespace SciencePotato.Scripts.Map.Domain
 
 		public IReadOnlyCollection<string> LoadedMapIds => _maps.Keys;
 
+		/// <summary>（v0.9.7 / `WP-5.6`）仓储的**只读**引用：应用层只拿它读"上次存档统计"（脏格数/耗时），写入口仍只有 `Flush`。</summary>
+		public IMapRepository Repository => _repository;
+
 		public bool IsLoaded(string mapId) => mapId != null && _maps.ContainsKey(mapId);
 
 		public bool IsDirty(string mapId) => mapId != null && _dirty.Contains(mapId);
@@ -74,6 +77,22 @@ namespace SciencePotato.Scripts.Map.Domain
 			foreach (string mapId in new List<string>(_dirty))
 				Flush(mapId);
 		}
+
+		/// <summary>（v0.9.7 / `WP-5.6`）删除地图：先删文件再清缓存（顺序反了会让缓存里的旧实例"复活"它）。</summary>
+		public bool Delete(string mapId)
+		{
+			if (mapId == null) return false;
+
+			Map map = _maps.TryGetValue(mapId, out Map cached) ? cached : _repository.LoadMap(mapId);
+			if (map == null) return false;
+
+			_repository.DeleteMap(map);
+			Evict(mapId);
+			return true;
+		}
+
+		/// <summary>（v0.9.7 / `WP-5.6`）盘上现存的地图列表（`MAP-08` 的补全：应用层此前没有"有哪些存档"的口）。</summary>
+		public List<Map> ListMaps() => new(_repository.ListMaps());
 
 		/// <summary>从缓存移除（不落盘）：切换地图或会话结束时调用。</summary>
 		public void Evict(string mapId)
