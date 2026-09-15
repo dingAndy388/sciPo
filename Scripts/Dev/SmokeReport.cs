@@ -23,6 +23,16 @@ namespace SciencePotato.Scripts.Dev
 	{
 		private const string MapId = "smoke";
 
+		/// <summary>（v0.6.0 / WP-5.8）冒烟地图规模：可用 `--size=WxH` 覆盖（默认 73×143 = 10439 格，`D76`）。</summary>
+		private int _mapWidth = DevMapUi.DefaultWidth;
+
+		private int _mapHeight = DevMapUi.DefaultHeight;
+
+		private int _seed = 20260914;
+
+		/// <summary>（v0.6.0 / WP-5.8）各阶段实测耗时（毫秒），最后一行汇总打印。</summary>
+		private readonly Dictionary<string, ulong> _timings = new();
+
 		private readonly List<string> _failures = new();
 		private int _passed;
 
@@ -47,7 +57,12 @@ namespace SciencePotato.Scripts.Dev
 
 			CoreServices core = container.Core;
 
-			// ① 冻结时间：冒烟自己按"日"推进，避免 GodotTimeDriver 每帧也在推进（结果不可复现）
+			// ① 参数（v0.6.0 / WP-5.8）：--size=WxH / --seed=N 让同一次冒烟能测不同规模与种子
+			ReadArguments();
+			ulong memoryBefore = OS.GetStaticMemoryUsage();
+			GD.Print($"[SMOKE] 规模 {_mapWidth}×{_mapHeight}={_mapWidth * _mapHeight} 格，seed={_seed}；起始静态内存 {memoryBefore / 1024.0 / 1024.0:0.0} MB");
+
+			// ② 冻结时间：冒烟自己按"日"推进，避免 GodotTimeDriver 每帧也在推进（结果不可复现）
 			core.Session.IsPaused = true;
 			core.Session.Clock.MaxDaysPerAdvance = int.MaxValue;
 
@@ -56,18 +71,22 @@ namespace SciencePotato.Scripts.Dev
 			Check("外观：格子步长/贴图目录来自配置表（换美术不改代码）", AppearanceMatchesConfigFile(core));
 			Check("玩家表：至少 1 个人类势力", core.Session.Players.Count >= 1 && core.Session.HumanOwnerId >= 1);
 
-			// ② 生成正式规模地图（73×143 = 10439 格）并计时（`R1` 的规模数据点）
+			// ③ 生成正式规模地图并计时（`R1` 的规模数据点；`WP-5.8` 把这里的数字固化成基线）
 			ulong startedMs = Time.GetTicksMsec();
-			core.Map.GenerateMap(20260914, 73, 143, MapId);
-			ulong generateMs = Time.GetTicksMsec() - startedMs;
+			core.Map.GenerateMap(_seed, _mapWidth, _mapHeight, MapId);
+			_timings["generate"] = Time.GetTicksMsec() - startedMs;
 
 			int cells = 0;
 			foreach (Map.Domain.MapCell _ in core.Map.GetAllCells(MapId)) cells++;
-			GD.Print($"[SMOKE] 地图 {MapId}：{cells} 格，生成耗时 {generateMs} ms");
-			Check($"地图：生成 10439 格（实际 {cells}）", cells == 10439);
+			GD.Print($"[SMOKE] 地图 {MapId}：{cells} 格，生成耗时 {_timings["generate"]} ms，" +
+					 $"生成后静态内存 {OS.GetStaticMemoryUsage() / 1024.0 / 1024.0:0.0} MB");
+			Check($"地图：生成 {_mapWidth * _mapHeight} 格（实际 {cells}）", cells == _mapWidth * _mapHeight);
+			Check($"地图：生成耗时 < {GenerateBudgetMs} ms（当前 {_timings["generate"]}）", _timings["generate"] < GenerateBudgetMs);
 
-			// ③ 启动全部势力的子系统（会话级编排，`WP-4.18`）
+			// ④ 启动全部势力的子系统（会话级编排，`WP-4.18`）
+			startedMs = Time.GetTicksMsec();
 			IReadOnlyList<PlayerStartReport> started = core.Orchestrator.StartMap(MapId);
+			_timings["start"] = Time.GetTicksMsec() - startedMs;
 			Check("编排：每个势力都启动了资源池与月结", started.Count == core.Session.Players.Count);
 			foreach (PlayerStartReport report in started) GD.Print($"[SMOKE] {report}");
 
@@ -85,7 +104,9 @@ namespace SciencePotato.Scripts.Dev
 
 			// ④ 推进 3 个月：月结/资源成长/事件都要真的跑起来
 			int subscribersBefore = core.Time.SubscriberCount;
+			startedMs = Time.GetTicksMsec();
 			core.Session.Clock.AdvanceDays(TimeConstants.DaysPerMonth * 3);
+			_timings["advance90"] = Time.GetTicksMsec() - startedMs;
 			GD.Print($"[SMOKE] 启动后周期任务 {subscribersBefore} 条；推进 90 日：日期={core.Session.Clock.Format()}，周期任务 → {core.Time.SubscriberCount}，" +
 					 $"月结次数={core.Settlement?.SettledCount ?? 0}，掷骰次数={core.Events?.RollCount ?? 0}");
 
@@ -105,8 +126,13 @@ namespace SciencePotato.Scripts.Dev
 			Check("时间：人类玩家的月结报告可读", core.Settlement != null && core.Settlement.LastReport(MapId, core.Session.HumanOwnerId) != null);
 
 			// ⑤ 存档点 → 读档点（真实 user:// 落盘 + 任务恢复）
+			startedMs = Time.GetTicksMsec();
 			core.WorldSave.SaveWorld(MapId);
+			_timings["save"] = Time.GetTicksMsec() - startedMs;
+
+			startedMs = Time.GetTicksMsec();
 			bool loaded = core.WorldSave.LoadWorld(MapId, core.Session.HumanOwnerId);
+			_timings["load"] = Time.GetTicksMsec() - startedMs;
 			GD.Print($"[SMOKE] 存档往返：loaded={loaded}，恢复任务 {core.WorldSave.LastRestoredTaskCount} 条");
 			Check("存档：读档成功", loaded);
 			Check("存档：读档恢复了周期任务", core.WorldSave.LastRestoredTaskCount > 0);
@@ -137,9 +163,11 @@ namespace SciencePotato.Scripts.Dev
 			ulong startedMs = Time.GetTicksMsec();
 			view.UpdateAllCells();
 			ulong renderMs = Time.GetTicksMsec() - startedMs;
+			_timings["render"] = renderMs;
 
 			GD.Print($"[SMOKE] 表现层：渲染 {view.RenderedCellCount} 格耗时 {renderMs} ms（缺贴图时只警告、不崩）");
 			Check($"表现层：渲染格数 = 地图格数（{expectedCells}）", view.RenderedCellCount == expectedCells);
+			Check($"表现层：渲染耗时 < {RenderBudgetMs} ms（当前 {renderMs}）", renderMs < RenderBudgetMs);
 
 			view.QueueFree();
 		}
@@ -172,6 +200,65 @@ namespace SciencePotato.Scripts.Dev
 				&& core.Appearance.TerrainSpriteDir == expectedDir;
 		}
 
+		/// <summary>
+		/// （v0.6.0 / WP-5.8）**耗时护栏**：宽松到只抓"数量级退化"（引擎换版本/生成器改坏/渲染逐格建纹理这类）。
+		/// <para>为什么不做严格时间断言：CI 机器性能差异会让严格阈值变成"假红"，而假红会让人开始无视它。
+		/// 精确基线数字记在 <c>Document/PerfBaseline.md</c>，由人对比。</para>
+		/// </summary>
+		private const ulong GenerateBudgetMs = 5000;
+
+		private const ulong RenderBudgetMs = 15000;
+
+		/// <summary>命令行用户参数（`--` 之后）：<c>--size=WxH</c> / <c>--seed=N</c>。</summary>
+		private void ReadArguments()
+		{
+			foreach (string arg in OS.GetCmdlineUserArgs())
+			{
+				if (arg == null) continue;
+
+				if (arg.StartsWith("--size=", System.StringComparison.Ordinal))
+				{
+					string[] parts = arg.Substring("--size=".Length).Split('x', 'X');
+					if (parts.Length == 2 && int.TryParse(parts[0], out int w) && int.TryParse(parts[1], out int h) && w > 0 && h > 0)
+					{
+						_mapWidth = w;
+						_mapHeight = h;
+					}
+				}
+				else if (arg.StartsWith("--seed=", System.StringComparison.Ordinal)
+						 && int.TryParse(arg.Substring("--seed=".Length), out int seed))
+				{
+					_seed = seed;
+				}
+			}
+		}
+
+		/// <summary>把本次跑出来的耗时打成一行（便于贴进 <c>Document/PerfBaseline.md</c> 做对比）。</summary>
+		private void PrintBaselineLine()
+		{
+			ulong memory = OS.GetStaticMemoryUsage();
+			long saveBytes = 0;
+
+			using (FileAccess save = FileAccess.Open("user://save/smoke.json", FileAccess.ModeFlags.Read))
+			{
+				if (save != null) saveBytes = (long)save.GetLength();
+			}
+
+			long mapBytes = 0;
+			using (FileAccess mapFile = FileAccess.Open($"user://maps/{MapId}.json", FileAccess.ModeFlags.Read))
+			{
+				if (mapFile != null) mapBytes = (long)mapFile.GetLength();
+			}
+
+			GD.Print($"[SMOKE][BASE] size={_mapWidth}x{_mapHeight}={_mapWidth * _mapHeight} cells seed={_seed} " +
+					 $"generate={Get("generate")}ms start={Get("start")}ms advance90={Get("advance90")}ms " +
+					 $"save={Get("save")}ms load={Get("load")}ms render={Get("render")}ms " +
+					 $"worldSave={saveBytes / 1024.0:0.0}KB mapFile={mapBytes / 1024.0:0.0}KB " +
+					 $"memStatic={memory / 1024.0 / 1024.0:0.0}MB memPeak={OS.GetStaticMemoryPeakUsage() / 1024.0 / 1024.0:0.0}MB");
+		}
+
+		private ulong Get(string key) => _timings.TryGetValue(key, out ulong value) ? value : 0ul;
+
 		private static bool ServicesReady(CoreServices core)
 			=> core.Map != null && core.Resources != null && core.Tech != null && core.Construction != null
 				&& core.Units != null && core.Events != null && core.Fog != null && core.Settlement != null
@@ -192,6 +279,8 @@ namespace SciencePotato.Scripts.Dev
 
 		private void Finish()
 		{
+			PrintBaselineLine();
+
 			GD.Print($"[SMOKE] 汇总：通过 {_passed} / 失败 {_failures.Count}");
 			foreach (string failure in _failures) GD.Print($"[SMOKE]   失败：{failure}");
 

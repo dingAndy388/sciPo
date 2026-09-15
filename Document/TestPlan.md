@@ -28,7 +28,10 @@ $exe = 'E:\Godot_v4.6-stable_mono_win64\Godot_v4.6-stable_mono_win64.exe'
 & $exe --headless --path 'e:\Godot\science-potato' res://Scene/Dev/smoke_report.tscn `
        --quit-after 3000 --log-file "$env:TEMP\sp_smoke.log" -- --smoke
 
-# ③b 多势力口径（加 1 个 AI：验"每个势力各自一套子系统"；AI 决策属批次 6）
+# ③b 换规模 / 换种子（`WP-5.8`；用于性能基线与大地图自查）
+& $exe --headless --path 'e:\Godot\science-potato' res://Scene/Dev/smoke_report.tscn --quit-after 6000 -- --smoke --size=73x143 --seed=20260914
+
+# ③c 多势力口径（加 1 个 AI：验"每个势力各自一套子系统"；AI 决策属批次 6）
 #   期望：玩家表 2 个势力 · AI 行 `事件=False`（AI 不面对事件）· 周期任务 9 条（2×(月结1+成长3)+人类事件1）· 月结 6 次
 & $exe --headless --path 'e:\Godot\science-potato' res://Scene/Dev/smoke_report.tscn --quit-after 3000 -- --smoke --ai=1
 ```
@@ -60,6 +63,7 @@ $exe = 'E:\Godot_v4.6-stable_mono_win64\Godot_v4.6-stable_mono_win64.exe'
 
 | 行 | 基线值 | 说明 |
 | :--- | :--- | :--- |
+| `[SMOKE][BASE] size=73x143=10439 cells …` | 见 `Document/PerfBaseline.md` §2 | 一次跑出**全部**耗时/内存/存档体积（改动生成/渲染/存档后对比这一行） |
 | `装配：全部应用服务就位` | PASS | 11 个服务 + 任务仓储 |
 | `外观比对：表 CellXStep=366 … 服务 366/317.25/…` | PASS | **配置 → 服务 → 表现层**链路自证（换美术只改表） |
 | `[MapView] 外观：列步长=366 行步长=317.25 贴图目录=…` | — | 表现层实际读到的值 |
