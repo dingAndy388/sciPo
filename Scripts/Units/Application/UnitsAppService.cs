@@ -36,6 +36,12 @@ namespace SciencePotato.Scripts.Units.Application
 		/// </summary>
 		private readonly UnitCombatService _combat;
 
+		/// <summary>
+		/// （v0.3 / WP-3.7 / `E20`）**掉落消费端**：订阅 `UnitDiedEvent`，把"玩家击杀敌方"翻译成入池动作
+		/// （`ILootSink`；战斗引擎不认识资源池，见 `D69`）。
+		/// </summary>
+		private readonly UnitLootService _loot;
+
 		public UnitsAppService(
 			MapAppService mapApp,
 			TechTreesAppService techTreeApp,
@@ -47,7 +53,8 @@ namespace SciencePotato.Scripts.Units.Application
 			FogAppService fogAppService,
 			IBuildingConfigRepository buildingRepo = null,
 			IDomainEventBus eventBus = null,
-			ModifierAppService modifierApp = null)
+			ModifierAppService modifierApp = null,
+			ILootSink lootSink = null)
 		{
 			_map = mapApp;
 			_tech = techTreeApp;
@@ -65,6 +72,11 @@ namespace SciencePotato.Scripts.Units.Application
 			// 因此用可空属性回连而不是构造注入（构造期互相注入会成环）
 			_combat = new UnitCombatService(mapApp, repo, _movement, timeService, fogAppService, eventBus, modifierApp);
 			_movement.Combat = _combat;
+
+			// v0.3 / WP-3.7：掉落 = `UnitDiedEvent` 的消费端（`E20`）；入池口缺省直接取资源服务
+			// （`ResourcesAppService : ILootSink`，与 `MapAppService : IPopulationSink` 同一手法 `D62`）。
+			// `lootSink` 显式传入时优先（表现层/测试想换实现不必换整个资源服务）。
+			_loot = new UnitLootService(mapApp, repo, lootSink ?? resourcesApp as ILootSink, eventBus);
 		}
 
 		/// <summary>（v0.3 / WP-3.6）战斗引擎（UI / 用例可直接查询"在打谁""开了几条循环"）。</summary>
@@ -72,6 +84,12 @@ namespace SciencePotato.Scripts.Units.Application
 
 		/// <summary>（v0.3 / WP-3.6）移动服务（供表现层做可达性预览；与内部实例同一个）。</summary>
 		public UnitMovementService Movement => _movement;
+
+		/// <summary>
+		/// （v0.3 / WP-3.7 / `E20`）掉落消费端：`Drops`/`LastGranted` 等观测口径与"为什么没掉落"的分类计数都挂在它上面
+		/// （UI 想显示"击杀 +30 Gold"直接读 <see cref="UnitLootService.LastGranted"/>，不必自己算配置表）。
+		/// </summary>
+		public UnitLootService Loot => _loot;
 
 		/// <summary>
 		/// **直接生成**单位（不经过建筑）—— 敌方刷新（`WP-3.8`）/ 调试 / 脚本用。

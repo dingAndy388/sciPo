@@ -36,6 +36,9 @@ namespace SciencePotato.Scripts.Common.Domain
 	/// <summary>
 	/// （v0.3 / WP-2.10）**单位阵亡**（`UNIT-08` 的核心缺口：死亡原本没有任何推送）。
 	/// <para>消费场景：亡语/遗言、击杀奖励、战报、成就统计、UI 刷新。</para>
+	/// <para>**已落地的消费者**：`UnitLootService`（v0.3.23 / `WP-3.7` / `E20`）—— 只给"玩家击杀敌方"
+	/// 掉落（用 <see cref="OwnerId"/> 区分阵亡方阵营、用 <see cref="KillerUId"/> 定位凶手与受益者），
+	/// 掉落表来自 `IUnitConfig.DropReward`。`WP-4.7`（单位合并）、`WP-4.8`（建筑）也会消费它。</para>
 	/// </summary>
 	public sealed class UnitDiedEvent(string mapId, int ownerId, string unitUId, string unitId, HexCubePosition position, string killerUId)
 	{

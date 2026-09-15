@@ -31,6 +31,7 @@ namespace SciencePotato.HeadlessChecks
 			SaveUnitChecks.RunAll();
 			EnemySpawnChecks.RunAll();
 			CombatChecks.RunAll();
+			LootChecks.RunAll();
 			MonthlySettlementChecks.RunAll();
 
 

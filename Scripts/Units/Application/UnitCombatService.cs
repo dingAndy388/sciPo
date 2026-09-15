@@ -28,8 +28,9 @@ namespace SciencePotato.Scripts.Units.Application
 	/// <para>**移动与战斗的分工**：位移、MP、迷雾的更新仍归 <see cref="UnitMovementService"/>；
 	/// 本服务只回答"这一格能不能以交战的方式进入""现在该不该开火"。两者用可空属性
 	/// <see cref="UnitMovementService.Combat"/> 回连，避免构造期循环依赖。</para>
-	/// <para>**不在这里做的事**（明确划给 `WP-3.7`）：掉落进资源池、驻扎加成的清理。阵亡的
-	/// "从地图移除 + 注销任务 + 推送 <see cref="UnitDiedEvent"/>"沿用 `WP-2.10`/`WP-3.4` 已落地的口径。</para>
+	/// <para>**不在这里做的事**：掉落进资源池（`E20` —— v0.3.23 / `WP-3.7` 起由 `UnitDiedEvent` 的消费端
+	/// <c>UnitLootService</c> 处理，战斗引擎不必认识资源池，见 `D69`）、驻扎加成的清理（`E21`，依赖驻扎系统 `WP-4.6`）。
+	/// 阵亡的"从地图移除 + 注销任务 + 推送 <see cref="UnitDiedEvent"/>"沿用 `WP-2.10`/`WP-3.4` 已落地的口径。</para>
 	/// </summary>
 	public sealed class UnitCombatService
 	{
@@ -514,8 +515,10 @@ namespace SciencePotato.Scripts.Units.Application
 		/// <summary>
 		/// **阵亡处理**：离开占位（区分被挑战方 / 进攻方两种槽位）、更新视野、回收任务与交战循环、
 		/// 清掉仍瞄准它的单位、推送 <see cref="UnitDiedEvent"/>。
-		/// <para>**不在这里做的事**：掉落进资源池（`E20`）、驻扎加成清理（`E21`）—— 明确归 `WP-3.7`；
-		/// "不返还资源"自 `WP-2.5` 起就成立（训练成本在入队时已扣，阵亡没有可返还的对象）。</para>
+		/// <para>**不在这里做的事**：掉落进资源池（`E20` —— v0.3.23 / `WP-3.7` 起由推送出去的
+		/// <see cref="UnitDiedEvent"/> 的消费端 `UnitLootService` 处理：引擎不必认识资源池）、
+		/// 驻扎加成清理（`E21`，依赖驻扎系统 `WP-4.6`）；"不返还资源"自 `WP-2.5` 起就成立
+		/// （训练成本在入队时已扣，阵亡没有可返还的对象）。</para>
 		/// </summary>
 		private void KillUnit(string mapId, Unit victim, string killerUid)
 		{

@@ -28,8 +28,9 @@ namespace SciencePotato.HeadlessChecks
 {
 	/// <summary>
 	/// （v0.3 / WP-3.6 / `E9`~`E12`、`E18`、`E19`、`UNIT-12`）**同格战斗**的验收检查 ——
-	/// M0-3 ③ 的门槛是「同格交战 N 日后 HP 归零、单位移除、掉落进池」；掉落（`E20`）归 `WP-3.7`，
-	/// 本组锁住前两半与四条派生口径：
+	/// M0-3 ③ 的门槛是「同格交战 N 日后 HP 归零、单位移除、掉落进池」：三段都在本组闭合
+	/// （掉落进池（`E20`）的消费端随 v0.3.23 / `WP-3.7` 落地；掉落口径的其余分支见 `LootChecks`）。
+	/// 本组锁住交战模型与四条派生口径：
 	/// <list type="number">
 	/// <item>**进入敌格即交战**（`E9`）：近战"攻进去"、一格一对、胜利者占据该格；</item>
 	/// <item>**按日结算**（`E10`）：`AttackDamage` = 每日伤害，双方各一条循环、互相掉血；</item>
@@ -52,7 +53,7 @@ namespace SciencePotato.HeadlessChecks
 			Check.Run("WP-3.6 伤害口径：对建筑 ×0.5、加伤乘其后（`E12` 的 0.5×1.5=0.75）", DamageFormulaMatchesDesign);
 			Check.Run("M0-3 ③ 近战攻进敌格即交战：同格一对、第二人进不来、攻击不消耗 MP（`E9`）", BreakIntoEnemyCell);
 			Check.Run("M0-3 ③ 同格交战按日结算：双方互相掉血，N 日后一方 HP 归零被移除（`E9`/`E10`）", SameCellExchangeIsMutual);
-			Check.Run("M0-3 ③ 击杀后胜者占据该格并解除封锁（`E9`，掉落归 `WP-3.7`）", WinnerTakesTheCell);
+			Check.Run("M0-3 ③ 击杀后胜者占据该格、解除封锁、掉落进击杀者资源池（`E9`/`E20`）", WinnerTakesTheCell);
 			Check.Run("WP-3.6 远程隔格开火：不共格，且近战敌人打不到它（`E11`）", RangedAttacksWithoutCoLocation);
 			Check.Run("WP-3.6 敌方反应：进入其射程即受击、离开射程循环自行注销（`E19`）", HostileReactsToRangeEntry);
 			Check.Run("WP-3.6 建筑作为目标：可瞄准、伤害 ×0.5、无友伤（`E18`）", BuildingIsAttackableWithHalfDamage);
@@ -167,7 +168,7 @@ namespace SciencePotato.HeadlessChecks
 			finally { Cleanup(h.Dir); }
 		}
 
-		/// <summary>击杀的收尾：胜者占据该格、封锁解除、阵亡事件推送；掉落（`E20`）明确不在本轮。</summary>
+		/// <summary>击杀的收尾：胜者占据该格、封锁解除、阵亡事件推送，**掉落进击杀者资源池**（`E20`）。</summary>
 		private static void WinnerTakesTheCell()
 		{
 			Harness h = NewHarness();
@@ -182,7 +183,7 @@ namespace SciencePotato.HeadlessChecks
 				Unit wolf = h.PlaceEnemy("wolf", enemyCell);
 				string wolfUid = wolf.GetInfo().UId;
 				Unit swordsman = h.SpawnFor(1, "swordsman", new HexCubePosition(2, 4));
-				float goldBefore = h.Pool().GetValue("Gold"); // 掉落归 `WP-3.7`：本轮资源池不应有变化
+				float goldBefore = h.Pool().GetValue("Gold"); // 掉落前基线（`E20` 断言 +30）
 
 				h.Units.ExcuteAction(MapId, swordsman.GetInfo().UId, enemyCell, wolfUid, "CanAttack");
 				h.Clock.AdvanceDays(8);
@@ -207,8 +208,13 @@ namespace SciencePotato.HeadlessChecks
 				Check.AssertEqual(EnemySpawner.HostileOwnerId, died[0].OwnerId, "阵亡方是敌方阵营");
 				Check.AssertEqual(swordsman.GetInfo().UId, died[0].KillerUId, "凶手 uid");
 
-				// ④ 掉落仍归 `WP-3.7`：这里锁住「本轮不消费 `DropReward`」的事实（否则 `WP-3.7` 无从验收）
-				Check.AssertEqual(goldBefore, h.Pool().GetValue("Gold"), "本轮不做进池，掉落归 `WP-3.7`");
+				// ④ 掉落进池（`E20`）：野狼 30 Gold（`DropReward`）进**击杀者所有者**的池子 —— 不返还、不落空
+				Check.AssertEqual(goldBefore + 30f, h.Pool().GetValue("Gold"), "击杀野狼应入池 30 Gold");
+				Check.AssertEqual(1, h.Units.Loot.Drops, "掉落消费端应记一次掉落（没接总线/没接池子都不会记账）");
+				Check.AssertEqual("wolf", h.Units.Loot.LastDroppedUnitId, "最近掉落的敌种 Id");
+				Check.AssertEqual(1, h.Units.Loot.LastLootOwnerId, "掉落进**击杀者**所有者（不是阵亡方）");
+				Check.AssertEqual(30f, h.Units.Loot.LastGranted["Gold"], "实际入池量（Gold 上限 999999，未被裁剪）");
+				Check.AssertEqual(0, h.Units.Loot.UnattributedDeathsIgnored, "凶手能定位到玩家单位 → 不该记「找不出凶手」");
 			}
 			finally { Cleanup(h.Dir); }
 		}

@@ -1,6 +1,6 @@
 ================================================================================
   Science Potato - 配置填表指南 (Config Table Guide)
-  版本: 1.5 | 最后更新: 2026-09-15
+  版本: 1.6 | 最后更新: 2026-09-15
   v1.1 变更（v0.3 / WP-1.5）：全部时长字段的单位由「秒」重标定为「游戏日」；
   新增「时间口径」约定与附录C 的单位自检规则。
   v1.2 变更（v0.3 / WP-2.1）：`Prerequisites` 支持**跨树前置**（`"tree:node"` 或结构体），
@@ -14,6 +14,11 @@
   `AttackDamage`/`Actions.CanAttack` 三者在战斗中的分工（近战=同格交战、远程=隔格、
   `AttackDamage` = 每日伤害、对建筑 ×0.5 衰减且加伤乘其后），并在附录C 增加两条
   「战斗口径自检」warning。
+  v1.6 变更（v0.3 / WP-3.7）：**掉落填表口径 + 补齐敌方字段**（无新增字段）—— 把
+  `IsHostile`/`SpawnTerrain`/`SpawnChance`/`DropReward` 四个"敌方专用"字段写进字段表
+  （此前只存在于 `WP-3.8` 的实现与 DTO 里），并明确 `DropReward` 的消费口径：
+  只给「玩家击杀敌方」、进**击杀者**资源池、**不破仓储上限**（满仓部分不到账，
+  但可从 `UnitLootService.LastGranted` 查到实际入池量）。
 
 ================================================================================
 
@@ -342,6 +347,17 @@
   PopulationCost        int                      是    训练消耗的人口
   Maintenance           { string: float }        否    每月维护费(资源名→数量; 留空 = 不维护)。
                                                       敌方单位留空 —— 敌方不参与月度维护扣费
+  ── 以下四个字段只对**敌方单位**有意义(v0.3 / WP-3.8 实现, v1.6 补文档) ──
+  IsHostile             bool                     否    是否敌方单位(默认 false = 玩家单位)。
+                                                      true 的行由地图生成后处理按地形概率放置:
+                                                      不参与训练、不消耗资源、无移动力、不揭雾
+  SpawnTerrain          string                   否    生成地形 Id(仅敌方): 只有该地形才可能刷出。
+                                                      空字符串 = 该行永远不会出现在地图上(error)
+  SpawnChance           float                    否    生成概率(仅敌方, (0,1]): 每个适配地块的
+                                                      **边际概率**; 同地形多个敌种各自独立掷骰,
+                                                      同格冲突时按概率降序取第一个(D55)
+  DropReward            { string: float }        否    击败掉落(仅敌方): 资源名→数量。
+                                                      留空 = 该敌种不产资源(合法)
 
 
   [完整样板 JSON]
@@ -415,6 +431,16 @@
         敌方单位不看 Actions(它们"进入射程即自动交火")。
       * 建筑可以被瞄准，但**建筑还没有 HP**(归 WP-4.8)，因此本轮打建筑不产生战损
         —— 填 `AttackDamage` 时不必为"拆建筑"预设数值。
+  - 掉落口径(v0.3.23 / WP-3.7，design「击败敌方获得资源」)：
+      * 只有**玩家击杀敌方**才掉落：`DropReward` 按"被杀者"查表，受益者 = **击杀者所有者**的
+        资源池(不是阵亡方、也不是别的玩家)；玩家单位阵亡不掉落(设计稿「不掉落单位或建筑」)。
+      * 敌方互殴(凶手也是敌方单位)、凶手 uid 缺失(环境/未知来源) 一律不掉 —— 这三类"没掉成"
+        的原因在 `UnitLootService` 里分别计数(`PlayerDeathsIgnored`/`UnattributedDeathsIgnored`/
+        `EmptyTablesIgnored`/`UnwiredDeathsIgnored`)，`Drops` 与 `LastGranted` 记录成功的那次。
+      * 掉落**不破仓储上限**(与资源生长同一条写入路径)：例如 Wood 上限只有 500，满仓时
+        野猪的 20 Wood 实际入池 0。填 `DropReward` 时请按上限规模取值。
+      * 当前 5 个敌种的填表口径：野狼 30 Gold / 野猪 80 Gold + 20 Wood / 山鹰 50 Gold /
+        巨角山羊 150 Wood + 50 Idea / 巨鳄 80 Gold + 40 Wood。
   - 移动力口径(v0.3.17 / WP-3.5，design/unit.md R1~R7)：`Movement` 即 M = 每 10 游戏日回复的 MP；
     跨一格消耗该格地形的 `MoveCost`(平原5/山地25)；静止时 MP 上限 = M，移动中可跨周期累积，
     到达目的地时 MP 清零。设计示例：M=10 的单位跨消耗 5 的平原 10 日走 2 格，跨消耗 25 的山地需等 30 日。
@@ -708,6 +734,10 @@
       * Settlement.DeclineJitterRatio 不在 [0,1]
       * Units/Buildings.Maintenance 负值
         （Maintenance 引用未定义的资源名只记 warning —— 与 ResourceCost 同一口径）
+  - 掉落（v0.3 / WP-3.7）：
+      * Units.DropReward 中存在空资源名 / 负值
+        （引用未定义的资源名只记 warning —— 与 ResourceCost/Maintenance 同一口径；
+          DropReward **留空不报**：该敌种就是不产资源，见 WP-3.7 的掉落口径）
   （时长字段的单位是「日」，因此 Duration/GrowInterval 只判"不能为负"；
     "单位写错"由下面的自检按 warning 处理）
 
@@ -724,6 +754,8 @@
   - 战斗口径自检（v0.3.22 / WP-3.6，只针对**玩家单位**；敌方单位不看 Actions）：
       * 有 `CanAttack` 能力但 `AttackDamage<=0`：战斗不会产生任何效果，且近战还会因此进不去敌格
       * 有 `AttackDamage>0` 却缺 `CanAttack`：玩家无法主动开战，只能被动挨打
+  - 掉落口径（v0.3.23 / WP-3.7）：Units.DropReward 引用了未定义的资源名
+    （与 ResourceCost / Maintenance 同一口径；DropReward 为空**不报**）
 
   [单位自检（v0.3 / WP-1.5）]
   口径：所有时长字段的单位是**游戏日**（30 日 = 1 月、360 日 = 1 年）。
