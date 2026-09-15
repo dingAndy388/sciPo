@@ -72,8 +72,8 @@ namespace SciencePotato.HeadlessChecks
 
 				// ② 训练 1 个工人（快配置 3 日）→ 单位进入世界
 				h.Units.TrainUnit(MapId, h.WorkshopUid, "worker");
-				// ③ 研究 1 个节点（15 日）→ 任务在线
-				h.Tech.Research(MapId, h.OwnerId, "science", "writing");
+				// ③ 研究 1 个节点（计数：0 成本根节点）→ 任务在线
+				h.Tech.Research(MapId, h.OwnerId, "math", "counting");
 
 				// ④ 推进到第 30 日；按需存档 → 读档
 				h.Clock.AdvanceDays(saveAtDay > 0 ? saveAtDay : 30);
