@@ -265,6 +265,13 @@ namespace SciencePotato.Scripts.Map.Application
 			_session.MarkDirty(MapId);
 		}
 
+		/// <summary>
+		/// （v0.6.3 / WP-7.2a）**"可建/可行地块"列表的判定入口**（设计稿该列是列表 → **任一匹配**即可）：
+		/// 建筑/单位只应调这一个重载，避免再次把列表逐项 AND 起来（那是"多点地块的建筑永远造不了"的根因）。
+		/// </summary>
+		public IRequirement GetTerrainRequirement(string mapId, HexCubePosition position, IEnumerable<string> targetTerrains)
+			=> new TerrainSetRequirement(_session.Get(mapId), position, targetTerrains);
+
 		public TerrainRequirement GetTerrainRequirement(string mapId, HexCubePosition position, string targetTerrain)
 		{
 			var map = _session.Get(mapId);

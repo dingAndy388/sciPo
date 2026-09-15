@@ -61,8 +61,9 @@ namespace SciencePotato.Scripts.Construction.Application
 				   select _resource.CreateResourceConsumption(item, mapId, ownerId),
 			];
 
-			var terrainRequirements = (from item in config.TerrainRequirements
-									   select _map.GetTerrainRequirement(mapId, position, item));
+			// （v0.6.3 / WP-7.2a）设计稿的"可建地块"是**列表 = 任一匹配**：必须整体判定，
+			// 而不能把列表逐项 AND 起来（那样"平原或山地"会变成"同时是平原和山地" → 永远建不了）
+			IRequirement terrainRequirement = _map.GetTerrainRequirement(mapId, position, config.TerrainRequirements);
 
 			var techRequirements = (from item in config.TechRequirements
 									select _tech.GetTechTreeRequirement(mapId, ownerId, item.Key, item.Value.ToList()));
@@ -72,7 +73,7 @@ namespace SciencePotato.Scripts.Construction.Application
 			if (contracts.All(c => c.IsConsumable())
 				&& _map.IsClear(mapId, position)
 				&& noHostileRequirement.IsMet() // v0.3 / WP-3.8（`B8`/`UNIT-14`）：敌方封锁格不可建造（M0-3 ④）
-				&& terrainRequirements.All(c => c.IsMet())
+				&& terrainRequirement.IsMet()
 				&& techRequirements.All(c => c.IsMet()))
 			{
 				Building building = _factory.CreateBuilding(buildingId, position, ownerId);

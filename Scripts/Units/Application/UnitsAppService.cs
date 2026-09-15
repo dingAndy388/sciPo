@@ -108,7 +108,8 @@ namespace SciencePotato.Scripts.Units.Application
 				.. from item in consumptions select _resources.CreateResourceConsumption(item, mapId, ownerId),
 			];
 
-			var terrainRequirements = (from item in config.TerrainRequirements select _map.GetTerrainRequirement(mapId, position, item));
+			// （v0.6.3 / WP-7.2a）"可训练地块"同样是**列表 = 任一匹配**（与建筑侧同一修正）
+			IRequirement terrainRequirement = _map.GetTerrainRequirement(mapId, position, config.TerrainRequirements);
 			var techRequirements = (from item in config.TechRequirements select _tech.GetTechTreeRequirement(mapId, ownerId, item.Key, item.Value.ToList()));
 
 			IConsumable? popContract = null;
@@ -119,7 +120,7 @@ namespace SciencePotato.Scripts.Units.Application
 			}
 
 			if (contracts.All(c => c.IsConsumable()) && _map.IsClear(mapId, position)
-				&& terrainRequirements.All(c => c.IsMet()) && techRequirements.All(c => c.IsMet())
+				&& terrainRequirement.IsMet() && techRequirements.All(c => c.IsMet())
 				&& (popContract == null || popContract.IsConsumable()))
 			{
 			contracts.ForEach(c => c.Consume());

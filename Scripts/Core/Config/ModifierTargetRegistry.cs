@@ -58,7 +58,14 @@ namespace SciencePotato.Scripts.Core.Config
 			IResourcesPoolConfig resources = tables?.Resources?.GetResourcesPoolConfig();
 			if (resources?.Resources != null)
 				foreach (IResourceConfig resource in resources.Resources)
-					if (!string.IsNullOrWhiteSpace(resource?.Name)) targets.Add($"{resource.Name}Growth");
+				{
+					if (string.IsNullOrWhiteSpace(resource?.Name)) continue;
+
+					// （v0.6.3 / WP-7.2a）产出目标名与**存储上限**目标名都由资源表派生：
+					// `{资源名}Growth` = 产出（农田/矿场），`{资源名}Limit` = 存储上限（仓库）；`ResourceLimit` = 全部资源
+					targets.Add($"{resource.Name}Growth");
+					targets.Add($"{resource.Name}Limit");
+				}
 
 			IEnumerable<IUnitConfig> units = tables?.Units?.GetAll();
 			if (units != null)

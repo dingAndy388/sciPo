@@ -37,3 +37,12 @@ TechIcon,(+93),[Icon needed],res://Texture/Tech/{TreeId}/{NodeId}.png,96x96,Cent
 UI,panel_bg,WP-5.4（待定）,res://Texture/UI/panel_bg.png,九宫格,Center,missing,待定,正式 HUD 归 WP-5.4
 Audio,BGM_main,WP-8.4（待定）,res://Audio/BGM/main.ogg,,,missing,用户提供,WP-8.4 需要 BGM 文件（见 log.md 19.5 U5）
 Audio,SFX_train,WP-8.4（待定）,res://Audio/SFX/train.ogg,,,missing,待定,训练/建造完成音效
+Building,farm,Config/Buildings.json,res://Texture/Building/farm.png,256x256,Center,placeholder,待定,农田 lv.I
+Building,farm_ii,Config/Buildings.json,res://Texture/Building/farm_ii.png,256x256,Center,placeholder,待定,农田 lv.II
+Building,farm_iii,Config/Buildings.json,res://Texture/Building/farm_iii.png,256x256,Center,placeholder,待定,农田 lv.III
+Building,mine,Config/Buildings.json,res://Texture/Building/mine.png,256x256,Center,placeholder,待定,矿场 lv.I
+Building,mine_ii,Config/Buildings.json,res://Texture/Building/mine_ii.png,256x256,Center,placeholder,待定,矿场 lv.II
+Building,mine_iii,Config/Buildings.json,res://Texture/Building/mine_iii.png,256x256,Center,placeholder,待定,矿场 lv.III
+Building,warehouse,Config/Buildings.json,res://Texture/Building/warehouse.png,256x256,Center,placeholder,待定,仓库 lv.I
+Building,warehouse_ii,Config/Buildings.json,res://Texture/Building/warehouse_ii.png,256x256,Center,placeholder,待定,仓库 lv.II
+Building,warehouse_iii,Config/Buildings.json,res://Texture/Building/warehouse_iii.png,256x256,Center,placeholder,待定,仓库 lv.III

@@ -1,6 +1,6 @@
 ================================================================================
   Science Potato - 配置填表指南 (Config Table Guide)
-  版本: 1.8 | 最后更新: 2026-09-15
+  版本: 1.9 | 最后更新: 2026-09-15
   v1.1 变更（v0.3 / WP-1.5）：全部时长字段的单位由「秒」重标定为「游戏日」；
   新增「时间口径」约定与附录C 的单位自检规则。
   v1.2 变更（v0.3 / WP-2.1）：`Prerequisites` 支持**跨树前置**（`"tree:node"` 或结构体），
@@ -27,6 +27,10 @@
   500 / 300 / 200、存储上限 10000 / 2000 / 1500、产出目标名 `IdeaGrowth` /
   `FoodGrowth` / `MineralGrowth`、人口口粮 `Settlement.DemandResource = Food`；
   基础产出（`BaseGrowth`）统一为 0，产出改由建筑/科技/事件的 Modifier 提供。
+  v1.9 变更（v0.6.4 / WP-7.2a）：**生产/存储建筑落地**（农田 lv.I~III、矿场 lv.I~III、
+  仓库 lv.I~III 共 9 条，数值取设计稿的建造消耗/建造时间/产出/上限列）+ 两条口径：
+  ① **可建地块是"任一匹配"**（列表 = OR，不是 AND；空列表 = 不限）；
+  ② **存储上限走 `{资源名}Limit` 目标**（仓库用它，落成即生效，口径是"重算"不是"累加"）。
 
 ================================================================================
 
@@ -202,7 +206,9 @@
   BuildingId            string                   是    建筑唯一标识(与 key 同)
   Name                  string                   是    显示名
   ResourceCost          { string: float }        是    建造消耗资源
-  TerrainRequirements   [string]                 是    可建造地形列表(地形ID)
+  TerrainRequirements   [string]                 是    可建造地形列表(地形ID)；**列表 = 任一匹配**(OR)，
+                                                      空列表 = 不限地形（v0.6.4 / WP-7.2a 修正：旧口径按 AND 处理，
+                                                      导致"平原、山地"这类多点地块的建筑永远建不了）
   TechRequirements       { string: [string] }    否    建造所需科技前提
   Modifiers             [Modifier]              否    建成后注册的全局效果
   Duration              float                    是    建造耗时(**游戏日**)

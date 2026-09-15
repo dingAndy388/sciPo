@@ -2,6 +2,7 @@ using SciencePotato.Scripts.Common.Application;
 using SciencePotato.Scripts.Common.Domain;
 using SciencePotato.Scripts.Core.Time;
 using SciencePotato.Scripts.Resources.Domain;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -14,16 +15,61 @@ namespace SciencePotato.Scripts.Resources.Application
 		private readonly ITimeService _time;
 		private readonly IModifierRepository _modifierRepo;
 
+		/// <summary>
+		/// （v0.6.3 / WP-7.2a）领域事件总线（可空 = 不订阅）：订阅 `BuildingCompletedEvent`，
+		/// 让"仓库建好 → 存储上限立刻提升"发生，而不是等下一次月结。
+		/// </summary>
+		private readonly IDomainEventBus _events;
+
 		public ResourcesAppService(
 			IResourcesRepository repo,
 			IResourcesConfigRepository configRepo,
 			ITimeService timeService,
-			IModifierRepository modifierRepo)
+			IModifierRepository modifierRepo,
+			IDomainEventBus eventBus = null)
 		{
 			_repo = repo;
 			_configRepo = configRepo;
 			_time = timeService;
 			_modifierRepo = modifierRepo;
+			_events = eventBus;
+
+			// 建筑落成/升级完成 = 存储上限可能变了（仓库）：立刻重算，玩家不用等一个月
+			_events?.Subscribe<BuildingCompletedEvent>(evt => RefreshLimits(evt.MapId, evt.OwnerId));
+			_events?.Subscribe<BuildingUpgradedEvent>(evt => RefreshLimits(evt.MapId, evt.OwnerId));
+		}
+
+		/// <summary>
+		/// （v0.6.3 / WP-7.2a）**重算存储上限**：上限 = 配置基值（`BaseLimit`）+ 修正器的 `{资源名}Limit` / `ResourceLimit`
+		/// 目标值（`(基值 + ΣAbsolute) × (1 + ΣPercent)`，与产出同一套公式）。
+		/// <para>为什么是"重算"而不是"加"：拆掉仓库、读档、重复调用都不应该让上限漂移 —— 幂等的口径只有一个：
+		/// 上限是从**配置 + 当前修正器**推出来的派生值。</para>
+		/// </summary>
+		/// <returns>事实上被改动的资源条目数（自检/用例可断言"确实生效了"）。</returns>
+		public int RefreshLimits(string mapId, int ownerId)
+		{
+			IResourcesPoolConfig config = _configRepo?.GetResourcesPoolConfig();
+			if (config?.Resources == null) return 0;
+
+			ResourcesPool pool = GetOrCreatePool(mapId, ownerId);
+			if (pool == null) return 0;
+
+			var modifiers = new ModifierManager(_modifierRepo?.LoadModifiers(mapId, ownerId));
+			int changed = 0;
+
+			foreach (IResourceConfig resource in config.Resources)
+			{
+				string[] targets = { $"{resource.Name}Limit", "ResourceLimit" };
+				float target = modifiers.GetValue(targets, resource.BaseLimit);
+
+				if (Math.Abs(pool.GetLimit(resource.Name) - target) < 0.001f) continue;
+
+				pool.SetLimit(resource.Name, target);
+				changed++;
+			}
+
+			if (changed > 0) _repo.SaveResources(mapId, ownerId, pool);
+			return changed;
 		}
 
 		public ResourcesPool GetOrCreatePool(string mapId, int ownerId)

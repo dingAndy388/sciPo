@@ -288,7 +288,7 @@ namespace SciencePotato.HeadlessChecks
 
 			Check.AssertEqual(5, tables.AllTerrains().Count(), "Terrains 条目数");
 			Check.AssertEqual(3, tables.AllResources().Count(), "Resources 条目数");
-			Check.AssertEqual(12, tables.AllBuildings().Count(), "Buildings 条目数（WP-2.6：4 条 lv.I + 8 条升级链）");
+			Check.AssertEqual(21, tables.AllBuildings().Count(), "Buildings 条目数（12 旧 + 农田/矿场/仓库各 3 级 = 21；24 条全表归 WP-7.2b）");
 			Check.AssertEqual(8, tables.AllUnits().Count(), "Units 条目数（WP-3.8：3 条玩家单位 + 5 条敌方单位）");
 			Check.AssertEqual(3, tables.TreeIds().Count(), "TechTrees 树数量（WP-2.1 起含最小 physics 样例）");
 			Check.AssertEqual(3, tables.AllEvents().Count(), "Events 条目数");

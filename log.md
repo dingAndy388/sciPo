@@ -2615,12 +2615,12 @@ dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessC
 | WP-6.5 | AI 信息公平（不无视迷雾、不凭空生成、不完美克制；以测试判据锁住"不作弊"） | ☐ 未开始 | M2 |
 | WP-6.6 | AI 与胜负（AI 也会被全灭/被月度判定淘汰；AI 胜利条件与人类同构） | ☐ 未开始 | M2 |
 
-### 批次 7 · 全内容（7 WP · 全部未开始）
+### 批次 7 · 全内容（7 WP · 完成 2 / 未开始 5）
 
 | WP | 内容 | 状态 | M |
 | :--- | :--- | :--- | :--- |
 | WP-7.1 | 资源重映射（设计稿 `Idea`/`Food`/`BasicMinerals` ↔ 原型 `Gold`/`Wood` 一次性收敛，含造价/维护/需求） | ✅ 完成（v0.6.3） | M1 |
-| WP-7.2a | 农田 / 矿场 / 仓库（设计稿数值 + 上限机制） | ☐ 未开始 | M1 |
+| WP-7.2a | 农田 / 矿场 / 仓库（设计稿数值 + 上限机制） | ✅ 完成（v0.6.4） | M1 |
 | WP-7.2b | 其余建筑 + 3 个独立建筑（24 条全表 + 校验 0 error） | ☐ 未开始 | M2 |
 | WP-7.3 | 科技 93 节点（三树全表 + 跨树前置 + 0 成本根节点） | ☐ 未开始 | M2 |
 | WP-7.4 | 事件 20 条（全表 + 前置/概率/持续期 + 可暂停决策） | ☐ 未开始 | M2 |
@@ -2671,11 +2671,13 @@ dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessC
 | `U5` | **BGM 文件**（`WP-8.4` 需要） | 未提供；不影响到 M2 的路径 | 用户 | `WP-8.4` |
 | `U6` | 设计稿 `unit.md` / `buildings.md` 里残留的"秒"单位表述 | 代码侧已全部按**日**（`TimeConstants` 是唯一出处）；只在设计稿文本里，改不改都不影响实现 | 我（`WP-7.x` 填表时顺带记一笔） | 批次 7 |
 | `U7` | **读档只恢复一个 owner 的任务/状态**：`WorldSaveService.LoadWorld(mapId, ownerId)` 的签名是单 owner（`--ai=1` 的冒烟实测：2 个势力共 9 条周期任务，读档只恢复 4 条 = 人类那一份） | 单人类玩家时口径正确（M0-3 验收即如此）；**多 AI 势力**下 AI 的月结/成长任务读档后会丢 → 必须在 M2 前改成"按玩家表逐 owner 恢复" | 我（实现） | `WP-5.11`（读档流程）/ `WP-4.10`（迷雾同因） |
+| `U8` | **开局经济死锁（数值，需裁量）**：初始 `BasicMinerals` **200**（`resources.md` 初始储备）< 最便宜的**产出**建筑（农田/矿场）**600**（`buildings.md` 建造消耗）⇒ 按字面数值开局造不起任何产出来源，石材永不增长 | `WP-7.2a` 已按设计稿原文落地（不吃数值）；但"能开局"是 M1 的底线。两条改法任选：① 提高初始储备（如 600~800）；② 下调农田/矿场造价——**注意**营地/工坊/学院/军营的造价仍是原型遗留值（如营地 20 石材），`WP-7.2b` 会按设计稿重填，届时真正的"最便宜建筑"才定下来 | 用户（**N2** 数值手感；我给了两个候选） | `WP-7.2b`（造价全表重填）/ `WP-7.6`（平衡校验） |
 
 ## 19.6 进度总览与复现命令
 
-**进度**：批次 0~3 ✅（29 WP）· 批次 4 **1/19** · 批次 5 **6/11** · 批次 6 **0/6** · 批次 7 **1/7** · 批次 8 **0/4** → **已完成 37 / 剩余 39**（到 M2 还差 **M1 的 2 个 + M2 的 33 个**，M3 另 5 个）。
-最近一次更新：**v0.6.3**（`WP-7.1` 资源口径收敛到设计稿：`Idea`/`Food`/`BasicMinerals` + 初始 500/300/200 + 上限 10000/2000/1500 + 修正器 `IdeaGrowth`/`FoodGrowth`/`MineralGrowth`，全表清除 Gold/Wood；检查 **188/188**、冒烟 **17/17、退出码 0**）。
+**进度**：批次 0~3 ✅（29 WP）· 批次 4 **1/19** · 批次 5 **4/11** · 批次 6 **0/6** · 批次 7 **2/7** · 批次 8 **0/4** → **已完成 36 / 剩余 40**（到 M2 还差 **M1 的 2 个 + M2 的 33 个**，M3 另 5 个）。
+最近一次更新：**v0.6.4**（`WP-7.2a` 农田/矿场/仓库落地：设计稿造价与耗时、`FoodGrowth`/`MineralGrowth` 产出、仓库 `BasicMineralsLimit` 抬升（落成即生效）；**顺带修掉"多点地块建筑永远建不了"的真实缺陷**；检查 **194/194**、冒烟 **17/17、退出码 0**）。
+> *勘误（v0.6.3）：v0.6.1/v0.6.2 两行曾把批次 5 记成 5/11、6/11（实为 3/11、4/11）并把总进度记成 36/40、37/39；正确为 33/43、34/42、35/41。*
 
 ```powershell
 # ① 主工程构建（Godot 侧；0 error 才算过）
@@ -2718,6 +2720,8 @@ $exe = 'E:\Godot_v4.6-stable_mono_win64\Godot_v4.6-stable_mono_win64.exe'
 | `D83` | 2026-09-15 | **性能基线制度（`WP-5.8`）**：① 新增 `Document/PerfBaseline.md` 记 73×143 的实测耗时/内存/存档体积，改到生成/渲染/存档的 WP 必须重跑并更新（旧数字不保留）；② 冒烟只设**宽松护栏**（生成 < 5 s、渲染 < 15 s、格数精确），不做严格时间断言（机器差异会造假红，假红导致无视）；③ 冒烟支持 `--size=WxH`/`--seed=N`；④ 基线结论：地图存档 **2.4 MB**（≈235 B/格）是磁盘大头 → `WP-5.6` 提优先级；渲染 10k 节点 ≈ 6 KB/格 → `WP-5.4` 加图层前必须定"合批/视口裁剪" | 没有基线就只能靠感觉谈"还能不能加东西"；而把时间阈值写死成断言会在不同机器上反复假红 | `Document/PerfBaseline.md`、`SmokeReport`、`WP-5.4`/`5.6` 的排序 |
 | `D84` | 2026-09-15 | **资源口径 = 设计稿（`WP-7.1`）**：三种资源定名 **`Idea` / `Food` / `BasicMinerals`**（数值取 `design/resources.md`：初始 500/300/200、上限 10000/2000/1500），产出目标名 `IdeaGrowth`/`FoodGrowth`/`MineralGrowth`，人口口粮 `Settlement.DemandResource = Food`；**`BaseGrowth` 全为 0** —— 产出来自建筑/科技/事件的 Modifier，而不是"凭空每月给一点"；Gold / Wood 别名**全表清除**（新增 `ConfigTableChecks` 断言防残留） | 旧别名会让"设计稿数值"永远无法照抄（造价/产出的 key 都对不上），越晚改越贵；而"每月白给资源"会掩盖"没建农田/矿场"的经济问题 —— 这正是设计稿用初始储备 + 建筑产出表达的东西 | `Config/Resources.json`+`Buildings`+`Units`+`Events`、`ConfigTableGuide` v1.8、全部含资源字面量的用例（12 条断言改成"显式构造前提"）、`WP-7.2a`（农田/矿场给产出） |
 | `D85` | 2026-09-15 | **无头用例支持分组过滤**：`SciencePotato.HeadlessChecks.exe <组名子串>` 只跑匹配的组（不带参数 = 全部）；旧的"一次全跑"行为不变 | 全套已到 40~60 秒，排错时为了看一组失败要等整轮；"迭代慢"会让人少跑测试。这也是我第一次需要它的原因（本机 30 s 命令上限） | `Tests/…/Program.cs`、`Document/TestPlan.md` |
+| `D86` | 2026-09-15 | **"可建/可行地块"列表 = 任一匹配（OR）**：新增 `TerrainSetRequirement` + `MapAppService.GetTerrainRequirement(mapId, pos, IEnumerable<string>)` 重载，建筑与单位都改走它；空列表 = 不限地块；`"*"` = 任意地形 | **真缺陷**（不是设计选择）：旧实现把列表逐项包成单地块需求再用 `All()` 合并，"平原、山地"因此变成"同时是平原和山地" ⇒ **任何 2+ 地块的建筑/单位永远做不出来**。旧表恰好全是单地块，所以一直没暴露 —— 直到农田/矿场/仓库（矿场 = 平原、山地）落地才现形 | `Scripts/Map/Domain/TerrainSetRequirement.cs`、`MapAppService`、`ConstructionAppService`、`UnitsAppService`、`Config/Buildings.json`（矿场）、回归用例 `ContentBuildingChecks.MultiTerrainIsAnyNotAll` |
+| `D87` | 2026-09-15 | **存储上限是"派生值 + 事件驱动重算"**：`ResourcesAppService.RefreshLimits(mapId, ownerId)` 按 `配置 BaseLimit + 修正器 {资源名}Limit / ResourceLimit` **重算**（幂等，新增 `ResourcesPool.SetLimit`），并订阅 `BuildingCompletedEvent`/`BuildingUpgradedEvent` → **仓库落成即生效**（不等月结）；上限下调时把库存夹回上限内 | 用 `AddLimit` 累加的话，拆仓库不回落、读档几次会翻倍；而"等下一次月结才涨上限"玩家会以为没生效。派生值口径让上限永远等于"配置 + 当前修正器"，与产出公式同源 | `ResourcesPool.SetLimit`、`ResourcesAppService.RefreshLimits` + 总线订阅、`ModifierTargetRegistry` 派生 `{资源名}Limit`、`Config/Buildings.json` 仓库三级、用例 `ContentBuildingChecks.WarehouseRaisesLimit` |
 
 > **下一步**（按 §19.2 状态推进，M1 剩余 4 个）：`WP-5.8` 73×143 基线 → `WP-7.1` 资源重映射 → `WP-7.2a` 农田/矿场/仓库 → `WP-5.9` 开局布置 → `WP-5.10` i18n → 交 **N1**（视觉与操作手感）复看。
 

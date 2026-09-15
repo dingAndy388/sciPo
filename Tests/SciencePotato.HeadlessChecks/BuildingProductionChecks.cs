@@ -27,7 +27,7 @@ namespace SciencePotato.HeadlessChecks
 	{
 		public static void RunAll()
 		{
-			Check.Run("WP-2.7 建筑表：4 条原型建筑 + 设计口径字段（营地人口 / School 250 idea/月）", BuildingTableMatchesDesign);
+			Check.Run("WP-2.7 建筑表：原型建筑 + 设计口径字段（营地人口 / School 250 idea/月）", BuildingTableMatchesDesign);
 			Check.Run("WP-2.7 建筑 Id 收敛：旧原型 Id（house/library/barracks）不再存在", LegacyBuildingIdsGone);
 			Check.Run("M0-2 ② 建成 School 后 6 个月内存出 250 idea/月（拆除后立即停止）", SchoolProducesIdeaMonthly);
 		}
@@ -38,7 +38,7 @@ namespace SciencePotato.HeadlessChecks
 		{
 			ConfigTables tables = ConfigFixtures.BuildRealCore().Tables;
 
-			Check.AssertEqual(12, tables.AllBuildings().Count(), "建筑条目数（WP-2.6：营地/工坊/学院/军营 各 3 级 = 12）");
+			Check.AssertEqual(21, tables.AllBuildings().Count(), "建筑条目数（营地/工坊/学院/军营各 3 级 = 12 + 农田/矿场/仓库各 3 级 = 9；24 条全表归 WP-7.2b）");
 
 			IBuildingConfig camp = tables.Buildings.GetBuildingConfig("camp");
 			Check.AssertEqual("营地", camp.Name, "营地名称");

@@ -94,7 +94,8 @@ namespace SciencePotato.Scripts.Core
 				new ResourcesRepository(saveRoot + "resources_", store),
 				tables.Resources,
 				timeService,
-				new ModifierRepository(saveRoot + "modifiers_", store));
+				new ModifierRepository(saveRoot + "modifiers_", store),
+				domainEvents); // v0.6.3 / WP-7.2a：订阅建筑落成/升级 → 立刻重算存储上限（仓库）
 
 			var modifiers = new ModifierAppService(new ModifierRepository(saveRoot + "modifiers_", store));
 

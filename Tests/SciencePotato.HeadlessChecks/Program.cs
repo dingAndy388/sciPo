@@ -40,6 +40,7 @@ namespace SciencePotato.HeadlessChecks
 				("MonthlySettlement", MonthlySettlementChecks.RunAll),
 				("Wiring", WiringChecks.RunAll),
 				("Appearance", AppearanceChecks.RunAll),
+				("ContentBuilding", ContentBuildingChecks.RunAll),
 			};
 
 			string filter = args?.FirstOrDefault(arg => !string.IsNullOrWhiteSpace(arg) && !arg.StartsWith("-"));
