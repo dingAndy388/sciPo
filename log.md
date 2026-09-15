@@ -2604,13 +2604,13 @@ dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessC
 | WP-5.10 | i18n 框架（中/英双语；字符串外置 + 缺键可视） | ✅ 完成（v0.6.6） | M1 |
 | WP-5.11 | 会话入口（新开局 / 存档 / 读档 / 退出 + 自动存档点） | ☐ 未开始 | M2 |
 
-### 批次 6 · AI 对手（6 WP · 完成 2 / 未开始 4）
+### 批次 6 · AI 对手（6 WP · 完成 3 / 未开始 3）
 
 | WP | 内容 | 状态 | M |
 | :--- | :--- | :--- | :--- |
 | WP-6.1 | AI 配置（`Config/AI.json`：数量 / 分流偏好 / 威胁阈值 / 分配比例 / 探图半径；先 1 个 AI） | ✅ 完成（v0.7.2） | M2 |
 | WP-6.2 | AI 决策循环（按游戏日 tick：生存 → 威胁 → 发展；只读**自己的**视野） | ✅ 完成（v0.7.3） | M2 |
-| WP-6.3 | AI 经济（建造/升级/科研的资源分配 + 最低保留 + 不在资源低时暴兵） | ☐ 未开始 | M2 |
+| WP-6.3 | AI 经济（建造/升级/科研的资源分配 + 最低保留 + 不在资源低时暴兵） | ✅ 完成（v0.7.4，建造/科研下单走玩家同一套服务；`ResourceSplit` 的数值分配 + 暴兵约束随 `WP-6.4` 收口） | M2 |
 | WP-6.4 | AI 军事（60 日不造兵 → 玩家暴露后 10~20% 资源造兵 → 威胁分级 → 优先防御） | ☐ 未开始 | M2 |
 | WP-6.5 | AI 信息公平（不无视迷雾、不凭空生成、不完美克制；以测试判据锁住"不作弊"） | ☐ 未开始 | M2 |
 | WP-6.6 | AI 与胜负（AI 也会被全灭/被月度判定淘汰；AI 胜利条件与人类同构） | ☐ 未开始 | M2 |
@@ -2677,8 +2677,8 @@ dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessC
 
 ## 19.6 进度总览与复现命令
 
-**进度**：批次 0~3 ✅（29 WP）· 批次 4 **3/19** · 批次 5 **6/11** · 批次 6 **2/6** · 批次 7 **2/7** · 批次 8 **0/4** → **已完成 42 / 剩余 34**（M2 剩 29 + M3 剩 5）。
-最近一次更新：**v0.7.3**（`WP-6.2` AI 决策循环：`AiService` 按 `AI.DecisionIntervalDays` 节拍对**非人类**势力做"生存 → 威胁 → 发展"判断，产出可复盘的 `AiDecision`；观测只含自己的资产 + **自己单位视野圈内**的敌方单位（几何视野，不借玩家迷雾）；威胁按 `ThreatThresholds` 分档；`NoMilitaryDays` 窗口内计划军费恒为 0；检查 **227/227**、冒烟 **19/19**（90 日实测 3 次决策，AI 不跑事件、只多 1 条决策任务））。
+**进度**：批次 0~3 ✅（29 WP）· 批次 4 **3/19** · 批次 5 **6/11** · 批次 6 **3/6** · 批次 7 **2/7** · 批次 8 **0/4** → **已完成 43 / 剩余 33**（M2 剩 28 + M3 剩 5）。
+最近一次更新：**v0.7.4**（`WP-6.3` AI 经济分配：`AiEconomyService` 实现 `WP-6.2` 的行动出口 —— 科研在 `SciencePreference` 树里开工最便宜的**可研究**节点、建造按"住房 → 产出"顺序并**不无限扩张**、落点先近后远逐个交给 `StartConstruction` 的真实校验、工人按"未被工地绑走"挑；全部走**与玩家相同**的应用服务 ⇒ 不作弊是结构性的。检查 **233/233**、冒烟 **19/19**（90 日实测 3 次决策：`focus=Threat` + 窗口内军费 0））。
 前一次：**v0.7.1**（`WP-4.8` 建筑 HP + 夺取：住房/军事有 HP、归零转"可夺取"、敌单位站上即易主（半血）+ 修正器移交给新主人；建筑资产变化接入胜负重算；检查 **216/216**、冒烟 **18/18**）。`n前一次：**v0.6.7**（P0 收尾 + 工作流加速：① 占位块改**真六边形**（`N1` 反馈）；② 地图方向定为**横幅 143×73**（`D92`）；③ 初始石材 **200 → 800**（`D91`，开局不再死锁）；④ AI 前期不造兵窗口定 **360 日**（`D93`）；⑤ 新增 `Tools/verify.ps1`（三层验收**一条命令、4 路并行**：墙钟 40~60 s → **16.6 s**）与 `Document/CodeMap.md`（改哪里要配套改哪里）。检查 **206/206**、冒烟 **18/18、退出码 0**）。
 > **M1 达成**（`v0.6.1`~`v0.6.6`）：装配通电 · 会话/玩家表 · 脚手架修复 · 外观数据驱动 · 73×143 基线 · 开局布置 · i18n · 资源口径收敛 · 农田/矿场/仓库。
 > **交 N1**（视觉与操作手感）：73×143 上能否看清/找到自家出生点、缩放与平移是否顺手、面板按钮是否够用 —— 这是 M1 唯一需要人看的部分。
@@ -2740,6 +2740,8 @@ $exe = 'E:\Godot_v4.6-stable_mono_win64\Godot_v4.6-stable_mono_win64.exe'
 | `D98` | 2026-09-15 | **两条实现教训（写进纪律）**：① **夺取后的"修正器移交"= 按配置重挂**（`RemoveModifiersBySourceId(旧主人) → AddModifiers(新主人, 配置里的修正器)`），**不是**"把原主人名下的任意修正器搬过去" —— 我第一版用例注入了配置里并不存在的修正器，于是"移交"把它摘掉后无从重挂（用例先红，才发现语义该这么定）；② **`ModifierRepository` 每次调用都会重读分区、不缓存** ⇒ 生产装配里"两个 `ModifierRepository` 实例"**不是** bug（我曾据此推断存在"A 写 B 读不到"，核实后否掉了）；顺手把生产装配统一成一个实例，理由只是"让'谁持有仓储'清楚"，**不是**修缺陷 | ① 防止"夺取把配置外的临时加成也带走"这种偶发语义；② 记录一次**推断被证伪**的过程，避免以后有人拿着我的错误注释去改代码（注释已按核实结果改写） | `ConstructionAppService.TransferModifiersOnCapture`、`BuildingHpChecks.UnitCapturesBuilding`、`CoreBootstrap`（修正器仓储去重）、`ModifierRepository`（核实结论） |
 | `D99` | 2026-09-15 | **AI 配置口径（`WP-6.1`）**：① 新增 `Config/AI.json`（`Defaults` 段：`Count`/`NoMilitaryDays`/`DecisionIntervalDays`/`SciencePreference`/`ExploreRadius`/`ReserveMonths`/`ThreatThresholds`/`ResourceSplit`）；② 它是**策略参数表**，与多语言文案同一处理方式（`IConfigSource` 直读 + 单独校验），**不并入 7 张配置表**（不动 `ConfigTables` 契约）；③ 分级：缺表 = warning + 内置缺省（AI 仍能跑）；比例和≠1 / 威胁阈值不递增 / 流派偏好不是已装载科技树 = **error**；④ **玩家表由 `AI.Count` 驱动**：宿主（`ServiceContainer`）不显式给表时装配层自建"1 人类 + N AI"（`--ai=N` 仍可覆盖；测试夹具显式给表以保持断言稳定） | ① 把"AI 几个 / 多激进 / 怎么分资源"集中到一处：`N3`（AI 手感）必然要反复调这些数；② 并入 7 表会让装载/校验/指南三处都多一份样板，而它不参与造物与科技的引用完整性；④ 避免"AI 数量在两处定义"（配置 + 命令行）随后打架 | `Config/AI.json`、`Scripts/AI/Domain/AiConfigDto.cs`、`Scripts/AI/Infrastructure/AiConfigLoader.cs`、`CoreBootstrap`（3.9 + `BuildPlayers`）、`ConfigFixtures.TextResources`、用例 `AiConfigChecks`（5 条）、`Document/CodeMap.md` |
 | `D100` | 2026-09-15 | **AI 决策循环口径（`WP-6.2`）**：① **判断与执行分离** —— `AiService` 只产出 `AiDecision`（侧重点 / 威胁等级 / 计划军费占比 / 人类可读理由 / 观测快照），**不下单**；建造/科研/训练归 `WP-6.3`/`WP-6.4`（好处：AI 动机永远可复盘，`N3` 调手感时不用读代码）；② **观测 = 自己看得见的**：自己的单位/建筑/资源 + **自己单位 `VisionRadius` 几何覆盖圈内**的敌方单位（含野怪），**不借玩家的迷雾矩阵**（那会把玩家视野当 AI 视野 = 作弊；改用按 owner 的迷雾要等 `WP-4.10`，`WP-6.5` 再统一）；视野查不到单位配置按 0 处理（fail closed）；③ **三级优先级固定**：生存（`FoodMonthsLeft < ReserveMonths` **或**无住房）→ 威胁（`ThreatThresholds` 分档，`None` 不算威胁）→ 发展；④ **前期不造兵**：`Day < NoMilitaryDays` 时计划军费恒 0（生存优先同样为 0），窗口过后取 `ResourceSplit.Military`；⑤ **节拍与归属**：`IntervalTask(0, DecisionIntervalDays)`，由 `SessionOrchestrator` **只给非人类势力**启动（人类的行为来自玩家，人类多 0 条任务） | ① "只判断不下单"让 6.2 能独立验收且不把 6.3/6.4 的数值揉进来；② 视野口径是 `A-AI-2`"不作弊"的第一条测试判据，几何圈当下就能验且比借玩家迷雾更严格；③ 固定优先级 = 可复现（`A-AI-8`），也是 `N3` 的抓手；④ 与 `D93` 的数字口径一致 | `Scripts/AI/Domain/AiDecision.cs`、`Scripts/AI/Application/AiService.cs`、`SessionOrchestrator`（`AttachAi` + 启动报告 `AiEngineStarted`）、`CoreBootstrap`（6.10）、`SmokeReport`（周期任务期望值 + AI 决策实测）、用例 `AiDecisionChecks`（6 条） |
+| `D101` | 2026-09-15 | **AI 经济分配口径（`WP-6.3`）**：① **行动出口抽象成 `IAiActionSink`**（`AiService` 判断完调它，异常被吞掉不让 tick 断轴），实现 = `AiEconomyService`；② **下单只走玩家同一套服务**（`ConstructionAppService.StartConstruction` / `TechTreesAppService.Research`）⇒ 地形/科技前置/资源/占格都由既有校验说了算，**AI 没有后门**（`A-AI-2` 的结构性保证）；③ **建造顺序** = 无住房 → 营地；有住房缺产出 → 缺口粮农田、否则矿场；两者齐了 ⇒ **不建**（`A-AI-9` 不无限扩张）；④ **落点** = 自家建筑与**单位**为锚、半径 6 内**先近后远**的空格逐个试（把"是否合法"交给 `StartConstruction`，AI 不自己复刻地形规则）；最多 60 次尝试（`R2`：不在 1 万格上扫图）；⑤ **工人** = 单位表 `Actions` 含 `CanBuild` 且**未被任何工地绑走**（查不到 = 不能建，fail closed）；⑥ **科研** = `SciencePreference` 树内"未研究 + `CanStartResearch`"里最便宜的一个；树内串行（有在进行中的就不重复下单）；成功判据用"是否真的进了 `InProgress`"（`Research` 是 void） | ① 判断/执行分离（`D100` 的延续）让两段各自可单测；② "走玩家同一套服务"比"我复刻一套规则"既省代码又天然公平；③ 不无限扩张是 `A-AI-9` 的测试判据，先做"够了就停"最容易验；④ 逐个真校验比让 AI 预判规则更抗内容变化（`WP-7.2b` 重填建筑表后不必改 AI）；⑤ `BuilderBinding` 只看 uid 无法区分**忙碌**，用"工地已绑"反推空闲，避免加新状态 | `Scripts/AI/Domain/IAiActionSink.cs`、`Scripts/AI/Domain/AiEconomyResult.cs`、`Scripts/AI/Application/AiEconomyService.cs`、`AiService.AttachActionSink`、`CoreBootstrap`（6.11）、`CoreServices.AiEconomy`、用例 `AiEconomyChecks`（6 条） |
+| `D102` | 2026-09-15 | **两个实现坑（写进纪律）**：① **`HexCubePosition` 没重写 `ToString()`** ⇒ 用 `HashSet<string>` 装位置去重会把"除第一格外的所有格子"当成重复（`WP-6.3` 的落点候选因此变成 0 个，AI 明明有合法空地却报"找不到落点"）——**位置类去重键一律用坐标**（`HashSet<(int,int)>`）或 `UId`；② **`_map.GetMapCell(...)` 越界返回 `null`** ⇒ `GetMapCell(p)?.Building != null` 这种写法会把"图外"当成"空地"放行、白白吃掉尝试次数（`PlacementAttempts` 用光 ⇒ 有合法落点也报"找不到"）。两条都是**静默失败**型：不抛异常、只是行为退化，靠"AI 真的把房子建起来了"这类**端到端断言**才抓到（只测"该拒的拒绝了"永远抓不到） | 纪律：① 位置/实体做键先想"它唯一吗"；② 越界一律显式判 `null`（`TryGetCell` 语义），不要拿 `?.` 当存在性检查 | `Scripts/AI/Application/AiEconomyService.cs`、用例 `AiEconomyChecks`（"不作弊 / 建造顺序"两条） |
 
 
 > **下一步**：**M1 已达成 → 交 N1（视觉与操作手感复看）**；随后进 M2（批次 4 的 18 个 + 批次 5 的 5 个 + 批次 6 全 6 个 + 批次 7 的 4 个），建议顺序：`WP-4.19` 胜负判定 → `WP-4.12` 事件暂停决策 → `WP-4.8` 建筑 HP/夺取 → 批次 6（AI）→ `WP-5.4` 正式表现层 → `WP-5.11` 会话入口 → 内容补齐（`WP-7.2b`/`7.3`/`7.4`/`7.5`）。

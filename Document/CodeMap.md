@@ -1,4 +1,4 @@
-# Science Potato · 代码地图（活文档 · v0.7.3）
+# Science Potato · 代码地图（活文档 · v0.7.4）
 
 > **用途**（工作流 W5）：把"改 X 要同时改哪几处、入口在哪、对应用例叫什么"写在一页纸上，
 > 避免每个 WP 都重新 grep 同一批链路。**发现新链路就补进来**，过期条目立刻删（不堆叠）。
@@ -49,6 +49,7 @@
 | 玩家/开局 | `SessionOrchestrator`、`SessionSetupService` | `PlayerContext`、`PlayerSpawn`、`PlayerStartReport` | `Wiring`、`SessionSetup` |
 | 胜负 | `VictoryService`（`Evaluate`/`OutcomeOf`/`IsAlive`） | `PlayerStatus`、`GameOutcome` | `Victory` |
 | AI 决策 | `AiService`（`StartEngine`/`Observe`/`Decide`/`Evaluate`/`DecisionsOf`） | `AiDecision`、`AiObservation`、`AiFocus`、`AiThreatLevel`、`IAiConfig` | `AiConfig`、`AiDecision` |
+| AI 经济 | `AiEconomyService`（`Execute(decision)`；实现 `IAiActionSink`） | `AiEconomyResult`、`BuilderBinding`（工人占用）、`StartConstruction`/`Research`（**只走玩家同一套服务**） | `AiEconomy` |
 | 外观/表现 | `MapView`（`UpdateAllCells`）、`MapCellView`（`Configure`/`SetTerrain`）、`CameraController` | `IMapAppearanceConfig`、`TerrainAppearance`、`RgbColor` | `Appearance` + 冒烟 |
 | i18n | `II18nService`（`T`） | `I18nService`、`I18nMarkers` | `I18n` |
 

@@ -196,6 +196,10 @@ namespace SciencePotato.Scripts.Core
 			var ai = new AiService(session, mapService, resources, tables.Resources, tables.Buildings, tables.Units, timeService, aiConfig);
 			orchestrator.AttachAi(ai);
 
+			// 6.11) AI 经济分配（v0.7.4 / WP-6.3）：判断完就下单（只走玩家同一套应用服务）
+			var aiEconomy = new AiEconomyService(session, mapService, resources, construction, tech, tables.Units, tables.Buildings, tables.TechTrees, tables.Resources, aiConfig);
+			ai.AttachActionSink(aiEconomy);
+
 			// 6.9) 胜负判定（v0.7.0 / WP-4.19）：每月判定（吃月结推送）+ 全灭（吃单位阵亡推送）
 			var victory = new VictoryService(session, mapService, settlement, domainEvents);
 
@@ -226,6 +230,7 @@ namespace SciencePotato.Scripts.Core
 				Victory = victory,
 				Ai = aiConfig,
 				AiService = ai,
+				AiEconomy = aiEconomy,
 				I18n = i18n,
 			};
 		}

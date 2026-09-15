@@ -41,6 +41,12 @@ namespace SciencePotato.Scripts.AI.Application
 
 		private readonly HashSet<string> _started = new(StringComparer.Ordinal);
 		private readonly Dictionary<string, List<AiDecision>> _decisions = new(StringComparer.Ordinal);
+		/// <summary>（v0.7.4 / WP-6.3）行动出口（可空）：判断完就交给它下单（建造/科研）。</summary>
+		private IAiActionSink _sink;
+
+		/// <summary>（v0.7.4 / WP-6.3）挂上行动出口（由组合根在装配末尾调用；不挂 = 只判断不动手）。</summary>
+		public void AttachActionSink(IAiActionSink sink) => _sink = sink;
+
 
 		/// <summary>累计决策次数（验收/调试：证明"按节拍"而不是"每帧"）。</summary>
 		public int DecisionCount { get; private set; }
@@ -186,6 +192,17 @@ namespace SciencePotato.Scripts.AI.Application
 				_decisions[key] = list;
 			}
 			list.Add(decision);
+
+			// 判断完立刻下单（`D100` 的两段式：这里是第二段的入口）。异常不能掀掉 tick。
+			if (_sink != null)
+			{
+				try
+				{
+					_sink.Execute(decision);
+				}
+				catch (Exception) { /* 单个 AI 的异常不能中断时间轴（与月结/事件同口径） */ }
+			}
+
 			return decision;
 		}
 
