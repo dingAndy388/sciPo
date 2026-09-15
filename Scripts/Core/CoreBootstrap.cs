@@ -17,6 +17,7 @@ using SciencePotato.Scripts.Construction.Application;
 using SciencePotato.Scripts.Core.Save;
 using SciencePotato.Scripts.Events.Application;
 using SciencePotato.Scripts.Fog.Application;
+using SciencePotato.Scripts.Intent.Application;
 using SciencePotato.Scripts.Fog.Infrastructure;
 using SciencePotato.Scripts.Resources.Application;
 using SciencePotato.Scripts.Resources.Infrastructure;
@@ -218,6 +219,9 @@ namespace SciencePotato.Scripts.Core
 			var attribution = new ProductionAttributionService(modifierRepo, mapService, tables.TechTrees);
 			var uiGate = tech == null ? null : new UiGateService(tech, tables.TechTrees);
 
+			// 6.16) 意图契约（v0.9.4 / WP-5.7）：表现层唯一入口 —— UI 只表达意图，规则（谁/门控/资源）在这里判
+			var intent = new HumanIntentHandler(session, mapService, construction, units, tech, uiGate, events);
+
 			// 6.13) AI 与胜负（v0.7.6 / WP-6.6）：出局即停（不再决策/下单）
 			ai.AttachVictory(victory);
 
@@ -253,6 +257,7 @@ namespace SciencePotato.Scripts.Core
 				Population = populationModel,
 				Attribution = attribution,
 				UiGate = uiGate,
+				Intent = intent,
 				I18n = i18n,
 			};
 		}

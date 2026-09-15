@@ -8,6 +8,7 @@ using SciencePotato.Scripts.Core.Save;
 using SciencePotato.Scripts.Core.Time;
 using SciencePotato.Scripts.Events.Application;
 using SciencePotato.Scripts.Fog.Application;
+using SciencePotato.Scripts.Intent.Application;
 using SciencePotato.Scripts.Map.Application;
 using SciencePotato.Scripts.Map.Domain;
 using SciencePotato.Scripts.Resources.Application;
@@ -151,6 +152,13 @@ namespace SciencePotato.Scripts.Core
 		/// （v0.7.5 / WP-6.4）**AI 军事**：按威胁分级投军费（训练）+ 优先防御（把人叫回自家聚落）。
 		/// </summary>
 		public AiMilitaryService AiMilitary { get; init; }
+
+		/// <summary>
+		/// （v0.9.4 / `WP-5.7`）**意图契约**：表现层唯一的输入口（`PlayerIntent` + `IActionHandler`）。
+		/// <para>为什么要有它：UI 直连 `ConstructionAppService` 这类调用会让"谁能做/门控/资源"的规则散进表现层
+		/// （`CON-02`/`CON-08`）。有了本项，UI 只表达意图，规则集中在 `HumanIntentHandler` 一处判断。</para>
+		/// </summary>
+		public IActionHandler Intent { get; init; }
 
 		/// <summary>
 		/// （v0.6.5 / WP-5.10）**多语言（i18n）**：UI 文案的键 → 文本解析器（缺键可见、可回退到默认语言）。

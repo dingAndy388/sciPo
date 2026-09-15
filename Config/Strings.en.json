@@ -19,6 +19,16 @@
     "terrain.water": "Water",
 
     "smoke.assembly": "Wiring check",
-    "smoke.spawn": "Spawn"
+    "smoke.spawn": "Spawn",
+
+    "intent.no_intent": "Nothing to do (empty intent)",
+    "intent.no_map": "Intent has no map id",
+    "intent.no_target": "Intent is missing its target (building / unit / tech / event / cell)",
+    "intent.no_unit": "Target unit or building not found",
+    "intent.not_human": "This is not your faction (the AI decides for itself)",
+    "intent.ui_locked": "Not unlocked yet (research the required tech first)",
+    "intent.prereq": "Tech prerequisite unmet, already researching, or already researched",
+    "intent.rejected": "Rules reject this action (resources / terrain / gates)",
+    "intent.unknown_kind": "Unknown intent kind"
   }
 }

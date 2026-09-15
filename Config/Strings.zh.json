@@ -19,6 +19,16 @@
     "terrain.water": "水域",
 
     "smoke.assembly": "装配自检",
-    "smoke.spawn": "出生点"
+    "smoke.spawn": "出生点",
+
+    "intent.no_intent": "没有可执行的意图",
+    "intent.no_map": "意图未指定地图",
+    "intent.no_target": "意图缺少目标（建筑 / 单位 / 科技 / 事件 / 格位）",
+    "intent.no_unit": "找不到目标单位或建筑",
+    "intent.not_human": "这不是你能指挥的势力（AI 由它自己决策）",
+    "intent.ui_locked": "该功能尚未解锁（先研究对应科技）",
+    "intent.prereq": "科技前置未满足，或在研究中/已研究",
+    "intent.rejected": "规则不允许该操作（资源 / 地形 / 门控）",
+    "intent.unknown_kind": "未知的意图类型"
   }
 }
