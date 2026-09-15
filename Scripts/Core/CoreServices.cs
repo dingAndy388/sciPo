@@ -114,6 +114,12 @@ namespace SciencePotato.Scripts.Core
 		public SessionSetupService Setup { get; init; }
 
 		/// <summary>
+		/// （v0.7.0 / WP-4.19）**胜负判定**：每月判定 + 全灭（`D72`）；AI 与人类同一套判据。
+		/// <para>一局结束的判据 = 只剩一个势力存活（`OutcomeOf(mapId).IsOver`）。</para>
+		/// </summary>
+		public VictoryService Victory { get; init; }
+
+		/// <summary>
 		/// （v0.6.5 / WP-5.10）**多语言（i18n）**：UI 文案的键 → 文本解析器（缺键可见、可回退到默认语言）。
 		/// <para>表现层今后**只允许**写键（如 <c>i18n.T("ui.generate")</c>），不允许写死文案（`R4`）。</para>
 		/// </summary>

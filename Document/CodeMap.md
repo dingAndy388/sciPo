@@ -45,6 +45,7 @@
 | 月结 | `MonthlySettlementService`（`StartSettlement`/`Settle`） | `IUpkeepDemandSource`、`IPopulationSink`、`MonthlySettlementReport` | `MonthlySettlement`、`PopulationGrowth` |
 | 存档 | `WorldSaveService`（`SaveWorld`/`LoadWorld`） | `ISaveStore`、`SaveMapper`、`SaveRebuilder` | `WorldPersistence`、`SaveUnit` |
 | 玩家/开局 | `SessionOrchestrator`、`SessionSetupService` | `PlayerContext`、`PlayerSpawn`、`PlayerStartReport` | `Wiring`、`SessionSetup` |
+| 胜负 | `VictoryService`（`Evaluate`/`OutcomeOf`/`IsAlive`） | `PlayerStatus`、`GameOutcome` | `Victory` |
 | 外观/表现 | `MapView`（`UpdateAllCells`）、`MapCellView`（`Configure`/`SetTerrain`）、`CameraController` | `IMapAppearanceConfig`、`TerrainAppearance`、`RgbColor` | `Appearance` + 冒烟 |
 | i18n | `II18nService`（`T`） | `I18nService`、`I18nMarkers` | `I18n` |
 

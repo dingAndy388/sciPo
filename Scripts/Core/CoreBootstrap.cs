@@ -65,6 +65,18 @@ namespace SciencePotato.Scripts.Core
 			ISaveStore store = dependencies.SaveStore;
 			string saveRoot = string.IsNullOrWhiteSpace(dependencies.SaveRoot) ? "user://save/" : dependencies.SaveRoot;
 
+			// 3.3) **没有存档单元时，仓储前缀改到系统临时目录**（v0.7.0 修：`D74` 的补充）。
+			//  `GenericJsonRepository` 在 store == null 时退化为"直接写 filePath" —— 而 `SaveRoot` 的缺省值是
+			//  `user://save/`（Godot 语义）。无头夹具/工具里没有存档单元，于是第一次写盘就会拿
+			//  `user:\save\...` 当 Windows 路径 → 抛"路径非法"（`WP-4.19` 的用例第一次跑到"建资源池"就炸了）。
+			//  统一丢到系统临时目录：语义仍是"不持久化"（进程结束即无意义），且绝不污染仓库。
+			if (store == null)
+			{
+				saveRoot = System.IO.Path.Combine(System.IO.Path.GetTempPath(),
+					"sp-nostore-" + Guid.NewGuid().ToString("N"), string.Empty);
+				System.IO.Directory.CreateDirectory(saveRoot);
+			}
+
 			ITaskRepository tasks = store == null ? null : new TaskRepository(saveRoot + "tasks_", store);
 			var timeService = new GameTimeService(clock, tasks);
 
@@ -168,6 +180,9 @@ namespace SciencePotato.Scripts.Core
 			var setup = new SessionSetupService(session, mapService, units, resources, fog, tables.Start);
 			orchestrator.AttachSetup(setup);
 
+			// 6.9) 胜负判定（v0.7.0 / WP-4.19）：每月判定（吃月结推送）+ 全灭（吃单位阵亡推送）
+			var victory = new VictoryService(session, mapService, settlement, domainEvents);
+
 			return new CoreServices
 			{
 				Session = session,
@@ -192,6 +207,7 @@ namespace SciencePotato.Scripts.Core
 				WorldSave = worldSave,
 				Orchestrator = orchestrator,
 				Setup = setup,
+				Victory = victory,
 				I18n = i18n,
 			};
 		}

@@ -62,8 +62,10 @@ namespace SciencePotato.HeadlessChecks
 		/// <summary>
 		/// 没有存档单元（无头工具 / 既有夹具）时必须退回 v0.5 的语义：**不做持久化、不写任何文件**。
 		/// <para>为什么这是一条要守住的契约：`CoreDependencies.SaveRoot` 的缺省值是 `user://save/`，
-		/// 若在无存档单元时仍建仓储，测试就会往 "user://..." 这种相对路径写盘（在 Windows 上会得到
+		/// 若在无存档单元时仍按该前缀建仓储，测试就会往 "user://..." 这种相对路径写盘（在 Windows 上会得到
 		/// 一个名叫 `user:` 的目录），污染工作区并让"无持久化"变成谎话。</para>
+		/// <para>（v0.6.7）**真实缺陷回归锁**：装配层已把无存档单元的仓储前缀改到系统临时目录；
+		/// 下面额外验两件事：① 资源池这类"会写盘的路径"能正常工作；② 仓库根目录没有长出 `user:`。</para>
 		/// </summary>
 		private static void NoStoreKeepsMemoryOnly()
 		{
@@ -73,6 +75,18 @@ namespace SciencePotato.HeadlessChecks
 			Check.Assert(core.Tasks == null, "无存档单元 → 不应挂任务仓储");
 			Check.AssertEqual(0, core.Time.SubscriberCount, "无存档单元 → 启动期不应注册任何周期任务");
 			Check.Assert(core.Orchestrator != null, "编排器与存档无关，仍然可用");
+
+			// ① 会写盘的路径（资源池）在无存档单元时必须照常工作（修前会抛"路径非法"）
+			core.Map.GenerateMap(20260928, 8, 8, "nostore");
+			core.Resources.AddResource("Food", 10f, "nostore", 1);
+			Check.AssertEqual(310f, core.Resources.GetOrCreatePool("nostore", 1).GetValue("Food"), "资源池可读写（不依赖存档单元）");
+
+			// ② 绝不污染仓库目录：既没有 `user:` 伪目录，也没有散落的 `resources_*` 文件
+			string repoRoot = Check.FindRepoRoot();
+			Check.Assert(!System.IO.Directory.Exists(System.IO.Path.Combine(repoRoot, "user:")),
+				"仓库根目录不应出现 `user:` 伪目录（无存档单元时仓储应落到系统临时目录）");
+			Check.Assert(!System.IO.File.Exists(System.IO.Path.Combine(repoRoot, "resources_nostore_1")),
+				"仓库根目录不应出现仓储文件");
 		}
 
 		private static void WritesIntoSaveStoreSections()
