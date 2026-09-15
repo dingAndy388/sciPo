@@ -9,7 +9,7 @@
 | 层 | 命令 | 判据 | 覆盖什么 | 覆盖不到什么 |
 | :--- | :--- | :--- | :--- | :--- |
 | ① 构建 | `dotnet build 'Science Potato.csproj'` | **0 error** | 类型/接口/命名空间口径 | 运行期行为 |
-| ② 无头检查 | `powershell -ExecutionPolicy Bypass -File Tools/verify.ps1`（或直跑 `Tests\…\bin\Debug\net8.0\SciencePotato.HeadlessChecks.exe`） | **退出码 0**，末尾 `结果：通过 N / 失败 0`（当前 **216** 条） | 纯 C# 核心：时钟/配置/地图/建造/单位/战斗/月结/存档/**装配**/玩家表/**开局**/**胜负**/i18n | 引擎适配层（资源加载、autoload、场景、`user://`） |
+| ② 无头检查 | `powershell -ExecutionPolicy Bypass -File Tools/verify.ps1`（或直跑 `Tests\…\bin\Debug\net8.0\SciencePotato.HeadlessChecks.exe`） | **退出码 0**，末尾 `结果：通过 N / 失败 0`（当前 **221** 条） | 纯 C# 核心：时钟/配置/地图/建造/单位/战斗/月结/存档/**装配**/玩家表/**开局**/**胜负**/i18n | 引擎适配层（资源加载、autoload、场景、`user://`） |
 | ③ Godot 无头冒烟 | 见 §2 | **退出码 0** 且 stdout 含 `[SMOKE] 汇总：通过 18 / 失败 0` | 真引擎：装配自检、**外观配置链路比对**、资源加载、**143×73 生成**、**开局布置（出生点 + 开局单位）**、逐 owner 子系统启动、`user://` 存档往返、**表现层端到端（实例化主场景 + 渲染 10439 格）** | 视觉/手感/数值体感/AI 像不像人 |
 
 人只看四类主观项（`log.md` §19.1 的 **N1**~**N4**）：视觉与操作手感、数值手感、AI 行为、美术与发布。
@@ -52,6 +52,7 @@ $exe = 'E:\Godot_v4.6-stable_mono_win64\Godot_v4.6-stable_mono_win64.exe'
 | `ConfigTableChecks`（v0.6.3 增补） | 7 张表装载 / 引用校验 / 分级处置 + **资源口径=设计稿**（名/初始/上限/修正器目标）+ **旧别名残留** | `WP-1.4`、`WP-7.1` |
 | `CoreBootstrapChecks` | 组合根快速失败与最小装配 | `WP-1.3` |
 | `WiringChecks`（v0.6.0 新增） | **装配通电**（全部服务 + 存档接线）· **玩家表** · **`SessionOrchestrator`** 逐 owner 启动 / 幂等 / 事件只对人类 | `WP-5.1`、`WP-4.18` |
+| `AiConfigChecks`（v0.7.2 新增） | **AI 配置**：装载/数值=用户裁定 · 比例与阈值合理性 · 缺表 warning+缺省 · 填错 error · **玩家表由 `AI.Count` 驱动** | `WP-6.1` |
 | `BuildingHpChecks`（v0.7.1 新增） | **建筑 HP/夺取**：HP 配置 · 归零转可夺取（格子可进入）· 单位站上即易主（半血 + 修正器移交）· HP>0 不可进入 · 建筑资产变化触发胜负重算 | `WP-4.8` |
 | `VictoryChecks`（v0.7.0 新增） | **胜负判定**：开局全存活 · 全灭即出局 · 每月判定兜底 · 多方出局顺序与幂等 · 有建筑不算全灭 | `WP-4.19` |
 | `I18nChecks`（v0.6.6 新增） | **多语言**：装载双语 · 键解析/缺键可见 · 回退默认语言 · 中英键集一致 · 切语言 · 面板只走键 | `WP-5.10` |

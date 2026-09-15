@@ -25,6 +25,7 @@
 | TechTrees | `Config/TechTrees.json` | `TechTreeConfigDto` | `ITechNodeConfig` | 跨树前置、科技解锁 |
 | Events | `Config/Events.json` | （`EventsConfigDto` 根对象） | `IEventConfig` | 触发概率/前置/Modifier |
 | Generator | `Config/Generator.json` | `GeneratorConfigDto` | `IMapGeneratorConfig`、`IStartSetupConfig`（`Start` 段） | `ConfigTables.Start`（出生点/开局单位） |
+| AI | `Config/AI.json`（策略参数：几个 AI / 不造兵窗口 / 分配比例 / 威胁阈值） | `AiConfigDto` / `AiConfigLoader` | `IAiConfig`（`CoreServices.Ai`） | 玩家表（`AI.Count` → 1 人类 + N AI） |
 | 文本 | `Config/Strings.{zh,en}.json` | `I18nService.Load` | `II18nService` | UI 键；`ConfigFixtures.TextResources` 要同步 |
 
 > **集合字段陷阱**：JSON 集合**不要**在 DTO 里预置默认值（Newtonsoft 默认 append，会读成两份，`D89`）。
