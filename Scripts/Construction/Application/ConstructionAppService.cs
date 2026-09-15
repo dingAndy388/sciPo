@@ -68,6 +68,18 @@ namespace SciencePotato.Scripts.Construction.Application
 			_modifier.AddModifiers(evt.MapId, evt.NewOwnerId, evt.BuildingUId, config.Modifiers);
 		}
 
+		/// <summary>
+		/// （v0.8.4 / `WP-4.4`）**建造/升级耗时**：读 `BuildingSpeed`。
+		/// <para>设计稿两种写法（`-30 日` = Absolute、`-10%` = Percent）用同一公式结算，
+		/// 所以 base 传"基础天数"：`(base + ΣAbsolute) × (1 + ΣPercent)`；下限 0.1 日防负/归零。</para>
+		/// </summary>
+		private float ScaledBuildDays(float baseDays, string mapId, int ownerId)
+			=> _modifier == null ? baseDays : Math.Max(0.1f, _modifier.GetValue(mapId, ownerId, "BuildingSpeed", baseDays));
+
+		/// <summary>（v0.8.4 / `WP-4.4`）**升级造价折扣**：读 `BuildingUpgradeCost`（`base × (1 + ΣPercent)`）。</summary>
+		private float ScaledUpgradeCost(float baseCost, string mapId, int ownerId)
+			=> _modifier == null ? baseCost : Math.Max(0f, _modifier.GetValue(mapId, ownerId, "BuildingUpgradeCost", baseCost));
+
 		public bool StartConstruction(string mapId, string buildingId, HexCubePosition position, int ownerId, BuilderBinding builder = null)
 		{
 			var config = _buildingRepo.GetBuildingConfig(buildingId);
@@ -106,7 +118,7 @@ namespace SciencePotato.Scripts.Construction.Application
 
 				string uid = building.GetInfo().UId;
 
-				LinearTask buildTask = new(0, config.Duration, config.BuildingId, "Construction", false, uid, mapId, ownerId);
+				LinearTask buildTask = new(0, ScaledBuildDays(config.Duration, mapId, ownerId), config.BuildingId, "Construction", false, uid, mapId, ownerId);
 
 				// v0.3 / WP-3.4：建筑落位走统一入口（同时写 cell.Building 与占据物槽位 → 修 MAP-04）
 				_map.PlaceBuilding(mapId, position, building);
@@ -184,7 +196,7 @@ namespace SciencePotato.Scripts.Construction.Application
 			if (target == null) return false;
 
 			var consumptions = (from item in (config.UpgradeCost ?? new Dictionary<string, float>())
-								select new Consumption(item.Key, item.Value)).ToList();
+								select new Consumption(item.Key, ScaledUpgradeCost(item.Value, mapId, ownerId))).ToList();
 			List<IConsumable> contracts =
 			[
 				.. from item in consumptions select _resource.CreateResourceConsumption(item, mapId, ownerId),
@@ -202,7 +214,7 @@ namespace SciencePotato.Scripts.Construction.Application
 			HexCubePosition position = building.GetInfo().Position;
 
 			// 任务类型 `Upgrade`、业务键 = 目标建筑 Id：键 = `Upgrade:{buildingUid}:{targetId}`（`WP-2.2`）
-			LinearTask upgradeTask = new(0, config.UpgradeDuration, config.UpgradeTo, "Upgrade", false, buildingUid, mapId, ownerId);
+			LinearTask upgradeTask = new(0, ScaledBuildDays(config.UpgradeDuration, mapId, ownerId), config.UpgradeTo, "Upgrade", false, buildingUid, mapId, ownerId);
 
 			upgradeTask.OnCompleted += () =>
 			{

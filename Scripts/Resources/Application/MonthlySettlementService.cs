@@ -152,8 +152,15 @@ namespace SciencePotato.Scripts.Resources.Application
 			List<UpkeepDemand> demands = CollectDemands(mapId, ownerId);
 
 			var demandByResource = new Dictionary<string, float>(StringComparer.Ordinal);
+			// （v0.8.4 / WP-4.4）口粮消耗读 `FoodConsumption`（`base × (1 + ΣPercent)`）：食物消耗类科技的效果点
+			string demandResourceName = _configRepo?.GetResourcesPoolConfig()?.Settlement?.DemandResource ?? "Food";
 			foreach (UpkeepDemand demand in demands)
-				demandByResource[demand.Resource] = demandByResource.GetValueOrDefault(demand.Resource) + demand.Amount;
+			{
+				float amount = demand.Amount;
+				if (_modifier != null && demand.Resource == demandResourceName)
+					amount = Math.Max(0f, _modifier.GetValue(mapId, ownerId, "FoodConsumption", amount));
+				demandByResource[demand.Resource] = demandByResource.GetValueOrDefault(demand.Resource) + amount;
+			}
 
 			// ③ 扣减：按资源名排序保证可复现（同一档读两次的报告与日志稳定）
 			var paidByResource = new Dictionary<string, float>(StringComparer.Ordinal);

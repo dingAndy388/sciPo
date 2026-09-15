@@ -137,6 +137,7 @@ namespace SciencePotato.Scripts.TechTree.Application
 
 			float cost = tree.GetCost(nodeId);
 			float duration = tree.GetDuration(nodeId);
+			if (_modifier != null) duration = Math.Max(0.1f, _modifier.GetValue(mapId, ownerId, "ResearchSpeed", duration));
 
 			Consumption consumption = new("Idea", cost);
 			var contract = _resource.CreateResourceConsumption(consumption, mapId, ownerId);

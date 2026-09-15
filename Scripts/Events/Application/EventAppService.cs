@@ -314,7 +314,7 @@ namespace SciencePotato.Scripts.Events.Application
 
 				if (evt.Modifiers != null && evt.Modifiers.Count > 0)
 				{
-					_modifier.AddModifiers(mapId, ownerId, evt.EventId, evt.Modifiers);
+					_modifier.AddModifiers(mapId, ownerId, evt.EventId, evt.Modifiers, ModifierStage.Event);
 				}
 
 				string key = EntryKey(mapId, ownerId, evt.EventId);

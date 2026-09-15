@@ -14,27 +14,37 @@ namespace SciencePotato.Scripts.Common.Application
 			_repo = repo;
 		}
 
-		public void AddModifier(string mapId, int ownerId, string sourceId, Modifier modifier)
+		/// <summary>
+		/// （v0.8.3 / `WP-4.1`）挂一条修正。<paramref name="stage"/> 决定它在阶段管道里的结算位置
+		/// （建筑 → 科技 → 事件；缺省 = 建筑）。
+		/// </summary>
+		public void AddModifier(string mapId, int ownerId, string sourceId, Modifier modifier,
+			ModifierStage stage = ModifierStage.Building)
 		{
 			var manager = new ModifierManager(_repo.LoadModifiers(mapId, ownerId));
 
 			var value = new ModifierValue(
 				modifier.Type == "Percent" ? ModifierType.Percentage : ModifierType.Absolute,
-				modifier.Value, sourceId);
+				modifier.Value, sourceId, stage);
 
 			manager.AddModifier(modifier.Target, value);
 
 			_repo.SaveModifier(mapId, ownerId, manager.GetAllModifiers());
 		}
 
-		public void AddModifiers(string mapId, int ownerId, string sourceId, List<Modifier> modifiers)
+		/// <summary>
+		/// （v0.3 / `WP-2.4`；v0.8.3 / `WP-4.1` 加 <paramref name="stage"/>）批量挂修正。
+		/// <para>调用方按来源传阶段：建筑/升级 = `Building`（缺省）、科技节点 = `Tech`、事件 = `Event`。</para>
+		/// </summary>
+		public void AddModifiers(string mapId, int ownerId, string sourceId, List<Modifier> modifiers,
+			ModifierStage stage = ModifierStage.Building)
 		{
 			var manager = new ModifierManager(_repo.LoadModifiers(mapId, ownerId));
 			foreach (var modifier in modifiers)
 			{
 				var value = new ModifierValue(
 					modifier.Type == "Percent" ? ModifierType.Percentage : ModifierType.Absolute,
-					modifier.Value, sourceId);
+					modifier.Value, sourceId, stage);
 				manager.AddModifier(modifier.Target, value);
 			}
 			_repo.SaveModifier(mapId, ownerId, manager.GetAllModifiers());
