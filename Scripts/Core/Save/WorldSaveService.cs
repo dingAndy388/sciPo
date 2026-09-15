@@ -174,6 +174,11 @@ namespace SciencePotato.Scripts.Core.Save
 
 			foreach (int owner in ownerIds)
 			{
+				// （v0.9.9 / `WP-5.11` 收口）**事件引擎只给人类玩家**（`G8` / `WP-4.12`：随机事件要打断的是玩家的决策）；
+				// `SessionOrchestrator.StartMap` 就是这个口径。旧实现给每个 owner 都挂 ⇒ 读档后 AI 多出一条
+				// `EventTick` 任务（用例实测 owner=2 的任务数 7 → 8），且 AI 会在每次日节拍上白跑事件掷骰。
+				if (!_session.IsHuman(owner)) continue;
+
 				_events?.RestoreEvents(mapId, owner);
 				_events?.StartEventsEngine(mapId, owner);
 			}

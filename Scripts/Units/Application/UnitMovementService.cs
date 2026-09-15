@@ -72,7 +72,10 @@ namespace SciencePotato.Scripts.Units.Application
 		/// <summary>注册单位的移动/回蓝循环（每 <see cref="TimeConstants.UnitMoveDays"/> 游戏日一次）。</summary>
 		public void RegisterMoveLoop(string mapId, string unitUid, float initialProgress = 0f)
 		{
-			var task = new IntervalTask(initialProgress, TimeConstants.UnitMoveDays, unitUid, "UnitMove", "none", mapId, 0);
+			// （v0.9.9 / `WP-5.11` 收口）owner 从**单位自身**取：旧实现硬写 0 ⇒ 这条循环在任务表里是"无主"的，
+			// 按 owner 分组统计/过滤（读档用例、AI 观察、UI 列表）都会把它算到 owner=0 上去。
+			int ownerId = _map.FindOccupantByUId(mapId, unitUid)?.GetInfo().OwnerId ?? 0;
+			var task = new IntervalTask(initialProgress, TimeConstants.UnitMoveDays, unitUid, "UnitMove", "none", mapId, ownerId);
 			task.OnCompleted += () => Tick(mapId, unitUid);
 			_time.Register(task);
 		}

@@ -104,6 +104,7 @@ namespace SciencePotato.Scripts.Core
 				return false;
 			}
 
+			_orchestrator.ResetEngines(mapId); // （v0.9.9）读档把时间轴订阅清空了 ⇒ AI 的"已挂上"痕迹也要作废，否则 StartMap 不会重挂
 			_orchestrator.StartMap(mapId);
 			CurrentMapId = mapId;
 			InGame = true;

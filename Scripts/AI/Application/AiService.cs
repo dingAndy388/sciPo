@@ -100,6 +100,21 @@ namespace SciencePotato.Scripts.AI.Application
 		public bool IsEngineStarted(string mapId, int ownerId) => _started.Contains(Key(mapId, ownerId));
 
 		/// <summary>
+		/// （v0.9.9 / `WP-5.11` 收口）**作废某张图上的"已挂上"痕迹**，让 <see cref="StartEngine"/> 能重新挂一次。
+		/// <para>为什么必须有：`WorldSaveService.LoadWorld` 会 `ITimeService.Reset()` 把**全部订阅**摘掉，
+		/// 但本类的 `_started` 仍记着"挂过了" ⇒ 随后 `StartMap` 里的 `StartEngine` 返回 false、AI 读档后
+		/// **再也不决策**（`_started` 与时间轴不一致）。由 `SessionEntryService.Load` 在读档后、`StartMap` 前调用。</para>
+		/// </summary>
+		/// <returns>被作废的势力数。</returns>
+		public int ResetEngines(string mapId)
+		{
+			if (string.IsNullOrWhiteSpace(mapId)) return 0;
+
+			string prefix = mapId + "|";
+			return _started.RemoveWhere(key => key.StartsWith(prefix, StringComparison.Ordinal));
+		}
+
+		/// <summary>
 		/// **挂上决策节拍**（幂等）：每 `DecisionIntervalDays` 游戏日做一次判断。
 		/// </summary>
 		/// <returns>本次是否**新**挂上（供启动报告与断言）。</returns>

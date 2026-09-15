@@ -206,6 +206,10 @@ namespace SciencePotato.Scripts.Core
 			return started;
 		}
 
+		/// <summary>（v0.9.9 / `WP-5.11` 收口）读档后作废"已挂上"的引擎痕迹（见 `AiService.ResetEngines`）。</summary>
+		/// <returns>被作废的势力数。</returns>
+		public int ResetEngines(string mapId) => _ai?.ResetEngines(mapId) ?? 0;
+
 		/// <summary>
 		/// **结束一张地图上的势力子系统**（换图 / 弃档）。
 		/// <para>只清"本类记下的启动痕迹"：逐个摘任务需要 `ITimeService` 的按 owner 注销能力（`WP-5.6`），

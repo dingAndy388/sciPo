@@ -89,26 +89,42 @@ namespace SciencePotato.HeadlessChecks
 			core.Session.Clock.AdvanceDays(30);
 
 			int total = core.Tasks.GetCurrentTasks(MapId).Count();
-			int ownerOne = core.Tasks.GetCurrentTasks(MapId).Count(t => t.OwnerId == 1);
-			int ownerTwo = core.Tasks.GetCurrentTasks(MapId).Count(t => t.OwnerId == 2);
-			Check.Assert(ownerTwo > 0, $"AI 势力也应有周期任务（实际 {ownerTwo}）——否则本用例锁不住 `U7`");
-			Check.Assert(ownerOne > 0, $"人类也应有周期任务（实际 {ownerOne}）");
+			string before = DescribeTasks(core);
+			string[] snapshotBefore = SnapshotKeys(core);
+			string[] allBefore = AllKeys(core);
+
+			Check.Assert(snapshotBefore.Length > 0, $"读档前应有快照类任务：{before}");
+			Check.Assert(core.Tasks.GetCurrentTasks(MapId).Any(t => t.OwnerId == 2),
+				$"AI 势力也应有周期任务——否则本用例锁不住 `U7`：{before}");
 
 			Check.Assert(core.Entry.Save(), "读档前应先存档");
 
 			// 读档（入口层按玩家表逐 owner 恢复）
 			Check.Assert(core.Entry.Load(MapId), $"读档应成功（{core.Entry.LastError}）");
+			string after = DescribeTasks(core);
 
-			Check.Assert(core.WorldSave.LastRestoredTaskCount >= ownerOne + ownerTwo,
-				$"`U7`：读档恢复的任务数（{core.WorldSave.LastRestoredTaskCount}）应 ≥ 两方快照数之和（人类 {ownerOne} + AI {ownerTwo} = {ownerOne + ownerTwo}）——旧口径只恢复人类那一份");
-			Check.Assert(core.WorldSave.LastRestoredTaskCount > ownerOne,
-				"恢复条数必须多于人类一方的条数（否则就是回到了单 owner 读档）");
+			// ① **快照类任务逐条复原**（`U7` 的正题：按玩家表逐 owner 恢复，一条不漏、一条不多）
+			string[] snapshotAfter = SnapshotKeys(core);
+			Check.Assert(snapshotBefore.SequenceEqual(snapshotAfter),
+				$"`U7`：快照类任务读档后应逐条复原。读档前 {before}；读档后 {after}");
 
-			int restoredOwnerTwo = core.Tasks.GetCurrentTasks(MapId).Count(t => t.OwnerId == 2);
-			// 容忍 +1：读档后 `SessionEntryService.Load` 会再调一次 `StartMap`（`D80` 幂等是针对**地图级**登记的），
-			// AI 侧的月结/成长任务可能被再登记一条 —— 这条已记入 `D121` 待专项收口，本用例只锁"不能少"。
-			Check.Assert(restoredOwnerTwo >= ownerTwo,
-				$"AI 的周期任务读档后应至少和读档前一样多（读档前 {ownerTwo}，读档后 {restoredOwnerTwo}）");
+			// ② 只允许新增**单位循环**：它们在存档里不是任务（`RestoreUnitTasks` 按"在场的单位"重建），
+			//    因此读档后每个可动单位都会多出一条 `UnitMove` —— 这是口径，不是 bug。
+			string[] allAfter = AllKeys(core);
+			var added = allAfter.Except(allBefore).ToList();
+			Check.Assert(added.All(key => key.Contains(":UnitMove:") || key.Contains(":UnitAttack:")),
+				$"读档后除单位循环外不应新增任何任务，实际新增：{string.Join(" | ", added)}（读档前 {before}；读档后 {after}）");
+			Check.Assert(allAfter.Length >= total, "任务总数不应减少");
+
+			// ③ 事件引擎只挂人类（`G8`）：旧实现给每个 owner 都挂 ⇒ AI 多出一条 `EventTick`（本次收口的回归锁）
+			var nonHumanEventTasks = core.Tasks.GetCurrentTasks(MapId)
+				.Where(t => t.Type == "EventTick" && t.OwnerId != core.Session.HumanOwnerId).ToList();
+			Check.AssertEqual(0, nonHumanEventTasks.Count,
+				$"事件引擎只应挂在人类势力上，实际：{string.Join(" | ", nonHumanEventTasks.Select(t => t.OwnerId + ":" + t.Id))}");
+
+			// ④ 恢复条数仍要多于人类一方（旧口径只恢复人类那一份）
+			Check.Assert(core.WorldSave.LastRestoredTaskCount > snapshotBefore.Count(k => k.StartsWith("1:")),
+				$"恢复条数必须多于人类一方的条数（否则就是回到了单 owner 读档）：{after}");
 		}
 
 		private static void InvalidEntryIsRejected()
@@ -141,6 +157,31 @@ namespace SciencePotato.HeadlessChecks
 		}
 
 		// ────────────────────────── 夹具 ──────────────────────────
+
+		/// <summary>把"当前任务清单"按 owner 分组打成一行（失败消息里直接看出多了/少了哪条）。</summary>
+		private static string DescribeTasks(CoreServices core)
+		{
+			var groups = core.Tasks.GetCurrentTasks(MapId)
+				.GroupBy(t => t.OwnerId)
+				.OrderBy(g => g.Key)
+				.Select(g => $"owner={g.Key}[{string.Join(",", g.Select(t => t.Type + ":" + t.Id).OrderBy(x => x))}]");
+			return string.Join(" ", groups);
+		}
+
+		/// <summary>全部任务键（`owner:type:id`，排序后便于比较）。</summary>
+		private static string[] AllKeys(CoreServices core)
+			=> core.Tasks.GetCurrentTasks(MapId)
+				.Select(t => $"{t.OwnerId}:{t.Type}:{t.Id}")
+				.OrderBy(x => x, System.StringComparer.Ordinal)
+				.ToArray();
+
+		/// <summary>
+		/// **快照类任务**：存档里逐条记录、读档必须逐条复原的那批。
+		/// <para>排除 `UnitMove`/`UnitAttack`：单位循环在存档里不是"任务"（`RestoreUnitTasks` 按在场单位重建），
+		/// 所以读档后每个可动单位都会多出一条 —— 这是口径（见用例 ② 的说明），不属于 `U7` 的判据。</para>
+		/// </summary>
+		private static string[] SnapshotKeys(CoreServices core)
+			=> AllKeys(core).Where(key => !key.Contains(":UnitMove:") && !key.Contains(":UnitAttack:")).ToArray();
 
 		private static CoreServices NewSession()
 		{
