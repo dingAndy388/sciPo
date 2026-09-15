@@ -60,7 +60,7 @@ namespace SciencePotato.HeadlessChecks
 			try
 			{
 				h.Events.StartEventsEngine(MapId, h.OwnerId);
-				h.Resources.AddResource("Wood", 500f, MapId, h.OwnerId);
+				h.Resources.AddResource("BasicMinerals", 500f, MapId, h.OwnerId);
 				h.Resources.AddResource("Idea", 500f, MapId, h.OwnerId);
 				h.Modifier.AddModifiers(MapId, h.OwnerId, "wp33-source",
 					new List<Modifier> { new Modifier { Target = "Idea", Type = "Add", Value = 5f } });
@@ -98,7 +98,7 @@ namespace SciencePotato.HeadlessChecks
 			{
 				string tempPath = h.SavePath + JsonSaveStore.TempSuffix;
 
-				h.Resources.AddResource("Wood", 100f, MapId, h.OwnerId);
+				h.Resources.AddResource("BasicMinerals", 100f, MapId, h.OwnerId);
 				h.Clock.AdvanceDays(3);
 				h.Save.SaveWorld(MapId, h.OwnerId);
 
@@ -259,7 +259,7 @@ namespace SciencePotato.HeadlessChecks
 			try
 			{
 				Unit worker = h.SpawnUnit(1, "worker", h.CellAtDistance(1, h.Site));
-				h.Resources.AddResource("Wood", 500f, MapId, h.OwnerId);
+				h.Resources.AddResource("BasicMinerals", 500f, MapId, h.OwnerId);
 				Check.Assert(h.Units.ExcuteAction(MapId, worker.GetInfo().UId, h.Site, "camp", "CanBuild"), "工人应能开工建营地");
 				h.Clock.AdvanceDays(1); // 施工中
 
@@ -314,8 +314,8 @@ namespace SciencePotato.HeadlessChecks
 			public Unit SpawnUnit(int ownerId, string unitId, HexCubePosition position)
 			{
 				Map.AddPopulation(MapId, position, 0, 9, 1);
-				Resources.AddResource("Gold", 300f, MapId, ownerId);
-				Resources.AddResource("Wood", 300f, MapId, ownerId);
+				Resources.AddResource("Food", 300f, MapId, ownerId);
+				Resources.AddResource("BasicMinerals", 300f, MapId, ownerId);
 				Units.CreateUnit(MapId, unitId, position, ownerId);
 				Clock.AdvanceDays(3);
 

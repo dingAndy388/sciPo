@@ -3,7 +3,7 @@
     "camp": {
       "BuildingId": "camp",
       "Name": "营地",
-      "ResourceCost": { "Wood": 20 },
+      "ResourceCost": { "BasicMinerals": 20 },
       "TerrainRequirements": ["plain"],
       "TechRequirements": {},
       "Modifiers": [],
@@ -17,14 +17,14 @@
       "TrainableUnits": [],
       "TrainingQueueLimit": 0,
       "UpgradeTo": "camp_ii",
-      "UpgradeCost": { "Wood": 40, "Gold": 10 },
+      "UpgradeCost": { "BasicMinerals": 40, "Food": 10 },
       "UpgradeDuration": 30,
       "UpgradeTechRequirements": { "science": ["mathematics"] }
     },
     "camp_ii": {
       "BuildingId": "camp_ii",
       "Name": "营地 lv.II",
-      "ResourceCost": { "Wood": 20 },
+      "ResourceCost": { "BasicMinerals": 20 },
       "TerrainRequirements": ["plain"],
       "TechRequirements": {},
       "Modifiers": [],
@@ -38,14 +38,14 @@
       "TrainableUnits": [],
       "TrainingQueueLimit": 0,
       "UpgradeTo": "camp_iii",
-      "UpgradeCost": { "Wood": 80, "Gold": 20 },
+      "UpgradeCost": { "BasicMinerals": 80, "Food": 20 },
       "UpgradeDuration": 60,
       "UpgradeTechRequirements": { "physics": ["simple_machine_intuition"] }
     },
     "camp_iii": {
       "BuildingId": "camp_iii",
       "Name": "营地 lv.III",
-      "ResourceCost": { "Wood": 40 },
+      "ResourceCost": { "BasicMinerals": 40 },
       "TerrainRequirements": ["plain"],
       "TechRequirements": {},
       "Modifiers": [],
@@ -66,7 +66,7 @@
     "workshop": {
       "BuildingId": "workshop",
       "Name": "工坊",
-      "ResourceCost": { "Wood": 30 },
+      "ResourceCost": { "BasicMinerals": 30 },
       "TerrainRequirements": ["plain"],
       "TechRequirements": {},
       "Modifiers": [],
@@ -80,14 +80,14 @@
       "TrainableUnits": ["worker"],
       "TrainingQueueLimit": 5,
       "UpgradeTo": "workshop_ii",
-      "UpgradeCost": { "Wood": 80, "Gold": 20 },
+      "UpgradeCost": { "BasicMinerals": 80, "Food": 20 },
       "UpgradeDuration": 60,
       "UpgradeTechRequirements": { "physics": ["simple_machine_intuition"] }
     },
     "workshop_ii": {
       "BuildingId": "workshop_ii",
       "Name": "工坊 lv.II",
-      "ResourceCost": { "Wood": 40 },
+      "ResourceCost": { "BasicMinerals": 40 },
       "TerrainRequirements": ["plain"],
       "TechRequirements": {},
       "Modifiers": [
@@ -103,14 +103,14 @@
       "TrainableUnits": ["worker"],
       "TrainingQueueLimit": 5,
       "UpgradeTo": "workshop_iii",
-      "UpgradeCost": { "Wood": 160, "Gold": 40 },
+      "UpgradeCost": { "BasicMinerals": 160, "Food": 40 },
       "UpgradeDuration": 90,
       "UpgradeTechRequirements": { "military": ["melee_weapons"] }
     },
     "workshop_iii": {
       "BuildingId": "workshop_iii",
       "Name": "工坊 lv.III",
-      "ResourceCost": { "Wood": 80 },
+      "ResourceCost": { "BasicMinerals": 80 },
       "TerrainRequirements": ["plain"],
       "TechRequirements": {},
       "Modifiers": [
@@ -133,7 +133,7 @@
     "school": {
       "BuildingId": "school",
       "Name": "学院",
-      "ResourceCost": { "Gold": 100, "Wood": 50 },
+      "ResourceCost": { "Food": 100, "BasicMinerals": 50 },
       "TerrainRequirements": ["plain"],
       "TechRequirements": {},
       "Modifiers": [
@@ -149,14 +149,14 @@
       "TrainableUnits": [],
       "TrainingQueueLimit": 0,
       "UpgradeTo": "school_ii",
-      "UpgradeCost": { "Wood": 400, "Gold": 50 },
+      "UpgradeCost": { "BasicMinerals": 400, "Food": 50 },
       "UpgradeDuration": 120,
       "UpgradeTechRequirements": { "science": ["mathematics"] }
     },
     "school_ii": {
       "BuildingId": "school_ii",
       "Name": "学院 lv.II",
-      "ResourceCost": { "Wood": 100, "Gold": 80 },
+      "ResourceCost": { "BasicMinerals": 100, "Food": 80 },
       "TerrainRequirements": ["plain"],
       "TechRequirements": {},
       "Modifiers": [
@@ -172,14 +172,14 @@
       "TrainableUnits": [],
       "TrainingQueueLimit": 0,
       "UpgradeTo": "school_iii",
-      "UpgradeCost": { "Wood": 800, "Idea": 50 },
+      "UpgradeCost": { "BasicMinerals": 800, "Idea": 50 },
       "UpgradeDuration": 120,
       "UpgradeTechRequirements": { "physics": ["simple_machine_intuition"] }
     },
     "school_iii": {
       "BuildingId": "school_iii",
       "Name": "学院 lv.III",
-      "ResourceCost": { "Wood": 200, "Gold": 150 },
+      "ResourceCost": { "BasicMinerals": 200, "Food": 150 },
       "TerrainRequirements": ["plain"],
       "TechRequirements": {},
       "Modifiers": [
@@ -202,7 +202,7 @@
     "military_camp": {
       "BuildingId": "military_camp",
       "Name": "军营",
-      "ResourceCost": { "Gold": 80, "Wood": 40 },
+      "ResourceCost": { "Food": 80, "BasicMinerals": 40 },
       "TerrainRequirements": ["plain"],
       "TechRequirements": {},
       "Modifiers": [],
@@ -216,14 +216,14 @@
       "TrainableUnits": ["swordsman", "archer"],
       "TrainingQueueLimit": 5,
       "UpgradeTo": "military_camp_ii",
-      "UpgradeCost": { "Wood": 80, "Idea": 15 },
+      "UpgradeCost": { "BasicMinerals": 80, "Idea": 15 },
       "UpgradeDuration": 60,
       "UpgradeTechRequirements": { "physics": ["simple_machine_intuition"] }
     },
     "military_camp_ii": {
       "BuildingId": "military_camp_ii",
       "Name": "军营 lv.II",
-      "ResourceCost": { "Wood": 80, "Gold": 80 },
+      "ResourceCost": { "BasicMinerals": 80, "Food": 80 },
       "TerrainRequirements": ["plain"],
       "TechRequirements": {},
       "Modifiers": [
@@ -239,14 +239,14 @@
       "TrainableUnits": ["swordsman", "archer"],
       "TrainingQueueLimit": 5,
       "UpgradeTo": "military_camp_iii",
-      "UpgradeCost": { "Wood": 160, "Idea": 30 },
+      "UpgradeCost": { "BasicMinerals": 160, "Idea": 30 },
       "UpgradeDuration": 90,
       "UpgradeTechRequirements": { "military": ["advanced_armor"] }
     },
     "military_camp_iii": {
       "BuildingId": "military_camp_iii",
       "Name": "军营 lv.III",
-      "ResourceCost": { "Wood": 160, "Gold": 150 },
+      "ResourceCost": { "BasicMinerals": 160, "Food": 150 },
       "TerrainRequirements": ["plain"],
       "TechRequirements": {},
       "Modifiers": [

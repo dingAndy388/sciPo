@@ -46,7 +46,7 @@ namespace SciencePotato.HeadlessChecks
 
 		public static void RunAll()
 		{
-			Check.Run("WP-3.9 配置口径：`Settlement`（Gold × 3/月）+ 单位维护表（工人 1 / 剑士 2 / 弓箭手 3，敌方 0）", ConfigDeclaresUpkeep);
+			Check.Run("WP-3.9 配置口径：`Settlement`（Food × 3/月）+ 单位维护表（工人 1 / 剑士 2 / 弓箭手 3，敌方 0）", ConfigDeclaresUpkeep);
 			Check.Run("WP-3.9 月结节拍：第 30 日首次结算、每 30 日一次（不足月不提前）", SettlesOnMonthBoundary);
 			Check.Run("WP-3.9 需求汇总：人口 × 3/月 + 单位维护（按来源与模板归因）", CollectsPopulationAndUnitDemand);
 			Check.Run("WP-3.9 产出汇总：修正器驱动的月产出与资源池增量一致（账对得上）", ProductionSummaryMatchesPool);
@@ -76,12 +76,12 @@ namespace SciencePotato.HeadlessChecks
 			{
 				ISettlementConfig settlement = h.Tables.Resources.GetResourcesPoolConfig().Settlement;
 				Check.Assert(settlement != null, "真实配置应填写 `Settlement` 段");
-				Check.AssertEqual("Gold", settlement.DemandResource, "需求资源应为原型资源别名 Gold（设计稿 Food）");
+				Check.AssertEqual("Food", settlement.DemandResource, "需求资源应为设计稿的 Food（`resources.md`：人口 × 3/月）");
 				Check.AssertEqual(3f, settlement.PopulationUpkeepPerMonth, "每人每月需求应为 3（design/resources.md）");
 
-				Check.AssertEqual(1f, h.Tables.Units.GetUnitConfig("worker").Maintenance["Gold"], "工人维护 1/月（设计稿默认值）");
-				Check.AssertEqual(2f, h.Tables.Units.GetUnitConfig("swordsman").Maintenance["Gold"], "剑士（民兵）2/月");
-				Check.AssertEqual(3f, h.Tables.Units.GetUnitConfig("archer").Maintenance["Gold"], "弓箭手 3/月");
+				Check.AssertEqual(1f, h.Tables.Units.GetUnitConfig("worker").Maintenance["Food"], "工人维护 1/月（设计稿默认值）");
+				Check.AssertEqual(2f, h.Tables.Units.GetUnitConfig("swordsman").Maintenance["Food"], "剑士（民兵）2/月");
+				Check.AssertEqual(3f, h.Tables.Units.GetUnitConfig("archer").Maintenance["Food"], "弓箭手 3/月");
 
 				foreach (string hostile in new[] { "wolf", "boar", "eagle", "ibex", "crocodile" })
 				{
@@ -139,8 +139,8 @@ namespace SciencePotato.HeadlessChecks
 			try
 			{
 				h.SeedPopulation(4);
-				h.Resources.AddResource("Gold", 1000f, MapId, h.OwnerId);  // 训练单位要有钱（消耗门控读池）
-				h.Resources.AddResource("Wood", 1000f, MapId, h.OwnerId);  // 弓箭手还要 30 Wood
+				h.Resources.AddResource("Food", 1000f, MapId, h.OwnerId);  // 训练单位要有钱（消耗门控读池）
+				h.Resources.AddResource("BasicMinerals", 1000f, MapId, h.OwnerId);  // 弓箭手还要 30 BasicMinerals
 
 				h.SpawnPlayer("worker", h.CellAtDistance(1, h.Site));
 				h.SpawnPlayer("archer", h.CellAtDistance(2, h.Site));
@@ -160,7 +160,7 @@ namespace SciencePotato.HeadlessChecks
 				Check.AssertEqual(3f, report.DemandOfSource("unit:archer"), "弓箭手维护 3/月（单位表口径）");
 				Check.AssertEqual(population * 3f + 4f, report.TotalDemand, "总需求 = 人口 × 3 + 单位维护之和");
 
-				Check.Assert(!report.IsDeficit, $"1000 Gold 足够付 {report.TotalDemand}：不应判为赤字");
+				Check.Assert(!report.IsDeficit, $"1000 Food 足够付 {report.TotalDemand}：不应判为赤字");
 				Check.AssertEqual(report.TotalDemand, report.TotalPaid, "够付时应足额扣款");
 			}
 			finally { Cleanup(h.Dir); }
@@ -172,7 +172,7 @@ namespace SciencePotato.HeadlessChecks
 			Harness h = NewHarness(zeroGrowth: true); // 基础产出清零 → 产出只来自修正器，账目干净
 			try
 			{
-				h.Resources.AddResource("Gold", 500f, MapId, h.OwnerId); // 先建池：资源月结任务先于结算器注册
+				h.Resources.AddResource("Food", 500f, MapId, h.OwnerId); // 先建池：资源月结任务先于结算器注册
 				h.Modifier.AddModifier(MapId, h.OwnerId, "school-uid",
 					new Modifier { Target = "IdeaGrowth", Type = "Absolute", Value = 250f });
 
@@ -185,7 +185,7 @@ namespace SciencePotato.HeadlessChecks
 				MonthlySettlementReport report = h.Settlement.LastReport(MapId, h.OwnerId);
 				Check.AssertEqual(250f, report.ProductionOf("Idea"), "产出汇总应读到 IdeaGrowth +250（School 250 idea/月）");
 				Check.AssertEqual(ideaAfter - ideaBefore, report.ProductionOf("Idea"), "产出汇总应与资源池增量一致（`C12`：账要对得上）");
-				Check.AssertEqual(0f, report.ProductionOf("Gold"), "无修正器 + 基础产出 0 → Gold 产出应为 0");
+				Check.AssertEqual(0f, report.ProductionOf("Food"), "无修正器 + 基础产出 0 → Food 产出应为 0");
 			}
 			finally { Cleanup(h.Dir); }
 		}
@@ -196,8 +196,8 @@ namespace SciencePotato.HeadlessChecks
 			Harness h = NewHarness(zeroGrowth: true); // 基础产出清零：池子不会被增长干扰，"账"只看需求侧
 			try
 			{
-				h.SeedPopulation(2);                                      // 需求 = 2 × 3 = 6 Gold/月
-				h.Resources.AddResource("Gold", 4f, MapId, h.OwnerId);    // 只付得起 4
+				h.SeedPopulation(2);                                      // 需求 = 2 × 3 = 6 Food/月
+				h.Resources.AddResource("Food", 4f, MapId, h.OwnerId);    // 只付得起 4
 
 				h.Settlement.StartSettlement(MapId, h.OwnerId);
 				h.Clock.AdvanceDays(30);
@@ -206,8 +206,8 @@ namespace SciencePotato.HeadlessChecks
 				Check.AssertEqual(6f, report.TotalDemand, "需求 = 人口 2 × 3");
 				Check.AssertEqual(4f, report.TotalPaid, "池里只有 4 → 只扣 4");
 				Check.AssertEqual(2f, report.TotalDeficit, "缺口 2 记为赤字");
-				Check.AssertEqual(2f, report.DeficitOf("Gold"), "赤字按资源归因（Gold）");
-				Check.AssertEqual(0f, h.Pool().GetValue("Gold"), "池子扣到 0（`ResourcesPool` 的截断保证不为负）");
+				Check.AssertEqual(2f, report.DeficitOf("Food"), "赤字按资源归因（Food）");
+				Check.AssertEqual(0f, h.Pool().GetValue("Food"), "池子扣到 0（`ResourcesPool` 的截断保证不为负）");
 				Check.Assert(h.Settlement.LastReport(MapId, h.OwnerId).IsDeficit, "入不敷出时报告应标记赤字");
 			}
 			finally { Cleanup(h.Dir); }
@@ -219,7 +219,7 @@ namespace SciencePotato.HeadlessChecks
 			Harness h = NewHarness(zeroGrowth: true);
 			try
 			{
-				h.SeedPopulation(1); // 需求 = 3 Gold/月，且池里一分钱都没有
+				h.SeedPopulation(1); // 需求 = 3 Food/月，且池里一分钱都没有
 
 				h.Settlement.StartSettlement(MapId, h.OwnerId);
 				h.Clock.AdvanceDays(30);
@@ -228,7 +228,7 @@ namespace SciencePotato.HeadlessChecks
 				h.Clock.AdvanceDays(30);
 				Check.AssertEqual(2, h.Settlement.GetConsecutiveDeficitMonths(MapId, h.OwnerId), "连续第 2 个赤字月（累加）");
 
-				h.Resources.AddResource("Gold", 100f, MapId, h.OwnerId); // 补足余额
+				h.Resources.AddResource("Food", 100f, MapId, h.OwnerId); // 补足余额
 				h.Clock.AdvanceDays(30);
 
 				MonthlySettlementReport report = h.Settlement.LastReport(MapId, h.OwnerId);
@@ -283,7 +283,7 @@ namespace SciencePotato.HeadlessChecks
 			Harness h = NewHarness(zeroGrowth: true);
 			try
 			{
-				h.SeedPopulation(1); // 需求 3 Gold/月，池里没钱 → 必然赤字
+				h.SeedPopulation(1); // 需求 3 Food/月，池里没钱 → 必然赤字
 				h.Settlement.StartSettlement(MapId, h.OwnerId);
 				h.Clock.AdvanceDays(30);
 				Check.AssertEqual(1, h.Settlement.GetConsecutiveDeficitMonths(MapId, h.OwnerId), "准备：已连续赤字 1 个月");
@@ -317,7 +317,8 @@ namespace SciencePotato.HeadlessChecks
 				$"缺 `Settlement` 段应给出 warning：{noSettlement.ConfigReport.ToLines()}");
 
 			// ② DemandResource 指向未定义的资源 → error（维护费永远扣不到东西）
-			CoreServices unknownResource = BuildWith("Resources", json => json["Settlement"]["DemandResource"] = "Food");
+			//    ⚠️ v0.6.3 / WP-7.1：这个"不存在的资源"必须真的不存在 —— 旧写法借用 `Food`（当时表里只有 Gold/Wood/Idea）
+			CoreServices unknownResource = BuildWith("Resources", json => json["Settlement"]["DemandResource"] = "Nonexistent");
 			Check.Assert(unknownResource.ConfigReport.Issues.Any(issue =>
 					issue.Level == ConfigIssueLevel.Error && issue.Message.Contains("DemandResource")),
 				$"DemandResource 指向未定义的资源应判 error：{unknownResource.ConfigReport.ToLines()}");
@@ -329,13 +330,13 @@ namespace SciencePotato.HeadlessChecks
 				$"人口维护率为负应判 error：{negativeUpkeep.ConfigReport.ToLines()}");
 
 			// ④ 单位维护为负 → error（与 ResourceCost 同一口径）
-			CoreServices negativeMaintenance = BuildWith("Units", json => json["Units"]["worker"]["Maintenance"]["Gold"] = -1);
+			CoreServices negativeMaintenance = BuildWith("Units", json => json["Units"]["worker"]["Maintenance"]["Food"] = -1);
 			Check.Assert(negativeMaintenance.ConfigReport.Issues.Any(issue =>
 					issue.Level == ConfigIssueLevel.Error && issue.ToString().Contains("Maintenance")),
 				$"单位维护为负应判 error：{negativeMaintenance.ConfigReport.ToLines()}");
 
 			// ⑤ 敌方单位填了维护 → warning（填了不会生效）
-			CoreServices hostileUpkeep = BuildWith("Units", json => json["Units"]["wolf"]["Maintenance"]["Gold"] = 2);
+			CoreServices hostileUpkeep = BuildWith("Units", json => json["Units"]["wolf"]["Maintenance"]["Food"] = 2);
 			Check.Assert(!hostileUpkeep.ConfigReport.HasErrors, "敌方单位填维护只应 warning、不阻断启动");
 			Check.Assert(hostileUpkeep.ConfigReport.Issues.Any(issue =>
 					issue.Level == ConfigIssueLevel.Warning && issue.ToString().Contains("Maintenance")),
@@ -371,13 +372,13 @@ namespace SciencePotato.HeadlessChecks
 
 			// ⑧ 建筑维护：负值 error、未定义资源 warning（与单位维护同一口径）
 			CoreServices badBuildingUpkeep = BuildWith("Buildings", json =>
-				SetMaintenance((JObject)json["Buildings"]["camp"], "Gold", -1));
+				SetMaintenance((JObject)json["Buildings"]["camp"], "Food", -1));
 			Check.Assert(badBuildingUpkeep.ConfigReport.Issues.Any(issue =>
 					issue.Level == ConfigIssueLevel.Error && issue.ToString().Contains("Maintenance")),
 				$"建筑维护为负应判 error：{badBuildingUpkeep.ConfigReport.ToLines()}");
 
 			CoreServices unknownBuildingUpkeep = BuildWith("Buildings", json =>
-				SetMaintenance((JObject)json["Buildings"]["camp"], "Food", 1));
+				SetMaintenance((JObject)json["Buildings"]["camp"], "Nonexistent", 1));
 			Check.Assert(!unknownBuildingUpkeep.ConfigReport.HasErrors, "建筑维护引用未定义资源只应 warning");
 			Check.Assert(unknownBuildingUpkeep.ConfigReport.Issues.Any(issue =>
 					issue.Level == ConfigIssueLevel.Warning && issue.ToString().Contains("Maintenance")),
@@ -591,12 +592,12 @@ namespace SciencePotato.HeadlessChecks
 			}
 			finally { Cleanup(plain.Dir); }
 
-			// ② 填上维护费（营地 5 Gold/月）⇒ 两座自己的营地 = 10 Gold/月，归因到 `building:camp`
+			// ② 填上维护费（营地 5 Food/月）⇒ 两座自己的营地 = 10 Food/月，归因到 `building:camp`
 			Harness h = NewHarness(mutateBuildings: json =>
-				SetMaintenance((JObject)json["Buildings"]["camp"], "Gold", 5));
+				SetMaintenance((JObject)json["Buildings"]["camp"], "Food", 5));
 			try
 			{
-				Check.AssertEqual(5f, h.Tables.Buildings.GetBuildingConfig("camp").Maintenance["Gold"],
+				Check.AssertEqual(5f, h.Tables.Buildings.GetBuildingConfig("camp").Maintenance["Food"],
 					"建筑表应读到维护费（与单位维护同构的字段）");
 
 				h.SeedPopulation(1);
@@ -614,7 +615,7 @@ namespace SciencePotato.HeadlessChecks
 				h.Clock.AdvanceDays(30);
 
 				MonthlySettlementReport report = h.Settlement.LastReport(MapId, h.OwnerId);
-				Check.AssertEqual(10f, report.DemandOfSource("building:camp"), "两座自己的营地 × 5 Gold/月（别人的不算）");
+				Check.AssertEqual(10f, report.DemandOfSource("building:camp"), "两座自己的营地 × 5 Food/月（别人的不算）");
 				Check.AssertEqual(13f, report.TotalDemand, "人口 3 + 建筑维护 10");
 			}
 			finally { Cleanup(h.Dir); }
@@ -792,6 +793,14 @@ namespace SciencePotato.HeadlessChecks
 
 			HexCubePosition site = map.GetAllCells(MapId)
 				.Select(cell => cell.Position).First(pos => pos.q == 4 && pos.r == 4);
+
+			// （v0.6.3 / WP-7.1）**把资源池清零**：设计口径下三种资源都有初始储备（`resources.md`：Idea 500 /
+			// Food 300 / BasicMinerals 200），而本组用例的断言全是"精确的账"（只扣得起 4、必然赤字、连续 36 月…）。
+			// 与其在每个用例里各自减一次初始值，不如让夹具从**已知的 0 账**开始 —— 初始储备本身由
+			// `ConfigTableChecks` 与冒烟各自验（那是配置的事，不是结算器的事）。
+			ResourcesPool zeroed = resources.GetOrCreatePool(MapId, ownerId);
+			foreach (IResourceConfig resource in core.Tables.AllResources())
+				resources.AddResource(resource.Name, -zeroed.GetValue(resource.Name), MapId, ownerId);
 
 			return new Harness
 			{

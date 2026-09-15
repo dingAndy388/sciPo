@@ -242,7 +242,7 @@ namespace SciencePotato.HeadlessChecks
 			public void ExcuteBuild(Unit unit, HexCubePosition position, string buildingId)
 				=> Units.ExcuteAction(MapId, unit.GetInfo().UId, position, buildingId, "CanBuild");
 
-			public float Wood() => Resources.GetOrCreatePool(MapId, OwnerId).GetValue("Wood");
+			public float BasicMinerals() => Resources.GetOrCreatePool(MapId, OwnerId).GetValue("BasicMinerals");
 		}
 
 		private static Harness NewHarness(int ownerId = 1)
@@ -305,8 +305,8 @@ namespace SciencePotato.HeadlessChecks
 			HexCubePosition site = spawnCell.Position.InRadius(1)
 				.First(pos => pos != spawnCell.Position && map.IsClear(MapId, pos) && pos.q is >= 2 and <= 6);
 
-			resources.AddResource("Wood", 300f, MapId, ownerId);
-			resources.AddResource("Gold", 300f, MapId, ownerId);
+			resources.AddResource("BasicMinerals", 300f, MapId, ownerId);
+			resources.AddResource("Food", 300f, MapId, ownerId);
 
 			return new Harness
 			{

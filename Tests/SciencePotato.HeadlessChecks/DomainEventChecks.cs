@@ -259,8 +259,8 @@ namespace SciencePotato.HeadlessChecks
 			/// <summary>在 <see cref="Site"/> 开工建造（快配置：2 日完工）。</summary>
 			public void Build(string buildingId)
 			{
-				Resources.AddResource("Wood", 500f, MapId, OwnerId);
-				Resources.AddResource("Gold", 500f, MapId, OwnerId);
+				Resources.AddResource("BasicMinerals", 500f, MapId, OwnerId);
+				Resources.AddResource("Food", 500f, MapId, OwnerId);
 				Construction.StartConstruction(MapId, buildingId, Site, OwnerId);
 				Clock.AdvanceDays(2);
 
@@ -277,8 +277,8 @@ namespace SciencePotato.HeadlessChecks
 			public Unit SpawnFor(int ownerId, string unitId, HexCubePosition position)
 			{
 				Map.AddPopulation(MapId, position, 0, 9, 1);
-				Resources.AddResource("Gold", 200f, MapId, ownerId);
-				Resources.AddResource("Wood", 200f, MapId, ownerId); // 弓箭手等需要木材
+				Resources.AddResource("Food", 200f, MapId, ownerId);
+				Resources.AddResource("BasicMinerals", 200f, MapId, ownerId); // 弓箭手等需要木材
 				Units.CreateUnit(MapId, unitId, position, ownerId);
 				Clock.AdvanceDays(3); // 快配置：训练 3 日 → 就绪
 

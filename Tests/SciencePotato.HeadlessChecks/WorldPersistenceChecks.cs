@@ -149,7 +149,7 @@ namespace SciencePotato.HeadlessChecks
 			{
 				// 施工中的营地（2 日完工）：存档时建造者绑定 + 施工任务都在
 				Unit worker = h.Spawn(1, "worker", h.CellAtDistance(1, h.Site));
-				h.Resources.AddResource("Wood", 500f, MapId, h.OwnerId);
+				h.Resources.AddResource("BasicMinerals", 500f, MapId, h.OwnerId);
 				Check.Assert(h.Units.ExcuteAction(MapId, worker.GetInfo().UId, h.Site, "camp", "CanBuild"), "工人应能开工建营地");
 				h.Clock.AdvanceDays(1); // 施工中
 
@@ -234,8 +234,8 @@ namespace SciencePotato.HeadlessChecks
 			public string Build(string buildingId, HexCubePosition? position = null)
 			{
 				HexCubePosition site = position ?? Site;
-				Resources.AddResource("Wood", 500f, MapId, OwnerId);
-				Resources.AddResource("Gold", 500f, MapId, OwnerId);
+				Resources.AddResource("BasicMinerals", 500f, MapId, OwnerId);
+				Resources.AddResource("Food", 500f, MapId, OwnerId);
 				Construction.StartConstruction(MapId, buildingId, site, OwnerId);
 				Clock.AdvanceDays(2);
 
@@ -253,8 +253,8 @@ namespace SciencePotato.HeadlessChecks
 			public Unit Spawn(int ownerId, string unitId, HexCubePosition position)
 			{
 				Map.AddPopulation(MapId, position, 0, 9, 1);
-				Resources.AddResource("Gold", 300f, MapId, ownerId);
-				Resources.AddResource("Wood", 300f, MapId, ownerId);
+				Resources.AddResource("Food", 300f, MapId, ownerId);
+				Resources.AddResource("BasicMinerals", 300f, MapId, ownerId);
 				Units.CreateUnit(MapId, unitId, position, ownerId);
 				Clock.AdvanceDays(3);
 
@@ -274,7 +274,7 @@ namespace SciencePotato.HeadlessChecks
 				lines.Add($"population.total={Map.GetAllCells(MapId).Sum(c => c.Population)}");
 
 				var pool = Resources.GetOrCreatePool(MapId, OwnerId);
-				foreach (string resource in new[] { "Gold", "Wood", "Idea" })
+				foreach (string resource in new[] { "Food", "BasicMinerals", "Idea" })
 					lines.Add($"resource.{resource}={pool.GetValue(resource):0.###}");
 
 				var cells = Map.GetAllCells(MapId).OrderBy(c => c.Position.q).ThenBy(c => c.Position.r).ToList();

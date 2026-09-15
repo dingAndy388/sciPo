@@ -183,7 +183,7 @@ namespace SciencePotato.HeadlessChecks
 				Unit wolf = h.PlaceEnemy("wolf", enemyCell);
 				string wolfUid = wolf.GetInfo().UId;
 				Unit swordsman = h.SpawnFor(1, "swordsman", new HexCubePosition(2, 4));
-				float goldBefore = h.Pool().GetValue("Gold"); // 掉落前基线（`E20` 断言 +30）
+				float goldBefore = h.Pool().GetValue("Food"); // 掉落前基线（`E20` 断言 +30）
 
 				h.Units.ExcuteAction(MapId, swordsman.GetInfo().UId, enemyCell, wolfUid, "CanAttack");
 				h.Clock.AdvanceDays(8);
@@ -208,12 +208,12 @@ namespace SciencePotato.HeadlessChecks
 				Check.AssertEqual(EnemySpawner.HostileOwnerId, died[0].OwnerId, "阵亡方是敌方阵营");
 				Check.AssertEqual(swordsman.GetInfo().UId, died[0].KillerUId, "凶手 uid");
 
-				// ④ 掉落进池（`E20`）：野狼 30 Gold（`DropReward`）进**击杀者所有者**的池子 —— 不返还、不落空
-				Check.AssertEqual(goldBefore + 30f, h.Pool().GetValue("Gold"), "击杀野狼应入池 30 Gold");
+				// ④ 掉落进池（`E20`）：野狼 30 Food（`DropReward`）进**击杀者所有者**的池子 —— 不返还、不落空
+				Check.AssertEqual(goldBefore + 30f, h.Pool().GetValue("Food"), "击杀野狼应入池 30 Food");
 				Check.AssertEqual(1, h.Units.Loot.Drops, "掉落消费端应记一次掉落（没接总线/没接池子都不会记账）");
 				Check.AssertEqual("wolf", h.Units.Loot.LastDroppedUnitId, "最近掉落的敌种 Id");
 				Check.AssertEqual(1, h.Units.Loot.LastLootOwnerId, "掉落进**击杀者**所有者（不是阵亡方）");
-				Check.AssertEqual(30f, h.Units.Loot.LastGranted["Gold"], "实际入池量（Gold 上限 999999，未被裁剪）");
+				Check.AssertEqual(30f, h.Units.Loot.LastGranted["Food"], "实际入池量（Food 上限 999999，未被裁剪）");
 				Check.AssertEqual(0, h.Units.Loot.UnattributedDeathsIgnored, "凶手能定位到玩家单位 → 不该记「找不出凶手」");
 			}
 			finally { Cleanup(h.Dir); }
@@ -552,8 +552,8 @@ namespace SciencePotato.HeadlessChecks
 			public Unit SpawnFor(int ownerId, string unitId, HexCubePosition position)
 			{
 				Map.AddPopulation(MapId, position, 0, 9, 1);
-				Resources.AddResource("Gold", 500f, MapId, ownerId);
-				Resources.AddResource("Wood", 500f, MapId, ownerId);
+				Resources.AddResource("Food", 500f, MapId, ownerId);
+				Resources.AddResource("BasicMinerals", 500f, MapId, ownerId);
 
 				Units.CreateUnit(MapId, unitId, position, ownerId);
 				Clock.AdvanceDays(3); // 快配置：玩家单位训练 3 日 → 就绪
@@ -564,8 +564,8 @@ namespace SciencePotato.HeadlessChecks
 			/// <summary>为指定玩家在某格建一座建筑并等它完工（快配置：建造 2 日）。</summary>
 			public bool Build(int ownerId, string buildingId, HexCubePosition position)
 			{
-				Resources.AddResource("Gold", 500f, MapId, ownerId);
-				Resources.AddResource("Wood", 500f, MapId, ownerId);
+				Resources.AddResource("Food", 500f, MapId, ownerId);
+				Resources.AddResource("BasicMinerals", 500f, MapId, ownerId);
 
 				if (!Construction.StartConstruction(MapId, buildingId, position, ownerId)) return false;
 

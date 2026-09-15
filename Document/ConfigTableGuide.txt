@@ -1,6 +1,6 @@
 ================================================================================
   Science Potato - 配置填表指南 (Config Table Guide)
-  版本: 1.7 | 最后更新: 2026-09-15
+  版本: 1.8 | 最后更新: 2026-09-15
   v1.1 变更（v0.3 / WP-1.5）：全部时长字段的单位由「秒」重标定为「游戏日」；
   新增「时间口径」约定与附录C 的单位自检规则。
   v1.2 变更（v0.3 / WP-2.1）：`Prerequisites` 支持**跨树前置**（`"tree:node"` 或结构体），
@@ -22,6 +22,11 @@
   v1.7 变更（v0.6.0 / WP-5.3）：**外观数据驱动**（附录A 新增表根外观段与每行
   `Sprite`/`Color`）—— 格子步长、贴图目录、每地形贴图名与占位色全部进表；
   **换美术只改这张表 + 放文件，不改代码**（缺贴图时按 `Color` 画纯色格并只警告一次）。
+  v1.8 变更（v0.6.3 / WP-7.1）：**资源口径收敛到设计稿** —— 三种资源定名
+  `Idea` / `Food` / `BasicMinerals`（旧的 Gold / Wood 别名全表清除），初始储备
+  500 / 300 / 200、存储上限 10000 / 2000 / 1500、产出目标名 `IdeaGrowth` /
+  `FoodGrowth` / `MineralGrowth`、人口口粮 `Settlement.DemandResource = Food`；
+  基础产出（`BaseGrowth`）统一为 0，产出改由建筑/科技/事件的 Modifier 提供。
 
 ================================================================================
 
@@ -60,13 +65,13 @@
   所有系统共享的 Modifier 结构，用于表示加成/减益效果。
 
   字段:
-    Target  (string) - 效果目标名称，如 "GoldGrowth", "Attack", "Movement"
+    Target  (string) - 效果目标名称，如 "FoodGrowth", "Attack", "Movement"
     Type    (string) - "Percent" 或 "Absolute"
     Value   (float)  - 效果数值
 
   示例:
-    { "Target": "GoldGrowth", "Type": "Percent", "Value": 0.2 }
-    → GoldGrowth 提升 20%
+    { "Target": "FoodGrowth", "Type": "Percent", "Value": 0.2 }
+    → FoodGrowth 提升 20%
 
     { "Target": "Attack",     "Type": "Absolute", "Value": 5 }
     → 攻击力 +5
@@ -80,15 +85,15 @@
 [ResourceCost 格式]
   Dictionary<string, float> — 键=资源名, 值=消耗数量
 
-  示例: { "Gold": 100, "Wood": 50 }
+  示例: { "Food": 100, "BasicMinerals": 50 }
   → 消耗 100 金币 + 50 木材
 
 [DependentModifiers 格式]
   List<string> — 直接填写 modifier target 名称，系统会在增长时用 ModifierManager
   以这些 target 查找所有注册的 modifier 并加总到 BaseGrowth 上。
 
-  示例: ["GoldGrowth"]
-  → 游戏内任何来源注册了 GoldGrowth modifier 都会被累加到金币增长率
+  示例: ["FoodGrowth"]
+  → 游戏内任何来源注册了 FoodGrowth modifier 都会被累加到金币增长率
 
 ================================================================================
   二、资源池配置 (Resources)
@@ -101,8 +106,8 @@
 
   字段名             类型     必填  说明
   ────────────────  ────────  ────  ─────────────────────────────────
-  Name              string    是    资源唯一标识，如 "Gold", "Wood", "Food"
-                                    也用作资源消耗时的 key
+  Name              string    是    资源唯一标识（**设计稿口径**：Idea / Food / BasicMinerals），
+                                    也用作 ResourceCost / Maintenance / DropReward / 前置消耗的 key
   Description       string    否    资源描述文本
   GrowInterval      int       是    自然增长/结算间隔（**游戏日**）。系统每隔这么多天
                                     结算一次并按 DependentModifiers 汇总产出。
@@ -110,49 +115,56 @@
   BaseGrowth        float     是    每次结算的基础数值。最终结算量 =
                                     ModifierManager(DependentModifiers, BaseGrowth)
                                     填 0 表示"基础产出为 0，全靠建筑/科技/事件的 Modifier"
-  BaseValue         float     是    初始资源量（新游戏开局时）
-  BaseLimit         float     是    资源上限，增长到此值后停止
-  DependentModifiers [string]  否   修饰器目标名列表。留空写 [] 即可
+  BaseValue         float     是    初始储备（新游戏开局时；设计稿：Idea 500 / Food 300 / BasicMinerals 200）
+  BaseLimit         float     是    存储上限（设计稿：Idea 10000 / Food 2000 / BasicMinerals 1500，
+                                    可由仓库建筑用 AddLimit 提升）
+  DependentModifiers [string]  否   修饰器目标名列表（设计稿：IdeaGrowth / FoodGrowth / MineralGrowth）
 
-  [完整样板 JSON]
+  [完整样板 JSON]（= 当前 `Config/Resources.json`，v0.6.3 / WP-7.1 起与设计稿数值一致）
   ```json
   {
     "Resources": [
       {
-        "Name": "Gold",
-        "Description": "金币，用于建造和研发",
-        "GrowInterval": 30,
-        "BaseGrowth": 1.0,
-        "BaseValue": 0,
-        "BaseLimit": 999999,
-        "DependentModifiers": ["GoldGrowth"]
-      },
-      {
-        "Name": "Wood",
-        "Description": "木材，用于建造",
-        "GrowInterval": 30,
-        "BaseGrowth": 0.5,
-        "BaseValue": 0,
-        "BaseLimit": 500,
-        "DependentModifiers": ["WoodGrowth"]
-      },
-      {
         "Name": "Idea",
-        "Description": "科技点，用于研发",
+        "Description": "灵感，用于研发科技、学院升级",
         "GrowInterval": 30,
-        "BaseGrowth": 0,
-        "BaseValue": 0,
-        "BaseLimit": 999999,
+        "BaseGrowth": 0.0,
+        "BaseValue": 500,
+        "BaseLimit": 10000,
         "DependentModifiers": ["IdeaGrowth"]
+      },
+      {
+        "Name": "Food",
+        "Description": "食物，用于维持人口、单位训练与维护",
+        "GrowInterval": 30,
+        "BaseGrowth": 0.0,
+        "BaseValue": 300,
+        "BaseLimit": 2000,
+        "DependentModifiers": ["FoodGrowth"]
+      },
+      {
+        "Name": "BasicMinerals",
+        "Description": "基础石材，用于建造建筑与建筑升级",
+        "GrowInterval": 30,
+        "BaseGrowth": 0.0,
+        "BaseValue": 200,
+        "BaseLimit": 1500,
+        "DependentModifiers": ["MineralGrowth"]
       }
     ]
   }
   ```
 
   [注意事项]
+  - **三种资源 = 设计稿的 Idea / Food / BasicMinerals**（`design/resources.md`）。
+    v0.6.3 / WP-7.1 之前原型表用的是 Gold / Wood 别名，现已**全表收敛**：
+    任何新填的条目都不允许再出现 Gold / Wood（`ConfigTableChecks` 有一条断言专门查残留）。
   - GrowInterval 一律填 30（月结）：设计稿的经济节拍就是"每月结算一次"。
-  - "Idea" 的 BaseGrowth 填 0 + GrowInterval 填 30：基础产出为 0，但**照样按月结算**，
-    以便把建筑的 `IdeaGrowth` Modifier（如 School 250/月）结算进池子。
+  - BaseGrowth 缺省填 0：设计稿的产出来自**建筑/科技/事件**的 Modifier
+    （学院 250 idea/月、农田、矿场…），基础产出为 0 但**照样按月结算**，
+    这样建筑的 `IdeaGrowth` 等 Modifier 才有结算点。
+  - 初始储备（BaseValue）是设计给的"开工本钱"：用例若要"账从 0 开始"，
+    请显式把它花掉，而不是假定它为 0。
   - 资源名区分大小写，必须与建筑/单位配置中的 ResourceCost key 一致
   - DependentModifiers 填的是 modifier 的 Target 名，不是资源名
 
@@ -160,7 +172,7 @@
   ```json
   {
     "Settlement": {
-      "DemandResource": "Gold",          // 人口维护费从哪个资源扣（留空/缺段 = 不向人口收费）
+      "DemandResource": "Food",          // 人口维护费从哪个资源扣（留空/缺段 = 不向人口收费）
       "PopulationUpkeepPerMonth": 3,     // 每人每月的需求量（设计稿 3/月；0 = 不收）
       "DeclineThresholdMonths": 36,      // 连续赤字多少个月后才开始减员（设计稿 3 年 = 36 月）
       "DeclineIntervalDays": 360,        // 减员评估的间隔（设计稿"年评估"= 360 日）
@@ -219,7 +231,7 @@
       "camp": {
         "BuildingId": "camp",
         "Name": "营地",
-        "ResourceCost": { "Wood": 20 },
+        "ResourceCost": { "BasicMinerals": 20 },
         "TerrainRequirements": ["plain"],
         "TechRequirements": {},
         "Modifiers": [],
@@ -236,7 +248,7 @@
       "workshop": {
         "BuildingId": "workshop",
         "Name": "工坊",
-        "ResourceCost": { "Wood": 30 },
+        "ResourceCost": { "BasicMinerals": 30 },
         "TerrainRequirements": ["plain"],
         "TechRequirements": {},
         "Modifiers": [],
@@ -253,7 +265,7 @@
       "school": {
         "BuildingId": "school",
         "Name": "学院",
-        "ResourceCost": { "Gold": 100, "Wood": 50 },
+        "ResourceCost": { "Food": 100, "BasicMinerals": 50 },
         "TerrainRequirements": ["plain"],
         "TechRequirements": {},
         "Modifiers": [
@@ -272,7 +284,7 @@
       "military_camp": {
         "BuildingId": "military_camp",
         "Name": "军营",
-        "ResourceCost": { "Gold": 80, "Wood": 40 },
+        "ResourceCost": { "Food": 80, "BasicMinerals": 40 },
         "TerrainRequirements": ["plain"],
         "TechRequirements": {},
         "Modifiers": [],
@@ -301,8 +313,8 @@
   - TrainingQueueLimit=0 表示"该建筑不训练"（与 TrainableUnits=[] 一起用于营地/学院这类非训练建筑）
   - 升级链（v0.3 / WP-2.6）：4 条原型建筑各有 lv.I→lv.II→lv.III 三级，共 12 条
     （camp/camp_ii/camp_iii、workshop/…、school/…、military_camp/…）；
-    数值取自设计稿 buildings.md 的"晋级 / 升级条件 / 升级消耗"三列（基础石材→Wood、
-    food→Gold，量级按原型表缩放；时间直接用设计稿的日数）
+    数值取自设计稿 buildings.md 的"晋级 / 升级条件 / 升级消耗"三列（基础石材→BasicMinerals、
+    food→Food，量级按原型表缩放；时间直接用设计稿的日数）
   - 升级 = 同一栋建筑**换配置**（uid 不变）：UpgradeTo 指向下一级的建筑 Id，升级期间建筑未就绪，
     完成后按新等级重挂 Modifier、重开视野、重注册人口任务（旧的按 uid 回收，不会叠加）
   - 升级条件目前映射到原型已有的科技节点（基础几何 → science/mathematics、
@@ -369,7 +381,7 @@
     "Units": {
       "worker": {
         "UnitId": "worker",
-        "ResourceCost": { "Gold": 20 },
+        "ResourceCost": { "Food": 20 },
         "TerrainRequirements": ["plain"],
         "TechRequirements": {},
         "Duration": 30,
@@ -384,7 +396,7 @@
       },
       "swordsman": {
         "UnitId": "swordsman",
-        "ResourceCost": { "Gold": 50, "Wood": 20 },
+        "ResourceCost": { "Food": 50, "BasicMinerals": 20 },
         "TerrainRequirements": ["plain"],
         "TechRequirements": {},
         "Duration": 35,
@@ -399,7 +411,7 @@
       },
       "archer": {
         "UnitId": "archer",
-        "ResourceCost": { "Gold": 60, "Wood": 30 },
+        "ResourceCost": { "Food": 60, "BasicMinerals": 30 },
         "TerrainRequirements": ["plain"],
         "TechRequirements": {},
         "Duration": 50,
@@ -440,10 +452,10 @@
       * 敌方互殴(凶手也是敌方单位)、凶手 uid 缺失(环境/未知来源) 一律不掉 —— 这三类"没掉成"
         的原因在 `UnitLootService` 里分别计数(`PlayerDeathsIgnored`/`UnattributedDeathsIgnored`/
         `EmptyTablesIgnored`/`UnwiredDeathsIgnored`)，`Drops` 与 `LastGranted` 记录成功的那次。
-      * 掉落**不破仓储上限**(与资源生长同一条写入路径)：例如 Wood 上限只有 500，满仓时
-        野猪的 20 Wood 实际入池 0。填 `DropReward` 时请按上限规模取值。
-      * 当前 5 个敌种的填表口径：野狼 30 Gold / 野猪 80 Gold + 20 Wood / 山鹰 50 Gold /
-        巨角山羊 150 Wood + 50 Idea / 巨鳄 80 Gold + 40 Wood。
+      * 掉落**不破仓储上限**(与资源生长同一条写入路径)：例如 BasicMinerals 上限 1500（`BaseLimit`），满仓时
+        野猪的 20 BasicMinerals 实际入池 0。填 `DropReward` 时请按上限规模取值。
+      * 当前 5 个敌种的填表口径：野狼 30 Food / 野猪 80 Food + 20 BasicMinerals / 山鹰 50 Food /
+        巨角山羊 150 BasicMinerals + 50 Idea / 巨鳄 80 Food + 40 BasicMinerals。
   - 移动力口径(v0.3.17 / WP-3.5，design/unit.md R1~R7)：`Movement` 即 M = 每 10 游戏日回复的 MP；
     跨一格消耗该格地形的 `MoveCost`(平原5/山地25)；静止时 MP 上限 = M，移动中可跨周期累积，
     到达目的地时 MP 清零。设计示例：M=10 的单位跨消耗 5 的平原 10 日走 2 格，跨消耗 25 的山地需等 30 日。
@@ -606,9 +618,9 @@
         "TriggerChancePerDay": 0.002,
         "Duration": 30,
         "Modifiers": [
-          { "Target": "GoldGrowth", "Type": "Percent", "Value": 1.0 }
+          { "Target": "FoodGrowth", "Type": "Percent", "Value": 1.0 }
         ],
-        "ResourcePrerequisites": { "Gold": 200 },
+        "ResourcePrerequisites": { "Food": 200 },
         "TechPrerequisites": {}
       },
       {
@@ -618,8 +630,8 @@
         "TriggerChancePerDay": 0.001,
         "Duration": 20,
         "Modifiers": [
-          { "Target": "GoldGrowth", "Type": "Percent", "Value": -0.3 },
-          { "Target": "WoodGrowth", "Type": "Percent", "Value": -0.2 }
+          { "Target": "FoodGrowth", "Type": "Percent", "Value": -0.3 },
+          { "Target": "MineralGrowth", "Type": "Percent", "Value": -0.2 }
         ],
         "ResourcePrerequisites": {},
         "TechPrerequisites": {}
@@ -633,7 +645,7 @@
         "Modifiers": [
           { "Target": "IdeaGrowth", "Type": "Percent", "Value": 0.5 }
         ],
-        "ResourcePrerequisites": { "Gold": 500, "Idea": 100 },
+        "ResourcePrerequisites": { "Food": 500, "Idea": 100 },
         "TechPrerequisites": { "science": ["mathematics"] }
       }
     ]
@@ -702,8 +714,8 @@
 
   | Target 名        | 影响内容       | 举例 |
   |-----------------|---------------|------|
-  | GoldGrowth      | 金币增长率/产量 | Absolute 250 = 每次结算 +250 |
-  | WoodGrowth      | 木材增长率/产量 | Percent 0.5 = +50% |
+  | FoodGrowth      | 金币增长率/产量 | Absolute 250 = 每次结算 +250 |
+  | MineralGrowth      | 木材增长率/产量 | Percent 0.5 = +50% |
   | IdeaGrowth      | 科技点增长率/产量 | Absolute 250 = School 的 250 idea/月 |
   | Attack          | 攻击力         | Absolute 5 = +5 |
   | 单位ID+Attack    | 特定单位攻击力 | swordsmanAttack |

@@ -233,14 +233,14 @@ namespace SciencePotato.HeadlessChecks
 				Check.Assert(h.Map.GetNoHostileRequirement(MapId, buildable).IsMet(), "对照：空地没有被封锁");
 
 				// ① 建造 API 必须被拒，且**无副作用**（不扣资源、不留建筑）
-				h.Resources.AddResource("Wood", 500f, MapId, h.OwnerId);
-				h.Resources.AddResource("Gold", 500f, MapId, h.OwnerId);
-				float woodBefore = h.Resources.GetOrCreatePool(MapId, h.OwnerId).GetValue("Wood");
+				h.Resources.AddResource("BasicMinerals", 500f, MapId, h.OwnerId);
+				h.Resources.AddResource("Food", 500f, MapId, h.OwnerId);
+				float woodBefore = h.Resources.GetOrCreatePool(MapId, h.OwnerId).GetValue("BasicMinerals");
 
 				Check.Assert(!h.Construction.StartConstruction(MapId, "camp", blocked, h.OwnerId),
 					"M0-3 ④：敌方封锁格不可建造");
 				Check.Assert(h.Map.GetBuildingInfo(MapId, blocked) == null, "被拒后不应留下建筑");
-				Check.AssertEqual(woodBefore, h.Resources.GetOrCreatePool(MapId, h.OwnerId).GetValue("Wood"), "被拒后不应扣资源");
+				Check.AssertEqual(woodBefore, h.Resources.GetOrCreatePool(MapId, h.OwnerId).GetValue("BasicMinerals"), "被拒后不应扣资源");
 				Check.Assert(!h.Map.IsHostileAt(MapId, buildable), "对照：空地没有被敌方封锁");
 
 				// ② 工人经由 `CanBuild` 动作同样被拒（能力/忙闲/距离都满足，唯一原因是封锁）
@@ -319,7 +319,7 @@ namespace SciencePotato.HeadlessChecks
 				Check.AssertEqual(0f, worker.CurrentMP, "到达目的地后 MP 清零（R6）");
 
 				// ② 真的能建造
-				h.Resources.AddResource("Wood", 500f, MapId, h.OwnerId);
+				h.Resources.AddResource("BasicMinerals", 500f, MapId, h.OwnerId);
 				Check.Assert(h.Construction.StartConstruction(MapId, "camp", buildCell, h.OwnerId), "解除封锁后恢复可建造");
 			}
 			finally { Cleanup(h.Dir); }
@@ -551,7 +551,7 @@ namespace SciencePotato.HeadlessChecks
 			public Unit SpawnWorker(HexCubePosition position)
 			{
 				Map.AddPopulation(MapId, position, 0, 9, 1);
-				Resources.AddResource("Gold", 300f, MapId, OwnerId);
+				Resources.AddResource("Food", 300f, MapId, OwnerId);
 				Units.CreateUnit(MapId, "worker", position, OwnerId);
 				Clock.AdvanceDays(3); // 快配置：训练 3 日
 

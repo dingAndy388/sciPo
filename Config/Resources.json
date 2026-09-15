@@ -1,35 +1,35 @@
 {
   "Resources": [
     {
-      "Name": "Gold",
-      "Description": "金币，用于建造和研发",
-      "GrowInterval": 30,
-      "BaseGrowth": 1.0,
-      "BaseValue": 0,
-      "BaseLimit": 999999,
-      "DependentModifiers": ["GoldGrowth"]
-    },
-    {
-      "Name": "Wood",
-      "Description": "木材，用于建造",
-      "GrowInterval": 30,
-      "BaseGrowth": 0.5,
-      "BaseValue": 0,
-      "BaseLimit": 500,
-      "DependentModifiers": ["WoodGrowth"]
-    },
-    {
       "Name": "Idea",
-      "Description": "科技点，用于研发",
+      "Description": "灵感，用于研发科技、学院升级",
       "GrowInterval": 30,
-      "BaseGrowth": 0,
-      "BaseValue": 0,
-      "BaseLimit": 999999,
+      "BaseGrowth": 0.0,
+      "BaseValue": 500,
+      "BaseLimit": 10000,
       "DependentModifiers": ["IdeaGrowth"]
+    },
+    {
+      "Name": "Food",
+      "Description": "食物，用于维持人口、单位训练与维护",
+      "GrowInterval": 30,
+      "BaseGrowth": 0.0,
+      "BaseValue": 300,
+      "BaseLimit": 2000,
+      "DependentModifiers": ["FoodGrowth"]
+    },
+    {
+      "Name": "BasicMinerals",
+      "Description": "基础石材，用于建造建筑与建筑升级",
+      "GrowInterval": 30,
+      "BaseGrowth": 0.0,
+      "BaseValue": 200,
+      "BaseLimit": 1500,
+      "DependentModifiers": ["MineralGrowth"]
     }
   ],
   "Settlement": {
-    "DemandResource": "Gold",
+    "DemandResource": "Food",
     "PopulationUpkeepPerMonth": 3,
     "DeclineThresholdMonths": 36,
     "DeclineIntervalDays": 360,

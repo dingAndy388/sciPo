@@ -10,7 +10,7 @@
 | :--- | :--- | :--- | :--- | :--- |
 | ① 构建 | `dotnet build 'Science Potato.csproj'` | **0 error** | 类型/接口/命名空间口径 | 运行期行为 |
 | ② 无头检查 | `dotnet run --project Tests\SciencePotato.HeadlessChecks` | **退出码 0**，末尾 `结果：通过 N / 失败 0` | 纯 C# 核心：时钟/配置/地图/建造/单位/战斗/月结/存档/装配/玩家表 | 引擎适配层（资源加载、autoload、场景、`user://`） |
-| ③ Godot 无头冒烟 | 见 §2 | **退出码 0** 且 stdout 含 `[SMOKE] 汇总：通过 15 / 失败 0` | 真引擎：装配自检、**外观配置链路比对**、资源加载、73×143 生成、逐 owner 子系统启动、`user://` 存档往返、**表现层端到端（实例化主场景 + 渲染 10439 格）** | 视觉/手感/数值体感/AI 像不像人 |
+| ③ Godot 无头冒烟 | 见 §2 | **退出码 0** 且 stdout 含 `[SMOKE] 汇总：通过 17 / 失败 0` | 真引擎：装配自检、**外观配置链路比对**、资源加载、73×143 生成、逐 owner 子系统启动、`user://` 存档往返、**表现层端到端（实例化主场景 + 渲染 10439 格）** | 视觉/手感/数值体感/AI 像不像人 |
 
 人只看四类主观项（`log.md` §19.1 的 **N1**~**N4**）：视觉与操作手感、数值手感、AI 行为、美术与发布。
 
@@ -20,7 +20,7 @@
 # ① 构建
 dotnet build 'Science Potato.csproj'
 
-# ② 无头检查（170 → 180 条；退出码 0 = 全通过）
+# ② 无头检查（**188 条**；退出码 0 = 全通过；也支持 `exe <组名子串>` 只跑几组）
 dotnet run --project Tests\SciencePotato.HeadlessChecks
 
 # ③ Godot 无头冒烟（`--smoke` = 独立存档 user://save/smoke.json，且每次运行先删旧档）
@@ -45,7 +45,8 @@ $exe = 'E:\Godot_v4.6-stable_mono_win64\Godot_v4.6-stable_mono_win64.exe'
 | 用例文件 | 覆盖 | 关键 WP |
 | :--- | :--- | :--- |
 | `ClockChecks` / `TimeBaselineChecks` | 游戏日派发 / 三档流速 / 暂停 / 单帧上限 | `WP-1.1`/`1.2`/`1.5` |
-| `ConfigChecks` / `ConfigTableChecks` | 7 张表装载 / 引用校验 / 分级处置 | `WP-1.4` |
+| `ConfigChecks` | 地形 JSON 可解析与字段口径（M0-1 ②） | `WP-0.4` |
+| `ConfigTableChecks`（v0.6.3 增补） | 7 张表装载 / 引用校验 / 分级处置 + **资源口径=设计稿**（名/初始/上限/修正器目标）+ **旧别名残留** | `WP-1.4`、`WP-7.1` |
 | `CoreBootstrapChecks` | 组合根快速失败与最小装配 | `WP-1.3` |
 | `WiringChecks`（v0.6.0 新增） | **装配通电**（全部服务 + 存档接线）· **玩家表** · **`SessionOrchestrator`** 逐 owner 启动 / 幂等 / 事件只对人类 | `WP-5.1`、`WP-4.18` |
 | `AppearanceChecks`（v0.6.1 新增） | **外观数据驱动**：格步长/目录来自配置、颜色解析、贴图路径解析、缺美术兜底、格位换算与原型逐像素一致 | `WP-5.3` |

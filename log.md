@@ -2319,7 +2319,7 @@ dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessC
 | 内容规模 ①| 科技树 3 树 **93 节点** vs 当前最小样例 **7 节点**（military 3 / science 3+`counting` 1 / physics 1）—— *v0.6.0 勘误：v0.3.5 起样例为 7 条，原文误记「6 节点」；§18.7.4 已同步* | 物理/化学树的 35 / 10 节点在 M1 手测里是空的（但**链路已通**：跨树前置 + 0 成本根节点均已验收） | 填表（批次 4 起，配 `WP-4.14` UI 门控） |
 | 内容规模 ②| 建筑 24 条 / 单位 5 类 vs 当前样例 3 / 3 | M0-2 ②~④ 只依赖 School / 营地 / 工坊三条 | `WP-2.5` / `WP-2.6` |
 | `MAP-04` 拆除失效（**已修复**） | ✅ **已修（v0.3.16 / WP-3.4）**：建造落位改走 `PlaceBuilding`，`cell.Building` 与占据物槽位一致 → 拆除真正生效（地块清空 + 修正器回收 + 任务注销）；`WP-2.7` 的固定断言已翻成正向断言 | 玩家可正常拆除建筑 | WP-3.4 | ✅ 已修 |
-| 资源词汇不一致 | 设计稿用「基础石材 / food / basic minerals」，原型表只有 Gold / Wood / Idea（建筑造价与矿场/农田产出因此无法照抄设计值） | 所有造价与产出的**数值映射**都是近似；`resources.md` 的 4~5 种基础资源落地时需一次性重填（`Settlement.DemandResource` / `Maintenance.ResourceId` 同样按别名填写，`D60`） | 填表（批次 4 起，配 `WP-3.9` 结算器；结算器已按可换资源 Id 建模） |
+| 资源词汇不一致 | ✅ **已修复（v0.6.3 / WP-7.1）**：三种资源定名 `Idea` / `Food` / `BasicMinerals`（数值取 `design/resources.md`：初始 500/300/200、上限 10000/2000/1500、目标名 `IdeaGrowth`/`FoodGrowth`/`MineralGrowth`），Gold / Wood 别名**全表清除**（建筑造价、单位费用与维护、敌方掉落、事件前置与效果、人口口粮一处不落），并加了"旧别名残留"断言防改一半。**遗留**：农田/矿场的产出数值仍待 `WP-7.2a` 按其建筑条目落地 | 从此设计稿数值可**照抄**（key 对得上）；"每月白给资源"的掩盖效应也消失了 | ✅ 已关闭（数值随 `WP-7.2a`） |
 | 建筑前置（附属 / 升级）未建模 | 设计稿的"前置"列既有科技也有**建筑**（如 日晷 ← School（建筑）），`IBuildingConfig` 只有 `TechRequirements`，没有"需要已有建筑"的字段 | 日晷、观星台等附属建筑无法表达；建筑升级（`WP-2.6`）也要用到 | `WP-2.6` / `WP-2.12+` |
 | `PopulationGrowth` 修正器接线（曾未接线） | ✅ **已接线（v0.3.9 / WP-2.3）**：`ModifierAppService.GetValue(mapId, ownerId, target, base)` = `(base + ΣAbsolute) × (1 + ΣPercent)`，人口增长是 `PopulationGrowth` 的**第一个消费点**（基数 1 人/间隔）+ 小数余量累加器（+50% → 两轮多 1 人）；用例断言 +1 Absolute → 每间隔 +2 人。**遗留**：`BuildingSpeed` / `UnitTrainingSpeed` / `ResearchSpeed` / `ResourceLimit` 等 target 仍无消费点（归 `WP-4.4`） | 科技/事件想「加快人口增长」现已生效；其余速率类 target 仍要等 `WP-4.4` 分批接线 | ✅ 人口已接线（WP-2.3）/ 其余 `WP-4.4` |
 | 小地图只剩一个群系 | 生成器锚点数 = `Density/100 × 面积`（Voronoi），8×8 这种小图常常全图同一种地形（实测某 seed 全 water=不可通行） | M1 手测建议用 ≥24×24；真正的"地图配比"问题归生成器重做 | `WP-5.3` / 生成器 |
@@ -2619,7 +2619,7 @@ dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessC
 
 | WP | 内容 | 状态 | M |
 | :--- | :--- | :--- | :--- |
-| WP-7.1 | 资源重映射（设计稿 `Idea`/`Food`/`BasicMinerals` ↔ 原型 `Gold`/`Wood` 一次性收敛，含造价/维护/需求） | ☐ 未开始 | M1 |
+| WP-7.1 | 资源重映射（设计稿 `Idea`/`Food`/`BasicMinerals` ↔ 原型 `Gold`/`Wood` 一次性收敛，含造价/维护/需求） | ✅ 完成（v0.6.3） | M1 |
 | WP-7.2a | 农田 / 矿场 / 仓库（设计稿数值 + 上限机制） | ☐ 未开始 | M1 |
 | WP-7.2b | 其余建筑 + 3 个独立建筑（24 条全表 + 校验 0 error） | ☐ 未开始 | M2 |
 | WP-7.3 | 科技 93 节点（三树全表 + 跨树前置 + 0 成本根节点） | ☐ 未开始 | M2 |
@@ -2674,8 +2674,8 @@ dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessC
 
 ## 19.6 进度总览与复现命令
 
-**进度**：批次 0~3 ✅（29 WP）· 批次 4 **1/19** · 批次 5 **6/11** · 批次 6 **0/6** · 批次 7 **0/7** · 批次 8 **0/4** → **已完成 36 / 剩余 40**（到 M2 还差 **M1 的 3 个 + M2 的 33 个**，M3 另 5 个）。
-最近一次更新：**v0.6.2**（`WP-5.8` 73×143 基线交付；检查 **186/186**；冒烟 **17/17、退出码 0**，`--size=WxH`/`--seed=N` 可换规模；基线数字与护栏见 `Document/PerfBaseline.md`）。
+**进度**：批次 0~3 ✅（29 WP）· 批次 4 **1/19** · 批次 5 **6/11** · 批次 6 **0/6** · 批次 7 **1/7** · 批次 8 **0/4** → **已完成 37 / 剩余 39**（到 M2 还差 **M1 的 2 个 + M2 的 33 个**，M3 另 5 个）。
+最近一次更新：**v0.6.3**（`WP-7.1` 资源口径收敛到设计稿：`Idea`/`Food`/`BasicMinerals` + 初始 500/300/200 + 上限 10000/2000/1500 + 修正器 `IdeaGrowth`/`FoodGrowth`/`MineralGrowth`，全表清除 Gold/Wood；检查 **188/188**、冒烟 **17/17、退出码 0**）。
 
 ```powershell
 # ① 主工程构建（Godot 侧；0 error 才算过）
@@ -2716,6 +2716,8 @@ $exe = 'E:\Godot_v4.6-stable_mono_win64\Godot_v4.6-stable_mono_win64.exe'
 | `D81` | 2026-09-15 | **无头用例入口 `WiringChecks`**：新增的装配/玩家表用例必须走 `CoreBootstrap`（与生产同一入口），不得自己手搭服务图 | 这组用例的价值就是"组合根少装一个服务就红"；手搭服务图的用例天然验不到装配疏漏 | `WP-5.1` 之后的每个 WP（新增服务必须补一条装配断言） |
 | `D82` | 2026-09-15 | **外观全部数据驱动（`WP-5.3`）**：格子步长 / 贴图目录 / 每地形贴图名与占位色全部进 `Config/Terrains.json`（表根 `CellXStep`/`CellYStep`/`TerrainSpriteDir` + 每行 `Sprite`/`Color`）；代码里**不再有**尺寸与路径常量；缺贴图 → 按 `Color` 画纯色占位格 + 每种地形只警告一次；`Color` 非法 → 按 Id 派生稳定色（同 Id 同色） | "换美术不改代码"（M2 判据 ⑤）要求尺寸/路径/颜色都可在表里改；而"缺一张图就崩"会把美术未到位拖成开发阻塞 | `Terrains.json`、`MapCellView`/`MapView`、`ConfigValidator`、`Document/ConfigTableGuide.txt` v1.7、`Document/ArtSpec.md` |
 | `D83` | 2026-09-15 | **性能基线制度（`WP-5.8`）**：① 新增 `Document/PerfBaseline.md` 记 73×143 的实测耗时/内存/存档体积，改到生成/渲染/存档的 WP 必须重跑并更新（旧数字不保留）；② 冒烟只设**宽松护栏**（生成 < 5 s、渲染 < 15 s、格数精确），不做严格时间断言（机器差异会造假红，假红导致无视）；③ 冒烟支持 `--size=WxH`/`--seed=N`；④ 基线结论：地图存档 **2.4 MB**（≈235 B/格）是磁盘大头 → `WP-5.6` 提优先级；渲染 10k 节点 ≈ 6 KB/格 → `WP-5.4` 加图层前必须定"合批/视口裁剪" | 没有基线就只能靠感觉谈"还能不能加东西"；而把时间阈值写死成断言会在不同机器上反复假红 | `Document/PerfBaseline.md`、`SmokeReport`、`WP-5.4`/`5.6` 的排序 |
+| `D84` | 2026-09-15 | **资源口径 = 设计稿（`WP-7.1`）**：三种资源定名 **`Idea` / `Food` / `BasicMinerals`**（数值取 `design/resources.md`：初始 500/300/200、上限 10000/2000/1500），产出目标名 `IdeaGrowth`/`FoodGrowth`/`MineralGrowth`，人口口粮 `Settlement.DemandResource = Food`；**`BaseGrowth` 全为 0** —— 产出来自建筑/科技/事件的 Modifier，而不是"凭空每月给一点"；Gold / Wood 别名**全表清除**（新增 `ConfigTableChecks` 断言防残留） | 旧别名会让"设计稿数值"永远无法照抄（造价/产出的 key 都对不上），越晚改越贵；而"每月白给资源"会掩盖"没建农田/矿场"的经济问题 —— 这正是设计稿用初始储备 + 建筑产出表达的东西 | `Config/Resources.json`+`Buildings`+`Units`+`Events`、`ConfigTableGuide` v1.8、全部含资源字面量的用例（12 条断言改成"显式构造前提"）、`WP-7.2a`（农田/矿场给产出） |
+| `D85` | 2026-09-15 | **无头用例支持分组过滤**：`SciencePotato.HeadlessChecks.exe <组名子串>` 只跑匹配的组（不带参数 = 全部）；旧的"一次全跑"行为不变 | 全套已到 40~60 秒，排错时为了看一组失败要等整轮；"迭代慢"会让人少跑测试。这也是我第一次需要它的原因（本机 30 s 命令上限） | `Tests/…/Program.cs`、`Document/TestPlan.md` |
 
 > **下一步**（按 §19.2 状态推进，M1 剩余 4 个）：`WP-5.8` 73×143 基线 → `WP-7.1` 资源重映射 → `WP-7.2a` 农田/矿场/仓库 → `WP-5.9` 开局布置 → `WP-5.10` i18n → 交 **N1**（视觉与操作手感）复看。
 

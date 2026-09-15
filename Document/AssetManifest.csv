@@ -26,9 +26,9 @@ Unit,eagle,Config/Units.json,res://Texture/Unit/eagle.png,128x128,Center,placeho
 Unit,ibex,Config/Units.json,res://Texture/Unit/ibex.png,128x128,Center,placeholder,待定,敌方
 Unit,crocodile,Config/Units.json,res://Texture/Unit/crocodile.png,128x128,Center,placeholder,待定,敌方
 Unit,(+7 more),design/unit.md,res://Texture/Unit/{Id}.png,128x128,Center,missing,待定,15 个全表归 WP-7.5（只读/探索/工程/攻城/学者/化学家等）
-Resource,Gold,Config/Resources.json,res://Texture/Resource/Gold.png,64x64,Center,placeholder,待定,原型 Id；WP-7.1 重映射为 Food
-Resource,Wood,Config/Resources.json,res://Texture/Resource/Wood.png,64x64,Center,placeholder,待定,原型 Id；WP-7.1 重映射为 BasicMinerals
-Resource,Idea,Config/Resources.json,res://Texture/Resource/Idea.png,64x64,Center,placeholder,待定,与 design/resources.md 同名
+Resource,Food,Config/Resources.json,res://Texture/Resource/Food.png,64x64,Center,placeholder,待定,设计稿口径（WP-7.1 已收敛）
+Resource,BasicMinerals,Config/Resources.json,res://Texture/Resource/BasicMinerals.png,64x64,Center,placeholder,待定,设计稿口径（WP-7.1 已收敛）
+Resource,Idea,Config/Resources.json,res://Texture/Resource/Idea.png,64x64,Center,placeholder,待定,设计稿口径（WP-7.1 已收敛）
 Event,gold_rush,Config/Events.json,res://Texture/Event/gold_rush.png,512x288,Center,placeholder,待定,淘金热
 Event,plague,Config/Events.json,res://Texture/Event/plague.png,512x288,Center,placeholder,待定,瘟疫
 Event,enlightenment,Config/Events.json,res://Texture/Event/enlightenment.png,512x288,Center,placeholder,待定,启蒙时代

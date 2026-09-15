@@ -154,7 +154,7 @@ namespace SciencePotato.HeadlessChecks
 				h.Clock.AdvanceDays(2);
 
 				// ① 未完工的建筑不能训练（施工中）
-				h.Resources.AddResource("Wood", 100f, MapId, h.OwnerId);
+				h.Resources.AddResource("BasicMinerals", 100f, MapId, h.OwnerId);
 				h.Construction.StartConstruction(MapId, "workshop", h.Shop, h.OwnerId);
 				string pendingUid = h.Map.GetOccupantInfo(MapId, h.Shop).Value.UId;
 				Check.Assert(!h.Units.TrainUnit(MapId, pendingUid, "worker"), "施工中的建筑不能训练");
@@ -171,14 +171,16 @@ namespace SciencePotato.HeadlessChecks
 				Check.Assert(!h.Units.TrainUnit(MapId, pendingUid, "dragon"), "不存在的单位 Id 应被拒绝");
 				Check.Assert(!h.Units.TrainUnit(MapId, "no-such-building", "worker"), "不存在的建筑 uid 应被拒绝");
 
-				// ⑤ 资源不足（把 Gold 花光）
+				// ⑤ 资源不足（把 Food 花光）
 				ResourcesPool pool = h.Resources.GetOrCreatePool(MapId, h.OwnerId);
-				h.Resources.CreateResourceConsumption(new Consumption("Gold", pool.GetValue("Gold")), MapId, h.OwnerId).Consume();
-				Check.AssertEqual(0f, pool.GetValue("Gold"), "准备：Gold 归零");
+				// （v0.6.3 / WP-7.1）走**应用服务**把 Food 花光：`CreateResourceConsumption` 消费的是另一次 Load 出来的实例，
+				// 用它"清零"只会清在一份临时对象上（旧写法能过，是因为当时资源池没有初始储备、恒为 0 = 什么都没做）
+				h.Resources.AddResource("Food", -pool.GetValue("Food"), MapId, h.OwnerId);
+				Check.AssertEqual(0f, h.Resources.GetOrCreatePool(MapId, h.OwnerId).GetValue("Food"), "准备：Food 归零");
 				Check.Assert(!h.Units.TrainUnit(MapId, pendingUid, "worker"), "资源不足应被拒绝");
 
 				// ⑥ 人口不足（人口为 0）
-				h.Resources.AddResource("Gold", 500f, MapId, h.OwnerId);
+				h.Resources.AddResource("Food", 500f, MapId, h.OwnerId);
 				h.Map.ConsumePopulation(MapId, h.Camp, 1, 99);
 				Check.AssertEqual(0, h.Map.GetPopulationWithin(MapId, h.Shop, 1), "准备：人口归零");
 				Check.Assert(!h.Units.TrainUnit(MapId, pendingUid, "worker"), "人口不足应被拒绝");
@@ -201,7 +203,7 @@ namespace SciencePotato.HeadlessChecks
 				HexCubePosition secondShop = h.Shop.InRadius(1)
 					.First(pos => pos != h.Shop && h.Map.IsClear(MapId, pos)
 						&& h.Map.GetMapCell(MapId, pos).Terrain?.Passable == true);
-				h.Resources.AddResource("Wood", 100f, MapId, h.OwnerId);
+				h.Resources.AddResource("BasicMinerals", 100f, MapId, h.OwnerId);
 				h.Construction.StartConstruction(MapId, "workshop", secondShop, h.OwnerId);
 				h.Clock.AdvanceDays(2);
 
@@ -269,14 +271,14 @@ namespace SciencePotato.HeadlessChecks
 			/// <summary>开局：建营地 + 工坊（相邻），并注入人口 —— 训练用例不依赖 300 日的人口自然增长（那段由 `WP-2.3` 覆盖）。</summary>
 			public void BuildCampAndWorkshop()
 			{
-				Resources.AddResource("Wood", 200f, MapId, OwnerId);
+				Resources.AddResource("BasicMinerals", 200f, MapId, OwnerId);
 				Construction.StartConstruction(MapId, "camp", Camp, OwnerId);
 				Construction.StartConstruction(MapId, "workshop", Shop, OwnerId);
 				Clock.AdvanceDays(90); // 真实配置下 90 日完工（快配置下 ≥2 日即可）
 
 				CampUid = Map.GetOccupantInfo(MapId, Camp).Value.UId;
 				ShopUid = Map.GetOccupantInfo(MapId, Shop).Value.UId;
-				Resources.AddResource("Gold", 500f, MapId, OwnerId);
+				Resources.AddResource("Food", 500f, MapId, OwnerId);
 				Map.AddPopulation(MapId, Camp, 1, 9, 5); // 5 人：够 5 个订单 / 或 2 人以上即可
 			}
 		}

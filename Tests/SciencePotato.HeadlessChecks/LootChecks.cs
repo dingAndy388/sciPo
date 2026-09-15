@@ -57,7 +57,7 @@ namespace SciencePotato.HeadlessChecks
 		// ────────────────────────── 用例：归属与口径 ──────────────────────────
 
 		/// <summary>
-		/// `E20` 的归属口径：掉落算**击杀者**的战功 —— 玩家 2 的民兵打死野狼，30 Gold 进玩家 2 的池子，
+		/// `E20` 的归属口径：掉落算**击杀者**的战功 —— 玩家 2 的民兵打死野狼，30 Food 进玩家 2 的池子，
 		/// 同图的玩家 1 一分不得（防止"谁先建池谁收钱"这类实现漂移）。
 		/// </summary>
 		private static void DropGoesToKillerOwner()
@@ -72,8 +72,8 @@ namespace SciencePotato.HeadlessChecks
 				Unit bystander = h.SpawnFor(1, "swordsman", new HexCubePosition(1, 1)); // 旁观者（玩家 1）
 				Unit killer = h.SpawnFor(2, "swordsman", new HexCubePosition(2, 4));   // 击杀者（玩家 2）
 
-				float bystanderBefore = h.PoolFor(1).GetValue("Gold");
-				float killerBefore = h.PoolFor(2).GetValue("Gold");
+				float bystanderBefore = h.PoolFor(1).GetValue("Food");
+				float killerBefore = h.PoolFor(2).GetValue("Food");
 
 				Check.Assert(h.Units.ExcuteAction(MapId, killer.GetInfo().UId, enemyCell, wolf.GetInfo().UId, "CanAttack"),
 					"相邻的民兵应接受攻击指令");
@@ -81,8 +81,8 @@ namespace SciencePotato.HeadlessChecks
 
 				Check.Assert(h.Map.FindOccupantByUId(MapId, wolf.GetInfo().UId) == null, "野狼应按日掉血直到阵亡并被移除");
 				Check.AssertEqual(1, h.Units.Loot.Drops, "一次击杀 = 一次掉落");
-				Check.AssertEqual(30f, h.PoolFor(2).GetValue("Gold") - killerBefore, "掉落进**击杀者**（玩家 2）的资源池");
-				Check.AssertEqual(bystanderBefore, h.PoolFor(1).GetValue("Gold"), "旁观者（玩家 1）的池子不该有变化");
+				Check.AssertEqual(30f, h.PoolFor(2).GetValue("Food") - killerBefore, "掉落进**击杀者**（玩家 2）的资源池");
+				Check.AssertEqual(bystanderBefore, h.PoolFor(1).GetValue("Food"), "旁观者（玩家 1）的池子不该有变化");
 				Check.AssertEqual(2, h.Units.Loot.LastLootOwnerId, "受益者 = 击杀者所有者");
 				Check.AssertEqual("wolf", h.Units.Loot.LastDroppedUnitId, "掉的是被杀的那个敌种");
 				Check.AssertEqual(0, h.Units.Loot.PlayerDeathsIgnored, "击杀敌方不该被算成「玩家阵亡」");
@@ -128,13 +128,13 @@ namespace SciencePotato.HeadlessChecks
 				Check.AssertEqual(2, h.Units.Loot.UnattributedDeathsIgnored, "uid 缺失同样归「找不出玩家凶手」");
 
 				// ④ 真打一次：玩家击杀敌方 → 掉（负向对照没有把正常掉落误伤掉）
-				float goldBefore = h.Pool().GetValue("Gold");
+				float goldBefore = h.Pool().GetValue("Food");
 				Check.Assert(h.Units.ExcuteAction(MapId, swordsman.GetInfo().UId, enemyCell, wolf.GetInfo().UId, "CanAttack"),
 					"相邻的民兵应接受攻击指令");
 				h.Clock.AdvanceDays(8);
 
 				Check.AssertEqual(1, h.Units.Loot.Drops, "只有这一次真击杀产生了掉落");
-				Check.AssertEqual(goldBefore + 30f, h.Pool().GetValue("Gold"), "野狼 30 Gold 入池");
+				Check.AssertEqual(goldBefore + 30f, h.Pool().GetValue("Food"), "野狼 30 Food 入池");
 				Check.AssertEqual(4, h.Units.Loot.HandledDeaths, "四次阵亡事件都进过消费端（1 掉 + 3 免）");
 				Check.AssertEqual(4, died.Count, "阵亡事件仍照常推送给所有订阅者（掉落没有吃掉事件）");
 				Check.AssertEqual(3, h.Units.Loot.PlayerDeathsIgnored + h.Units.Loot.UnattributedDeathsIgnored
@@ -146,35 +146,41 @@ namespace SciencePotato.HeadlessChecks
 		}
 
 		/// <summary>
-		/// **上限口径**（`ILootSink` 契约）：掉落不破仓储上限 —— `Wood` 的 `BaseLimit` 只有 500，
-		/// 满仓时那 20 Wood 不会到账；因此 `GrantLoot` 返回的是**实际入池量**而不是传进去的表
+		/// **上限口径**（`ILootSink` 契约）：掉落不破仓储上限 —— `BasicMinerals` 的 `BaseLimit` 只有 500，
+		/// 满仓时那 20 BasicMinerals 不会到账；因此 `GrantLoot` 返回的是**实际入池量**而不是传进去的表
 		/// （`D25`：被上限吃掉必须看得见，不能静默丢弃）。
-		/// <para>两段：① 直接调契约实现（数值精确）；② 走玩法路径打一只野猪（`DropReward` = 80 Gold + 20 Wood）
+		/// <para>两段：① 直接调契约实现（数值精确）；② 走玩法路径打一只野猪（`DropReward` = 80 Food + 20 BasicMinerals）
 		/// 看 `LastGranted` 与池子是否一致。野猪 HP 150 / ATK 10 会反杀民兵，故本用例把它改成
 		/// 「HP 10 / 不还手」—— 只为让"掉落数字"成为唯一的变量。</para>
 		/// </summary>
 		private static void PoolLimitIsRespectedAndVisible()
 		{
-			// ① 契约本身：Wood 已在 500 上限（训练民兵时就顶满了）
+			// ① 契约本身：把 BasicMinerals 顶到**它的**上限（上限值从配置读，不写死 —— v0.6.3 / WP-7.1 起
+			//    `Resources.json` 的 `BaseLimit` 就是设计值：Food 2000 / BasicMinerals 1500 / Idea 10000）
 			Harness direct = NewHarness();
 			try
 			{
 				direct.GeneratePlainMap(20260918, SmallMap);
 				direct.SpawnFor(1, "swordsman", new HexCubePosition(1, 1));
 
-				Check.AssertEqual(500f, direct.Pool().GetValue("Wood"), "准备：Wood 已被顶到上限 500（`Resources.json` `BaseLimit`）");
+				string capped = "BasicMinerals";
+				float cap = direct.Pool().GetLimit(capped);
+				direct.Resources.AddResource(capped, cap, MapId, 1);
+				Check.AssertEqual(cap, direct.Pool().GetValue(capped), $"准备：{capped} 已被顶到上限 {cap}（`Resources.json` 的 `BaseLimit`）");
 
+				float foodBefore = direct.Pool().GetValue("Food");
 				Dictionary<string, float> granted = direct.Resources.GrantLoot(MapId, 1,
-					new Dictionary<string, float> { { "Gold", 80f }, { "Wood", 20f } });
+					new Dictionary<string, float> { { "Food", 80f }, { capped, 20f } });
 
-				Check.AssertEqual(80f, granted["Gold"], "Gold 上限 999999 → 全额入池");
-				Check.AssertEqual(0f, granted["Wood"], "Wood 已满 → 实际入池 0（契约把它报出来，而不是静默丢弃）");
-				Check.AssertEqual(500f, direct.Pool().GetValue("Wood"), "上限不被突破");
-				Check.AssertEqual(580f, direct.Pool().GetValue("Gold"), "80 Gold 全额到账");
+				Check.AssertEqual(80f, granted["Food"], "Food 未满 → 全额入池");
+				Check.AssertEqual(0f, granted[capped], $"{capped} 已满 → 实际入池 0（契约把它报出来，而不是静默丢弃）");
+				Check.AssertEqual(cap, direct.Pool().GetValue(capped), "上限不被突破");
+				Check.AssertEqual(foodBefore + 80f, direct.Pool().GetValue("Food"), "80 Food 全额到账");
 			}
 			finally { Cleanup(direct.Dir); }
 
-			// ② 玩法路径：野猪（80 Gold + 20 Wood）被击杀，`LastGranted` = 池子前值/后值之差
+			// ② 玩法路径：野猪（80 Food + 20 BasicMinerals）被击杀，`LastGranted` = 池子前值/后值之差
+			//    （把 BasicMinerals 先顶满，才能验"满仓的掉落不到账"）
 			Newtonsoft.Json.Linq.JObject table = RealUnitsTable();
 			table["Units"]["boar"]["HP"] = 10;          // 150 → 10：两天内击杀
 			table["Units"]["boar"]["AttackDamage"] = 0; // 不还手（避开"民兵先死"这个无关变量）
@@ -186,18 +192,22 @@ namespace SciencePotato.HeadlessChecks
 				var enemyCell = new HexCubePosition(3, 4);
 				Unit boar = h.PlaceEnemy("boar", enemyCell);
 				Unit swordsman = h.SpawnFor(1, "swordsman", new HexCubePosition(2, 4));
-				float goldBefore = h.Pool().GetValue("Gold");
-				float woodBefore = h.Pool().GetValue("Wood");
+
+				float mineralCap = h.Pool().GetLimit("BasicMinerals");
+				h.Resources.AddResource("BasicMinerals", mineralCap, MapId, 1);
+
+				float foodBefore = h.Pool().GetValue("Food");
+				float mineralBefore = h.Pool().GetValue("BasicMinerals");
 
 				Check.Assert(h.Units.ExcuteAction(MapId, swordsman.GetInfo().UId, enemyCell, boar.GetInfo().UId, "CanAttack"),
 					"相邻的民兵应接受攻击指令");
 				h.Clock.AdvanceDays(3);
 
 				Check.AssertEqual(1, h.Units.Loot.Drops, "野猪被击杀 → 掉落发生了（被上限吃掉的只是数量）");
-				Check.AssertEqual(80f, h.Units.Loot.LastGranted["Gold"], "击杀者应拿到 80 Gold");
-				Check.AssertEqual(0f, h.Units.Loot.LastGranted["Wood"], "满仓的 Wood 实际入池 0");
-				Check.AssertEqual(goldBefore + 80f, h.Pool().GetValue("Gold"), "池子和 `LastGranted` 对得上（Gold）");
-				Check.AssertEqual(woodBefore, h.Pool().GetValue("Wood"), "池子和 `LastGranted` 对得上（Wood）");
+				Check.AssertEqual(80f, h.Units.Loot.LastGranted["Food"], "击杀者应拿到 80 Food");
+				Check.AssertEqual(0f, h.Units.Loot.LastGranted["BasicMinerals"], "满仓的 BasicMinerals 实际入池 0");
+				Check.AssertEqual(foodBefore + 80f, h.Pool().GetValue("Food"), "池子和 `LastGranted` 对得上（Food）");
+				Check.AssertEqual(mineralBefore, h.Pool().GetValue("BasicMinerals"), "池子和 `LastGranted` 对得上（BasicMinerals）");
 				Check.AssertEqual(80f, h.Units.Loot.TotalGranted, "累计实际入池量 = 80（只算真实到账的部分）");
 			}
 			finally { Cleanup(h.Dir); }
@@ -218,7 +228,7 @@ namespace SciencePotato.HeadlessChecks
 				bare.GeneratePlainMap(20260918, SmallMap);
 				Unit wolf = bare.PlaceEnemy("wolf", new HexCubePosition(3, 4));
 				Unit swordsman = bare.SpawnFor(1, "swordsman", new HexCubePosition(2, 4));
-				float goldBefore = bare.Pool().GetValue("Gold");
+				float goldBefore = bare.Pool().GetValue("Food");
 
 				var unwired = new UnitLootService(bare.Map, bare.Tables.Units, loot: null, events: null);
 				unwired.OnUnitDied(new UnitDiedEvent(MapId, EnemySpawner.HostileOwnerId,
@@ -227,7 +237,7 @@ namespace SciencePotato.HeadlessChecks
 				Check.AssertEqual(1, unwired.UnwiredDeathsIgnored, "没接池子 → 记入「没接线」这一类（不是静默无操作）");
 				Check.AssertEqual(0, unwired.Drops, "没接池子不可能掉落");
 				Check.AssertEqual(1, unwired.HandledDeaths, "事件仍被处理过（只是掉不出去）");
-				Check.AssertEqual(goldBefore, bare.Pool().GetValue("Gold"), "池子不受影响");
+				Check.AssertEqual(goldBefore, bare.Pool().GetValue("Food"), "池子不受影响");
 			}
 			finally { Cleanup(bare.Dir); }
 
@@ -242,7 +252,7 @@ namespace SciencePotato.HeadlessChecks
 				var enemyCell = new HexCubePosition(3, 4);
 				Unit wolf = h.PlaceEnemy("wolf", enemyCell);
 				Unit swordsman = h.SpawnFor(1, "swordsman", new HexCubePosition(2, 4));
-				float goldBefore = h.Pool().GetValue("Gold");
+				float goldBefore = h.Pool().GetValue("Food");
 
 				Check.Assert(h.Units.ExcuteAction(MapId, swordsman.GetInfo().UId, enemyCell, wolf.GetInfo().UId, "CanAttack"),
 					"相邻的民兵应接受攻击指令");
@@ -251,7 +261,7 @@ namespace SciencePotato.HeadlessChecks
 				Check.AssertEqual(1, h.Units.Combat.Kills, "战斗照常打完（掉落与战斗解耦）");
 				Check.AssertEqual(0, h.Units.Loot.Drops, "空表 → 不掉落");
 				Check.AssertEqual(1, h.Units.Loot.EmptyTablesIgnored, "应记入「表为空」这一类（说明表被真的读过了）");
-				Check.AssertEqual(goldBefore, h.Pool().GetValue("Gold"), "池子不受影响");
+				Check.AssertEqual(goldBefore, h.Pool().GetValue("Food"), "池子不受影响");
 			}
 			finally { Cleanup(h.Dir); }
 		}
@@ -304,8 +314,8 @@ namespace SciencePotato.HeadlessChecks
 			public Unit SpawnFor(int ownerId, string unitId, HexCubePosition position)
 			{
 				Map.AddPopulation(MapId, position, 0, 9, 1);
-				Resources.AddResource("Gold", 500f, MapId, ownerId);
-				Resources.AddResource("Wood", 500f, MapId, ownerId);
+				Resources.AddResource("Food", 500f, MapId, ownerId);
+				Resources.AddResource("BasicMinerals", 500f, MapId, ownerId);
 
 				Units.CreateUnit(MapId, unitId, position, ownerId);
 				Clock.AdvanceDays(3); // 快配置：玩家单位训练 3 日 → 就绪

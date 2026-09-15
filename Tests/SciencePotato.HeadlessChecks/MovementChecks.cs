@@ -194,7 +194,7 @@ namespace SciencePotato.HeadlessChecks
 			public Unit SpawnWorker(HexCubePosition position)
 			{
 				Map.AddPopulation(MapId, position, 0, 9, 1);
-				Resources.AddResource("Gold", 300f, MapId, OwnerId);
+				Resources.AddResource("Food", 300f, MapId, OwnerId);
 				Units.CreateUnit(MapId, "worker", position, OwnerId);
 				Clock.AdvanceDays(3); // 快配置：训练 3 日
 

@@ -1,5 +1,6 @@
 using SciencePotato.Scripts.Core;
 using SciencePotato.Scripts.Core.Config;
+using SciencePotato.Scripts.Resources.Domain;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -29,9 +30,71 @@ namespace SciencePotato.HeadlessChecks
 			Check.Run("WP-1.4 放行：FailOnConfigErrors=false 时带 error 仍可装配并取到报告", ReportWithoutThrowing);
 			Check.Run("WP-1.4 全表视图：GetAll/GetTreeIds 与 JSON 条目数一致", EnumerationViewsMatchJson);
 			Check.Run("WP-1.4 报告：问题行包含表名与等级（可直接贴给填表者）", ReportIsReadable);
+			Check.Run("WP-7.1 资源口径：设计稿的 3 种资源（名/初始储备/上限/修正器目标）", DesignResourceIds);
+			Check.Run("WP-7.1 资源口径：全表已无旧别名（Gold/Wood 残留 = 改了一半）", NoLegacyResourceAliases);
 		}
 
 		// ────────────────────────── 正向 ──────────────────────────
+
+		/// <summary>
+		/// （v0.6.3 / WP-7.1）**资源口径 = 设计稿**：名 / 初始储备 / 上限 / 修正器目标名。
+		/// <para>数值取自 `design/resources.md` 的资源总表（Idea 500/10000 · Food 300/2000 · BasicMinerals 200/1500）。
+		/// 这条断言的价值是"把设计稿的表格钉在代码里"：数值被悄悄改掉时立刻红。</para>
+		/// </summary>
+		private static void DesignResourceIds()
+		{
+			CoreServices core = ConfigFixtures.BuildRealCore();
+			var expected = new (string Name, float Initial, float Limit, string Growth)[]
+			{
+				("Idea", 500f, 10000f, "IdeaGrowth"),
+				("Food", 300f, 2000f, "FoodGrowth"),
+				("BasicMinerals", 200f, 1500f, "MineralGrowth"),
+			};
+
+			List<IResourceConfig> resources = core.Tables.AllResources().ToList();
+			Check.AssertEqual(expected.Length, resources.Count, "资源种类数（设计稿 3 种）");
+
+			foreach ((string name, float initial, float limit, string growth) in expected)
+			{
+				IResourceConfig resource = resources.FirstOrDefault(r => r.Name == name);
+				Check.Assert(resource != null, $"设计稿的资源「{name}」应在表里");
+				Check.AssertEqual(initial, resource.BaseValue, $"{name} 初始储备（`resources.md`）");
+				Check.AssertEqual(limit, resource.BaseLimit, $"{name} 存储上限（`resources.md`）");
+				Check.Assert(resource.DependentModifiers != null && resource.DependentModifiers.Contains(growth),
+					$"{name} 的产出修正器目标应为 {growth}");
+			}
+
+			// 人口口粮走 Food（设计稿：人口 × 3/月）
+			IResourcesPoolConfig poolConfig = core.Tables.Resources.GetResourcesPoolConfig();
+			ISettlementConfig settlement = poolConfig?.Settlement;
+			Check.Assert(settlement != null, "Resources 表应含 Settlement 段");
+			Check.AssertEqual("Food", settlement.DemandResource, "Settlement.DemandResource");
+			Check.AssertEqual(3f, settlement.PopulationUpkeepPerMonth, "人口维护率（设计稿 3/月）");
+		}
+
+		/// <summary>
+		/// （v0.6.3 / WP-7.1）**旧别名必须绝迹**：全表（资源/建筑/单位/事件）里不允许再出现 `Gold` / `Wood`。
+		/// <para>为什么单独查一条：改名改一半的表（比如建筑造价还是 Wood、资源表已经没有 Wood）不会报 error ——
+		/// 它只会让"某个建筑永远造不了"（费用校验失败），这类缺陷找起来很贵。</para>
+		/// </summary>
+		private static void NoLegacyResourceAliases()
+		{
+			string[] legacy = { "Gold", "Wood", "GoldGrowth", "WoodGrowth" };
+			CoreServices core = ConfigFixtures.BuildRealCore();
+
+			foreach (string alias in legacy)
+			{
+				Check.Assert(!core.Tables.AllResources().Any(r => r.Name == alias), $"资源表不应再有「{alias}」");
+				Check.Assert(!core.Tables.AllBuildings().Any(b => UsesAlias(b.ResourceCost, b.Maintenance, alias)),
+					$"建筑表不应再引用「{alias}」");
+				Check.Assert(!core.Tables.AllUnits().Any(u => UsesAlias(u.ResourceCost, u.Maintenance, alias)),
+					$"单位表不应再引用「{alias}」");
+			}
+		}
+
+		/// <summary>某条配置（建筑/单位）的费用或维护费里是否还引用旧资源别名。</summary>
+		private static bool UsesAlias(IDictionary<string, float> cost, IDictionary<string, float> maintenance, string alias)
+			=> (cost != null && cost.ContainsKey(alias)) || (maintenance != null && maintenance.ContainsKey(alias));
 
 		private static void AllTablesPresent()
 		{
@@ -75,7 +138,7 @@ namespace SciencePotato.HeadlessChecks
 				.ToList();
 
 			Check.Assert(unregistered.Count == 0,
-				"真实配置里所有 Modifier.Target 都应能被登记表解析（含资源派生 GoldGrowth/WoodGrowth 与单位派生 swordsmanAttack/swordsmanHP）：" +
+				"真实配置里所有 Modifier.Target 都应能被登记表解析（含资源派生 FoodGrowth/MineralGrowth 与单位派生 swordsmanAttack/swordsmanHP）：" +
 				string.Join(" | ", unregistered.Select(i => i.ToString())));
 		}
 
@@ -92,7 +155,7 @@ namespace SciencePotato.HeadlessChecks
 			      "Name": "拼错的类型",
 			      "TriggerChancePerDay": 0.01,
 			      "Duration": 5,
-			      "Modifiers": [ { "Target": "GoldGrowth", "Type": "Percentt", "Value": 0.5 } ],
+			      "Modifiers": [ { "Target": "FoodGrowth", "Type": "Percentt", "Value": 0.5 } ],
 			      "ResourcePrerequisites": {},
 			      "TechPrerequisites": {}
 			    }
@@ -139,7 +202,7 @@ namespace SciencePotato.HeadlessChecks
 			    "house": {
 			      "BuildingId": "hovel",
 			      "Name": "民居",
-			      "ResourceCost": { "Wood": 20 },
+			      "ResourceCost": { "BasicMinerals": 20 },
 			      "TerrainRequirements": ["plain"],
 			      "TechRequirements": {},
 			      "Modifiers": [],
@@ -180,7 +243,7 @@ namespace SciencePotato.HeadlessChecks
 			    "lab": {
 			      "BuildingId": "lab",
 			      "Name": "实验室",
-			      "ResourceCost": { "Gold": 10 },
+			      "ResourceCost": { "Food": 10 },
 			      "TerrainRequirements": ["plain"],
 			      "TechRequirements": { "no_such_tree": ["x"], "science": ["no_such_node"] },
 			      "Modifiers": [],

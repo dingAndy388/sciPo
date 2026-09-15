@@ -7,9 +7,9 @@
       "TriggerChancePerDay": 0.002,
       "Duration": 30,
       "Modifiers": [
-        { "Target": "GoldGrowth", "Type": "Percent", "Value": 1.0 }
+        { "Target": "FoodGrowth", "Type": "Percent", "Value": 1.0 }
       ],
-      "ResourcePrerequisites": { "Gold": 200 },
+      "ResourcePrerequisites": { "Food": 200 },
       "TechPrerequisites": {}
     },
     {
@@ -19,8 +19,8 @@
       "TriggerChancePerDay": 0.001,
       "Duration": 20,
       "Modifiers": [
-        { "Target": "GoldGrowth", "Type": "Percent", "Value": -0.3 },
-        { "Target": "WoodGrowth", "Type": "Percent", "Value": -0.2 }
+        { "Target": "FoodGrowth", "Type": "Percent", "Value": -0.3 },
+        { "Target": "MineralGrowth", "Type": "Percent", "Value": -0.2 }
       ],
       "ResourcePrerequisites": {},
       "TechPrerequisites": {}
@@ -34,7 +34,7 @@
       "Modifiers": [
         { "Target": "IdeaGrowth", "Type": "Percent", "Value": 0.5 }
       ],
-      "ResourcePrerequisites": { "Gold": 500, "Idea": 100 },
+      "ResourcePrerequisites": { "Food": 500, "Idea": 100 },
       "TechPrerequisites": { "science": ["mathematics"] }
     }
   ]

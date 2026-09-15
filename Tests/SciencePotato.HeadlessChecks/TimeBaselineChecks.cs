@@ -149,7 +149,7 @@ namespace SciencePotato.HeadlessChecks
 			var bus = new GameTimeService(clock);
 			int settlements = 0;
 
-			var task = new IntervalTask(0, TimeConstants.ResourceSettlementDays, "Gold", "ResourceGrowth", "none", "map", 1);
+			var task = new IntervalTask(0, TimeConstants.ResourceSettlementDays, "Food", "ResourceGrowth", "none", "map", 1);
 			task.OnCompleted += () => settlements++;
 			bus.Register(task);
 
@@ -259,7 +259,7 @@ namespace SciencePotato.HeadlessChecks
 			    "slow": {
 			      "BuildingId": "slow",
 			      "Name": "秒值房",
-			      "ResourceCost": { "Wood": 1 },
+			      "ResourceCost": { "BasicMinerals": 1 },
 			      "TerrainRequirements": ["plain"],
 			      "TechRequirements": {},
 			      "Modifiers": [],

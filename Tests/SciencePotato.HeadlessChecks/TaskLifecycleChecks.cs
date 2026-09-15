@@ -85,7 +85,7 @@ namespace SciencePotato.HeadlessChecks
 			Harness h = NewHarness();
 			try
 			{
-				var task = new IntervalTask(0, 30, "Gold", "ResourceGrowth", "none", Map, 1);
+				var task = new IntervalTask(0, 30, "Food", "ResourceGrowth", "none", Map, 1);
 				h.Bus.Register(task);
 				h.Clock.AdvanceDays(1);
 				Check.AssertEqual(1, h.Repo.GetCurrentTasks(Map).Count, "注册后应有一条快照");
@@ -155,7 +155,7 @@ namespace SciencePotato.HeadlessChecks
 			Harness h = NewHarness();
 			try
 			{
-				var keep = new IntervalTask(0, 30, "Gold", "ResourceGrowth", "none", Map, 1);
+				var keep = new IntervalTask(0, 30, "Food", "ResourceGrowth", "none", Map, 1);
 				var shortOne = new LinearTask(0, 3, "camp", "Construction", false, "u1", Map, 0);
 				var shortTwo = new LinearTask(0, 7, "school", "Construction", false, "u2", Map, 0);
 				h.Bus.Register(keep);
@@ -167,7 +167,7 @@ namespace SciencePotato.HeadlessChecks
 				List<TaskSnapshot> snapshots = h.Repo.GetCurrentTasks(Map);
 				Check.AssertEqual(h.Bus.SubscriberCount, snapshots.Count, "文件条目数应等于活跃任务数");
 				Check.AssertEqual(1, snapshots.Count, "两条一次性任务完成后只剩月结任务");
-				Check.AssertEqual("ResourceGrowth:none:Gold", snapshots[0].Key, "剩下的是资源月结任务");
+				Check.AssertEqual("ResourceGrowth:none:Food", snapshots[0].Key, "剩下的是资源月结任务");
 				Check.AssertEqual(20f, snapshots[0].Progress, "月结任务进度不受其它任务回收影响");
 			}
 			finally { Cleanup(h.Dir); }

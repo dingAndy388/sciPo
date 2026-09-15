@@ -139,8 +139,8 @@ namespace SciencePotato.HeadlessChecks
 			public string Build(string buildingId, HexCubePosition? position = null)
 			{
 				HexCubePosition site = position ?? Site;
-				Resources.AddResource("Wood", 500f, MapId, OwnerId);
-				Resources.AddResource("Gold", 500f, MapId, OwnerId);
+				Resources.AddResource("BasicMinerals", 500f, MapId, OwnerId);
+				Resources.AddResource("Food", 500f, MapId, OwnerId);
 				Construction.StartConstruction(MapId, buildingId, site, OwnerId);
 				Clock.AdvanceDays(2);
 
@@ -156,8 +156,8 @@ namespace SciencePotato.HeadlessChecks
 			public Unit Spawn(int ownerId, string unitId, HexCubePosition position)
 			{
 				Map.AddPopulation(MapId, position, 0, 9, 1);
-				Resources.AddResource("Gold", 300f, MapId, ownerId);
-				Resources.AddResource("Wood", 300f, MapId, ownerId);
+				Resources.AddResource("Food", 300f, MapId, ownerId);
+				Resources.AddResource("BasicMinerals", 300f, MapId, ownerId);
 				Units.CreateUnit(MapId, unitId, position, ownerId);
 				Clock.AdvanceDays(3);
 

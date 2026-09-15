@@ -112,12 +112,12 @@ namespace SciencePotato.HeadlessChecks
 				h.Research("science", "mathematics");
 
 				// ② 资源不足
-				h.Drain("Wood");
+				h.Drain("BasicMinerals");
 				Check.Assert(!h.Units.ExcuteAction(MapId, worker.GetInfo().UId, h.Site, h.CampUid, "CanUpgrade"), "资源不足时不得升级");
 
 				// ③ 成功一次 → 到 lv.II（lv.II 的升级前置是 physics/simple_machine_intuition，未解锁）
-				h.Resources.AddResource("Wood", 500f, MapId, h.OwnerId);
-				h.Resources.AddResource("Gold", 200f, MapId, h.OwnerId);
+				h.Resources.AddResource("BasicMinerals", 500f, MapId, h.OwnerId);
+				h.Resources.AddResource("Food", 200f, MapId, h.OwnerId);
 				Check.Assert(h.Units.ExcuteAction(MapId, worker.GetInfo().UId, h.Site, h.CampUid, "CanUpgrade"), "前置与资源齐备后应能升级");
 				h.Clock.AdvanceDays(2); // 快配置：升级 2 日
 
@@ -133,7 +133,7 @@ namespace SciencePotato.HeadlessChecks
 
 				// ⑤ 未完工不得升级
 				HexCubePosition pending = h.FreeSite();
-				h.Resources.AddResource("Wood", 500f, MapId, h.OwnerId);
+				h.Resources.AddResource("BasicMinerals", 500f, MapId, h.OwnerId);
 				h.Construction.StartConstruction(MapId, "camp", pending, h.OwnerId);
 				string pendingUid = h.Map.GetOccupantInfo(MapId, pending).Value.UId;
 				Check.Assert(!h.Construction.StartUpgrade(MapId, pendingUid, h.OwnerId), "施工中的建筑不得升级");
@@ -178,7 +178,7 @@ namespace SciencePotato.HeadlessChecks
 			try
 			{
 				Unit worker = h.SpawnWorker();
-				h.Resources.AddResource("Gold", 500f, MapId, h.OwnerId);
+				h.Resources.AddResource("Food", 500f, MapId, h.OwnerId);
 				h.Resources.AddResource("Idea", 0f, MapId, h.OwnerId);
 				h.BuildAndFinish("school");
 
@@ -282,7 +282,7 @@ namespace SciencePotato.HeadlessChecks
 				"应给出未知资源的 warning");
 
 			// ⑤ 负值消耗 → error
-			report = BuildReport(b => b["camp"]["UpgradeCost"] = new JObject { ["Wood"] = -5 });
+			report = BuildReport(b => b["camp"]["UpgradeCost"] = new JObject { ["BasicMinerals"] = -5 });
 			Check.Assert(report.HasErrors, "负的升级消耗应判 error");
 		}
 
@@ -324,8 +324,8 @@ namespace SciencePotato.HeadlessChecks
 			public string BuildAndFinish(string buildingId, HexCubePosition? position = null)
 			{
 				HexCubePosition site = position ?? Site;
-				Resources.AddResource("Wood", 500f, MapId, OwnerId);
-				Resources.AddResource("Gold", 500f, MapId, OwnerId);
+				Resources.AddResource("BasicMinerals", 500f, MapId, OwnerId);
+				Resources.AddResource("Food", 500f, MapId, OwnerId);
 				Construction.StartConstruction(MapId, buildingId, site, OwnerId);
 				Clock.AdvanceDays(2); // 快配置：建造 2 日
 
@@ -342,7 +342,7 @@ namespace SciencePotato.HeadlessChecks
 					&& c.Position.DistenceTo(Site) <= 1);
 
 				Map.AddPopulation(MapId, cell.Position, 0, 9, 1);
-				Resources.AddResource("Gold", 100f, MapId, OwnerId);
+				Resources.AddResource("Food", 100f, MapId, OwnerId);
 				Units.CreateUnit(MapId, "worker", cell.Position, OwnerId);
 				Clock.AdvanceDays(3); // 快配置：训练 3 日
 

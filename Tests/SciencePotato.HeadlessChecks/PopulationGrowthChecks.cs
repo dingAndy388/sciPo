@@ -278,7 +278,7 @@ namespace SciencePotato.HeadlessChecks
 
 		private static void BuildCamp(Harness h)
 		{
-			h.Resources.AddResource("Wood", 200f, MapId, h.OwnerId); // 营地造价：Wood 20
+			h.Resources.AddResource("BasicMinerals", 200f, MapId, h.OwnerId); // 营地造价：BasicMinerals 20
 			h.Construction.StartConstruction(MapId, "camp", h.Site, h.OwnerId);
 		}
 

@@ -128,16 +128,19 @@ namespace SciencePotato.HeadlessChecks
 				core.Map.SetTerrain(mapId, site.Position, core.Tables.Terrains.GetById("plain"));
 				HexCubePosition position = site.Position;
 
-				// 资源到位（学院：Gold 100 + Wood 50）；建池同时注册 3 条月结任务（GrowInterval=30）
-				resources.AddResource("Gold", 1000f, mapId, ownerId);
-				resources.AddResource("Wood", 1000f, mapId, ownerId);
+				// 资源到位（学院：Food 100 + BasicMinerals 50）；建池同时注册 3 条月结任务（GrowInterval=30）
+				resources.AddResource("Food", 1000f, mapId, ownerId);
+				resources.AddResource("BasicMinerals", 1000f, mapId, ownerId);
 				resources.AddResource("Idea", 0f, mapId, ownerId);
 
 				construction.StartConstruction(mapId, "school", position, ownerId);
 
 				// ① 施工期内不应有 idea 产出（产出 Modifier 只在完工回调里注册）
+				//    （v0.6.3 / WP-7.1）断言改成**增量**：设计口径下 Idea 有初始储备（`resources.md`：500），
+				//    "完工前不增长"的含义是"数值不变"，而不是"等于 0"
+				float ideaBeforeBuild = IdeaOf(resources, mapId, ownerId);
 				core.Session.Clock.AdvanceDays(239);
-				Check.AssertEqual(0f, IdeaOf(resources, mapId, ownerId), "学院完工前 Idea 不应增长");
+				Check.AssertEqual(ideaBeforeBuild, IdeaOf(resources, mapId, ownerId), "学院完工前 Idea 不应增长");
 
 				// ② 第 240 日完工：建筑就绪（**占用槽位以 `cell.Occupant` 为准** —— 见下方 ⑤ 的已知缺陷）
 				core.Session.Clock.AdvanceDays(1);

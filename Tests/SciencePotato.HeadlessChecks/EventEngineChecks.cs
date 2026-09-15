@@ -85,7 +85,7 @@ namespace SciencePotato.HeadlessChecks
 		/// <summary>真实事件表 + 固定种子跑 3 年：先让科技/资源就绪，再看触发次数。</summary>
 		private static Dictionary<string, int> RunThreeYears(int seed)
 		{
-			Harness harness = Harness.Build(eventsJson: null, seed: seed, gold: 500f, idea: 100f);
+			Harness harness = Harness.Build(eventsJson: null, seed: seed, Food: 500f, idea: 100f);
 			try
 			{
 				// 启蒙时代的前置是「science/mathematics 已研究」：先研究 writing → mathematics
@@ -156,18 +156,25 @@ namespace SciencePotato.HeadlessChecks
 
 		private static void PrerequisitesGateTriggers()
 		{
-			// ① 资源前置：Gold 200。初始 0 → 永不触发；补到 400 → 触发
+			// ① 资源前置：Food 200。初始储备已够 → 先清空再验"不足不触发"；补到 400 → 触发
 			//    注意：因 `D25`（`Consume()` 不回写资源池），扣除不落盘 → 前置资源在下次读盘时"复活"，
 			//    所以这里**不能**断言"扣空后不再触发"。`D25` 同时影响建造/研发/事件三处扣费，已挂 §18.4。
-			Harness poor = Harness.Build(eventsJson: ResourceEventJson("costly", 1f, 5, "Gold", 200f), seed: 1);
+			//    （v0.6.3 / WP-7.1）"不足"必须是显式构造的：设计口径下 Food 有初始储备（300），
+			//    旧写法靠"初始 0"成立，现在要先把它花掉 —— 否则测的是"够用也能触发"。
+			Harness poor = Harness.Build(eventsJson: ResourceEventJson("costly", 1f, 5, "Food", 200f), seed: 1);
 			try
 			{
+				SciencePotato.Scripts.Resources.Domain.ResourcesPool empty =
+					poor.Resources.GetOrCreatePool(poor.MapId, poor.OwnerId);
+				poor.Resources.AddResource("Food", -empty.GetValue("Food"), poor.MapId, poor.OwnerId);
+				Check.AssertEqual(0f, poor.Resources.GetOrCreatePool(poor.MapId, poor.OwnerId).GetValue("Food"), "准备：Food 清空");
+
 				poor.Clock.AdvanceDays(30);
 				Check.AssertEqual(0, poor.Events.GetTriggerCounts(poor.MapId, poor.OwnerId).Count, "资源不足时不应触发");
 			}
 			finally { poor.Dispose(); }
 
-			Harness rich = Harness.Build(eventsJson: ResourceEventJson("costly", 1f, 5, "Gold", 200f), seed: 1, gold: 400f);
+			Harness rich = Harness.Build(eventsJson: ResourceEventJson("costly", 1f, 5, "Food", 200f), seed: 1, Food: 400f);
 			try
 			{
 				rich.Clock.AdvanceDays(30);
@@ -285,7 +292,7 @@ namespace SciencePotato.HeadlessChecks
 			public string MapId = "evt-map";
 			public int OwnerId = 1;
 
-			public static Harness Build(string eventsJson, int seed, float gold = 0f, float idea = 0f)
+			public static Harness Build(string eventsJson, int seed, float Food = 0f, float idea = 0f)
 			{
 				CoreServices core = ConfigFixtures.BuildRealCore();
 
@@ -316,7 +323,7 @@ namespace SciencePotato.HeadlessChecks
 				IEventConfigRepository eventRepo = eventsJson == null ? core.Tables.Events : new EventConfigRepository(eventsJson);
 				harness.Events = new EventAppService(eventRepo, harness.Resources, harness.Tech, modifier, harness.Time, new SystemRandom(seed));
 
-				if (gold > 0f) harness.Resources.AddResource("Gold", gold, harness.MapId, harness.OwnerId);
+				if (Food > 0f) harness.Resources.AddResource("Food", Food, harness.MapId, harness.OwnerId);
 				if (idea > 0f) harness.Resources.AddResource("Idea", idea, harness.MapId, harness.OwnerId);
 
 				harness.Events.StartEventsEngine(harness.MapId, harness.OwnerId);
