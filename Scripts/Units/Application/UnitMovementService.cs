@@ -276,8 +276,8 @@ namespace SciencePotato.Scripts.Units.Application
 
 			if (_fog != null)
 			{
-				_fog.ResetArea(from, visionRadius);
-				_fog.RevealArea(position, visionRadius);
+				_fog.ResetArea(unit.GetInfo().OwnerId, from, visionRadius); // WP-4.10
+				_fog.RevealArea(unit.GetInfo().OwnerId, position, visionRadius); // WP-4.10
 			}
 
 			return true;

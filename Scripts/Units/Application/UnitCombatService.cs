@@ -447,8 +447,8 @@ namespace SciencePotato.Scripts.Units.Application
 			if (_fog == null) return;
 
 			int vision = _configs.GetUnitConfig(unit.GetInfo().Id)?.VisionRadius ?? 0;
-			_fog.ResetArea(from, vision);
-			_fog.RevealArea(to, vision);
+			_fog.ResetArea(unit.GetInfo().OwnerId, from, vision); // WP-4.10
+			_fog.RevealArea(unit.GetInfo().OwnerId, to, vision); // WP-4.10
 		}
 
 		// ────────────────────────── 内部：按日结算 ──────────────────────────

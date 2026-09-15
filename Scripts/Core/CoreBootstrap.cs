@@ -214,6 +214,10 @@ namespace SciencePotato.Scripts.Core
 			var populationModel = tables.Buildings == null ? null : new PopulationModelService(mapService, tables.Buildings, domainEvents);
 			construction?.AttachPopulationModel(populationModel);
 
+			// 6.15) 信息与门控（v0.8.9 / WP-4.13 + WP-4.14）：产出归因 + UI 门控
+			var attribution = new ProductionAttributionService(modifierRepo, mapService, tables.TechTrees);
+			var uiGate = tech == null ? null : new UiGateService(tech, tables.TechTrees);
+
 			// 6.13) AI 与胜负（v0.7.6 / WP-6.6）：出局即停（不再决策/下单）
 			ai.AttachVictory(victory);
 
@@ -247,6 +251,8 @@ namespace SciencePotato.Scripts.Core
 				AiEconomy = aiEconomy,
 				AiMilitary = aiMilitary,
 				Population = populationModel,
+				Attribution = attribution,
+				UiGate = uiGate,
 				I18n = i18n,
 			};
 		}

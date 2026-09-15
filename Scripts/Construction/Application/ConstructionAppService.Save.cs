@@ -33,6 +33,7 @@ namespace SciencePotato.Scripts.Construction.Application
 			if (builder is Units.Domain.Unit unit)
 			{
 				building.BuilderBinding.OnRelease = () => unit.IsIdle = true;
+			unit.IsIdle = false;   // （v0.8.9 / WP-4.15）读档后工人应恢复"忙"，否则会被别的工地抢走
 				wired++;
 			}
 			else

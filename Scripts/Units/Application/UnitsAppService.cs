@@ -168,7 +168,7 @@ namespace SciencePotato.Scripts.Units.Application
 				trainingTask.OnCompleted += () =>
 				{
 					_map.GetOccupantByUId(mapId, uid).IsReady = true;
-					_fog.RevealArea(position, config.VisionRadius);
+					_fog.RevealArea(ownerId, position, config.VisionRadius); // WP-4.10
 
 					RegisterMoveTask(mapId, uid);
 				};

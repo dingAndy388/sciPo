@@ -27,5 +27,11 @@ namespace SciencePotato.Scripts.TechTree.Domain
 		float Cost { get; }
 		float Duration { get; }
 		List<Modifier> Modifiers { get; }
+
+		/// <summary>
+		/// （v0.8.9 / `WP-4.14`）**解锁的界面能力**（`resource_panel` / `research` / `harvest_panel` …）：
+		/// 设计稿"解锁资源面板/开启研究功能"这类效果的数据形式，由 `UiGateService` 消费。空表 = 不解锁任何界面。
+		/// </summary>
+		IReadOnlyList<string> UnlocksUi { get; }
 	}
 }

@@ -18,5 +18,10 @@ namespace SciencePotato.Scripts.TechTree.Domain
 		public float Cost { get; set; }
 		public float Duration { get; set; }
 		public List<Modifier> Modifiers { get; set; }
+
+		/// <summary>（v0.8.9 / WP-4.14）解锁的界面能力（如 resource_panel / research / harvest_panel）。</summary>
+		public List<string> UnlocksUi { get; set; } = new List<string>();
+
+		IReadOnlyList<string> ITechNodeConfig.UnlocksUi => UnlocksUi ?? new List<string>();
 	}
 }

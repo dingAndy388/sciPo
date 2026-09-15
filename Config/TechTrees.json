@@ -40,14 +40,16 @@
           "Prerequisites": [],
           "Cost": 0,
           "Duration": 0,
-          "Modifiers": []
+          "Modifiers": [],
+          "UnlocksUi": [ "resource_panel", "research" ]
         },
         "writing": {
           "Id": "writing",
           "Prerequisites": [],
           "Cost": 30,
           "Duration": 15,
-          "Modifiers": []
+          "Modifiers": [],
+          "UnlocksUi": [ "harvest_panel" ]
         },
         "mathematics": {
           "Id": "mathematics",

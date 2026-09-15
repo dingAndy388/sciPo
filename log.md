@@ -2502,7 +2502,7 @@ dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessC
 
 ## 19.1 目标与交付口径
 
-| 项 | 口径（v0.6.0） |
+| 项 | 口径（v0.8.9） |
 | :--- | :--- |
 | **终点** | **M2 = 除美术外全内容 + AI**：一局游戏能打到胜负（含 1 个 AI 对手）、93 科技 / 24 建筑 / 20 事件 / 15 单位**全部在表**且启动校验 **0 error**、事件可暂停并等玩家决策、**替换美术不需要改代码** |
 | **可自动验证优先** | 一切能在无头下判定的都必须自动判定：`dotnet build`（0 error）→ `dotnet run --project Tests\SciencePotato.HeadlessChecks`（退出码 0）→ **Godot 无头冒烟**（`Scene/Dev/smoke_report.tscn`，退出码 0）。人只看四类**主观项**（见下） |
@@ -2510,7 +2510,7 @@ dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessC
 | **我自动交付的东西** | C# 代码、JSON 配置表、`.tscn`/`.tres` 文本、`.md` 文档、无头断言、Godot 无头冒烟、`--write-movie` 截帧半视觉自查 |
 | **文档纪律** | 每完成一个 WP 只改三处：§19.2 状态列、§19.6 进度行、§20 决策记录；每批提交前做一次"文档体检"（版本号、状态、复现命令是否自洽） |
 
-## 19.2 批次与 WP 状态（总 **76**：已完成 **29** / 剩余 **47**）
+## 19.2 批次与 WP 状态（总 **76**：已完成 **65** / 剩余 **11**）
 
 > 状态标记：`✅ 完成` ｜ `🔧 进行中` ｜ `☐ 未开始`。`M` 列 = 归属里程碑（M1 之后按 §19.3 的判据分配）。
 
@@ -2580,9 +2580,9 @@ dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessC
 | WP-4.10 | **迷雾按 owner 拆分**（状态/服务分离 + 永久清除语义 + 视野列） | ☐ 未开始 | M2 |
 | WP-4.11 | 地形通行解锁（水域/山地由科技解锁） | ✅ 完成（v0.8.8：`Passable:{terrain}` 解锁 + `TerrainCost:{terrain}` 改写成本） | M2 |
 | WP-4.12 | **事件暂停 + 玩家决策**（触发即暂停，等确认再继续） | ✅ 完成（v0.7.8，`M2` 判据 ③：待决队列 + 自动暂停/还原档位 + `Resolve`/`ResolveAll`；UI 接线归 `WP-5.4`） | M2 |
-| WP-4.13 | 产出归因查询（"查看资源加减项"）+ `SourceId` 语义规范 | ☐ 未开始 | M2 |
-| WP-4.14 | UI 门控（资源面板 / 研究功能 / 升级按钮按解锁状态显示） | ☐ 未开始 | M2 |
-| WP-4.15 | 建造者绑定落盘（`BuilderBinding` 进存档，读档后仍绑着人） | ☐ 未开始 | M2 |
+| WP-4.13 | 产出归因查询（"查看资源加减项"）+ `SourceId` 语义规范 | ✅ 完成（v0.8.9：`ProductionAttributionService` 按来源拆账 + `D115` 语义规范） | M2 |
+| WP-4.14 | UI 门控（资源面板 / 研究功能 / 升级按钮按解锁状态显示） | ✅ 完成（v0.8.9：`UnlocksUi` + `UiGateService`；表现层接线归 WP-5.4） | M2 |
+| WP-4.15 | 建造者绑定落盘（`BuilderBinding` 进存档，读档后仍绑着人） | ✅ 完成（v0.8.9：`SaveMapper` 往返 + **读档恢复工人忙闲**（真缺陷修复） | M2 |
 | WP-4.16 | 建筑前置建模（设计稿的"前置"含**建筑**：日晷 ← 学院） | ✅ 完成（v0.8.8：`BuildingPrerequisites` + 已完工判定） | M2 |
 | WP-4.17 | 人口模型（聚落级容量：多住房不叠加；拆住房 → 迁移/减员） | ✅ 完成（v0.8.8：`PopulationModelService` 取最大上限 + 拆房压人口） | M2 |
 | **WP-4.18** | **会话 / 玩家表**（`PlayerContext` + `GameSession.Players` + `SessionOrchestrator` 逐 owner 启动） | ✅ 完成（v0.6.0） | M1 |
@@ -2677,7 +2677,7 @@ dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessC
 
 ## 19.6 进度总览与复现命令
 
-**进度**：批次 0~3 ✅（29 WP）· 批次 4 **15/19** · 批次 5 **6/11** · 批次 6 **6/6 ✅** · 批次 7 **5/7** · 批次 8 **0/4** → **已完成 60 / 剩余 16**（M2 剩 11 + M3 剩 5）。
+**进度**：批次 0~3 ✅（29 WP）· 批次 4 **19/19 ✅** · 批次 5 **6/11** · 批次 6 **6/6 ✅** · 批次 7 **5/7** · 批次 8 **0/4** → **已完成 65 / 剩余 11**（M2 剩 7 + M3 剩 4）。
 最近一次更新：**v0.7.7**（`WP-6.4`+`WP-6.5`+`WP-6.6`：**批次 6 AI 全链完成** —— 军费按威胁分级（窗口内 0 / 窗口后 5·10·15·20%）、训练走 `TrainUnit`、高威胁时把人叫回自家聚落；"不作弊"钉成 5 条**差分**判据；**出局即停**（`Evaluate` 返回 null 且自摘 tick，没有僵尸 AI）、双向胜负与人类同构。检查 **248/248**、冒烟 **20/20**）；随后 `v0.7.8` 补 `WP-4.12` 事件暂停（检查 **253/253**）。
 前一次：**v0.7.1**（`WP-4.8` 建筑 HP + 夺取：住房/军事有 HP、归零转"可夺取"、敌单位站上即易主（半血）+ 修正器移交给新主人；建筑资产变化接入胜负重算；检查 **216/216**、冒烟 **18/18**）。`n前一次：**v0.6.7**（P0 收尾 + 工作流加速：① 占位块改**真六边形**（`N1` 反馈）；② 地图方向定为**横幅 143×73**（`D92`）；③ 初始石材 **200 → 800**（`D91`，开局不再死锁）；④ AI 前期不造兵窗口定 **360 日**（`D93`）；⑤ 新增 `Tools/verify.ps1`（三层验收**一条命令、4 路并行**：墙钟 40~60 s → **16.6 s**）与 `Document/CodeMap.md`（改哪里要配套改哪里）。检查 **206/206**、冒烟 **18/18、退出码 0**）。
 > **M1 达成**（`v0.6.1`~`v0.6.6`）：装配通电 · 会话/玩家表 · 脚手架修复 · 外观数据驱动 · 73×143 基线 · 开局布置 · i18n · 资源口径收敛 · 农田/矿场/仓库。
@@ -2754,6 +2754,7 @@ $exe = 'E:\Godot_v4.6-stable_mono_win64\Godot_v4.6-stable_mono_win64.exe'
 | `D112` | 2026-09-16 | **B2 深度机制口径（`WP-4.2` 范围 · `WP-4.3` 标签/条件化 · `WP-4.6` 驻扎 · `WP-4.7` 合并）**：① **单位能力走"按配置现算"**（`IUnitConfig.Tags` / `Abilities` / `GarrisonHosts` / `GarrisonModifiers`）：不进 `ModifierRepository` ⇒ 无生命周期管理（单位死/走开天然失效），代价是不能叠临时增益；② **条件化伤害**：`DamageVs{目标标签}`（长矛兵对近战 +20%）与 `DamageVsBuilding`（弩炮对建筑 +50%）在 `ComputeDamage` 按**目标标签**结算，`DamageTaken`（重装卫士 −25%）在**伤害落地处**按**受击方**结算；③ **驻扎**：单位在宿主建筑（`GarrisonHosts`）**一格内**时其 `GarrisonModifiers` 并入所属玩家产出（学者=学院 Idea+10%、化学家=矿场矿物+10%），宿主消失/走开**下一拍自动失效**；④ **范围产出效果**：`IBuildingConfig.ModifierRange`（0=只作用自身；观星台 3 格、骨笛工坊 1 格）——被覆盖的**生产建筑**每个贡献一次源建筑的加成（"覆盖 2 块农田"= 各 +15%，合计 +30%），owner 级近似（按建筑拆分产出归 `WP-4.13`）；**相邻同类**（振动与波）用 `AdjacentSameTypeBonus` 作**倍率**（base 传 1，传 0 会被乘成 0 —— 这是本轮踩的公式坑）；⑤ **单位合并**：同模板 + **相邻或同格**（地图不允许两单位共格 ⇒ 触发条件放宽到距离 ≤ 1）+ HP 相加截断到 `MaxHP`，被并方**不算阵亡**（不推 `UnitDiedEvent`，只移除 + 注销移动循环）；⑥ 新增两条设计稿建筑（**观星台** / **骨笛工坊**）使范围效果有真实载体（建筑 23 条，日晷属附属建筑归 `WP-4.9`/`WP-7.2b`） | ① ④⑤ 都是"用配置现算代替状态管理"的同一取舍：B2 的四条机制**零新增持久化状态**，读档/复制/多人都不用额外同步（后续若需要"临时增益"再引入注册制）；② 条件化伤害让设计稿的「特殊能力」列第一次有机器可读形式（此前只能写进 `EffectText`）；④ 是本轮收益最大的一条：观星台/骨笛工坊/振动与波三类"范围"效果从今天起真生效 | `Scripts/Units/Domain/IUnitConfig.cs` + `UnitConfigDto`（4 个新字段）、`Scripts/Units/Application/UnitCombatService.cs`（`ComputeDamage` 重载 + `ApplyAbility`）、`UnitsAppService.MergeUnits`/`MergeCount`、`Scripts/Resources/Application/MonthlySettlementService.cs`（`RangedProductionBonus`/`AdjacentSameTypeCount`/`ApplyGarrison`）、`IBuildingConfig`/`BuildingConfigDto`（`ModifierRange`）、`Config/Units.json`（15 条标签 + 3 条能力 + 2 条驻扎）、`Config/Buildings.json`（观星台/骨笛工坊）、`ModifierTargetRegistry`（`DamageVs*`/`DamageTaken`/`AdjacentSameTypeBonus`）、`CoreBootstrap`（settlement 传 `unitConfigs`）、用例 `DepthMechanicChecks`（5 条） |
 | `D113` | 2026-09-16 | **一个潜在不一致（顺带记录）**：`MapAppService.MoveOccupant` 是**格级** API（只挪格子槽位），不会同步 `Unit.Position` 字段 —— 游戏内移动靠 `UnitMovementService` 在到达时更新，所以生产路径一致；但**测试/工具**用格级 API 走位时必须自己同步（本轮 `DepthMechanicChecks` 的驻扎用例即如此）。**不做修复**（改 `Map.MoveOccupant` 去写单位字段会把"地图层不应该知道单位字段"的边界打破），改为在用例里显式同步 + 注释 | 记录这类"层边界导致的隐式约定"，避免下一个人再踩一遍；若将来 `WP-4.9`/`WP-4.13` 需要"权威位置查询"，再给 `IOccupantQuery` 加一个"按 uid 取当前格"的只读方法 | `Tests/.../DepthMechanicChecks.cs`（注释）、`Scripts/Map/Application/MapAppService.cs`（未改，仅记录） |
 | `D114` | 2026-09-16 | **B3 结构机制口径（`WP-4.9` 区域/附属建筑 · `WP-4.16` 建筑前置 · `WP-4.17` 人口模型 · `WP-4.11` 地形解锁）**：① **附属建筑**：`IBuildingConfig.IsAttachment` + `BuildingPrerequisites`，落位走 `Map.PlaceAttachment`（**不动 `cell.Building`**，只挂 `cell.Attachments` / `Building.Attachments` 并进 `_occupants` 索引）——因此普通 `IsClear` 判定被显式旁路（附属就建在宿主格上）；② **区域升级不动附属**（`ApplyUpgrade` 只换自己的 Id）；③ **宿主被拆 ⇒ 附属一并清**（`Map.ClearAttachments`，在 `MapAppService.RemoveBuilding` 里调用，避免僵尸索引）；④ **建筑两格无迷雾**：`RevealArea(max(2, VisionRadius))`；⑤ **`GetOccupants` 必须计入 `cell.Attachments`**（漏掉会让"日晷算不算资产 / 吃不吃维护费 / 会不会揭雾"静默错 —— 与 `D97` 同一类教训）；⑥ **建筑维度前置**：`HasCompletedBuilding`（本势力已完工之一即可）；⑦ **人口模型**：`PopulationModelService.CapacityAt` = **覆盖该点的住房取最大上限**（设计稿"多住房不叠加"：两座营地摞一起仍是 9，不是 18），增长任务改用它；**拆住房**由 `ConstructionAppService.RemoveBuildingByPosition` 触发压人口（多出来的人按距中心由近到远减员）；**不在 `BuildingRemovedEvent` 里压** —— 该事件不带位置（`D114` 记录这个缺口：若将来要做"事件驱动的全局压人口"，得给事件补 `Position`）；⑧ **地形解锁**：`CanEnter(mapId, ownerId, pos)` / `TerrainCost(mapId, ownerId, pos)` 读 `Passable:{terrainId}`（存在即解锁）与 `TerrainCost:{terrainId}`（有则**改写**成本，浮力定律 = 水域 5.0）；注册表按地形表**派生**这两个名字 | ①⑤ 是"新实体必须同时进所有视图"的实例（附属建筑一度只存在于 `cell.Attachments`，`GetOccupants` 立刻漏掉它）；⑦ 把"不叠加"落成**取最大**而不是"求和再减去重叠"——同样的设计意图，实现与测试都短一个数量级；⑧ 复用 `HasTarget` 做"存在即解锁"，避免再造一套开关 | `Scripts/Construction/Domain/IBuildingConfig.cs`+`BuildingConfigDto`（`BuildingPrerequisites`/`IsAttachment`）、`Building.cs`（`HostUId`/`Attachments`）、`MapCell.cs`（`Attachments`）、`Map.cs`（`PlaceAttachment`/`RemoveAttachment`/`ClearAttachments`）、`MapAppService`（`PlaceAttachment` + `GetOccupants` 含附属 + 拆房清附属）、`ConstructionAppService`（前置/宿主/`HasCompletedBuilding`/迷雾 min2/人口压减接线）、`Scripts/Map/Application/PopulationModelService.cs`（新）、`CoreServices.Population`、`CoreBootstrap`（6.14）、`UnitMovementService`（owner 版 `CanEnter`/`TerrainCost`）、`ModifierTargetRegistry`（地形派生名）、`Config/Buildings.json`（日晷=`sundial`，**建筑表到设计稿全表 24 条**）、用例 `StructureMechanicChecks`（5 条） |
+| `D115` | 2026-09-16 | **B4 信息与门控口径（`WP-4.10` 迷雾按 owner · `WP-4.13` 归因 · `WP-4.14` UI 门控 · `WP-4.15` 建造者绑定）**：① **迷雾按 owner**：`FogAppService` 内部改成 `Dictionary<ownerId, FogState>`，**旧的无 owner 签名全部代理到构造时传入的 `_ownerId`**（人类）⇒ 既有的 80+ 处调用行为不变；新增 owner 版 `RevealArea/ResetArea/GetVisibility/Load/Save/Clear`，并把 6 处"知道 owner"的调用点（建筑完工、单位落位/移动、战斗位移）改成按 owner 揭雾（AI 打架不再替玩家开图）；**永久清除语义**保持：离开视野只降到 `Fogged`，永不回退 `Unexplored`；② **产出归因**：新增 `ProductionAttributionService`，直接读修正器仓储的**原始条目**并逐条标注来源类型，同时落地 **`SourceId` 语义规范**：建筑 = 建筑 uid（`Map.FindOccupantByUId` 能查到）/ 科技 = 科技节点 Id（在任一树里能查到）/ `base` = 空 SourceId / 其余归 `other`（事件 Id 暂落这里）；③ **UI 门控**：科技节点新增 `UnlocksUi`（`resource_panel` / `research` / `harvest_panel`），`UiGateService.IsUnlocked` 扫"已研究节点的 UnlocksUi"⇒ 面板开关是**填表**的事（占位表里 计数→资源面板+研究、writing→收获面板；`WP-7.3` 落地 93 表时按设计稿把收获面板移到"算术"）；④ **建造者绑定落盘**：`SaveMapper` 早已写入 `BuilderUId` 并在重建时 `TryBindBuilder`，本轮补上**读档后把工人置回"忙"**（`unit.IsIdle = false`）—— 否则绑定虽在、工人会被别的工地抢走（真缺陷，用例锁住） | ① 用"字典 + 旧签名代理"实现按 owner，避免改动 80+ 调用点；② 归因读原始条目而不是聚合值，面板才能回答"这 12 点食物是谁给的"；③ 把"哪条科技开哪个面板"从代码挪进配置；④ 是"存档写了 ≠ 状态恢复了"的典型：用例断言的是**工人的忙闲**，不是 DTO 字段 | `Scripts/Fog/Application/FogAppService.cs`（按 owner）、`ProductionAttributionService.cs`（新）、`UiGateService.cs`（新）、`ITechNodeConfig`/`TechNodeConfigDto`（`UnlocksUi`）、`Config/TechTrees.json`（占位节点补 `UnlocksUi`）、`ConstructionAppService.Save.cs`（读档恢复忙碌）、6 处揭雾调用点、`CoreServices.Attribution`/`UiGate`、`CoreBootstrap`（6.15）、用例 `InfoGateChecks`（4 条） |
 
 
 > **下一步**：**M1 已达成 → 交 N1（视觉与操作手感复看）**；随后进 M2（批次 4 的 18 个 + 批次 5 的 5 个 + 批次 6 全 6 个 + 批次 7 的 4 个），建议顺序：`WP-4.19` 胜负判定 → `WP-4.12` 事件暂停决策 → `WP-4.8` 建筑 HP/夺取 → 批次 6（AI）→ `WP-5.4` 正式表现层 → `WP-5.11` 会话入口 → 内容补齐（`WP-7.2b`/`7.3`/`7.4`/`7.5`）。

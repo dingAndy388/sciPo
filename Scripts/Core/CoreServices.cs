@@ -136,6 +136,12 @@ namespace SciencePotato.Scripts.Core
 		/// <summary>（v0.8.8 / WP-4.17）人口模型：聚落级容量（多住房不叠加）+ 拆住房减员。</summary>
 		public PopulationModelService Population { get; init; }
 
+		/// <summary>（v0.8.9 / WP-4.13）产出归因：把某资源产出拆成一条条来源（"查看资源加减项"）。</summary>
+		public ProductionAttributionService Attribution { get; init; }
+
+		/// <summary>（v0.8.9 / WP-4.14）UI 门控：科技节点 `UnlocksUi` → 界面能力开关。</summary>
+		public UiGateService UiGate { get; init; }
+
 		/// <summary>
 		/// （v0.7.4 / WP-6.3）**AI 经济分配**：把决策变成建造/科研订单（走玩家同一套应用服务 ⇒ 不作弊）。
 		/// </summary>

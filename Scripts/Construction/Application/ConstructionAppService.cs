@@ -187,11 +187,11 @@ namespace SciencePotato.Scripts.Construction.Application
 			if (previousConfig != null)
 			{
 				_modifier.RemoveModifiersBySourceId(mapId, ownerId, uid);
-				_fog.ResetArea(position, previousConfig.VisionRadius);
+				_fog.ResetArea(ownerId, position, previousConfig.VisionRadius); // WP-4.10：按 owner 收视野
 			}
 
 			_modifier.AddModifiers(mapId, ownerId, uid, config.Modifiers);
-			_fog.RevealArea(position, Math.Max(2, config.VisionRadius)); // WP-4.9：设计稿"建筑两格内无迷雾" ⇒ 至少 2 格
+			_fog.RevealArea(ownerId, position, Math.Max(2, config.VisionRadius)); // WP-4.9：设计稿"建筑两格内无迷雾" ⇒ 至少 2 格
 
 			// 人口任务：同一建筑同时只允许一条（升级会换间隔/上限，必须先把旧任务摘掉）
 			_time.UnregisterByUId(uid);
