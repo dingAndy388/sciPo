@@ -12,10 +12,15 @@ namespace SciencePotato.Scripts.Map.Infrastructure
 	/// </summary>
 	public partial class MapSave
 	{
-		/// <summary>存档格式版本：1 = 只有地形（v0.3.4 之前）；2 = 含人口与占据物（v0.3.15 / WP-3.2）。</summary>
+		/// <summary>存档格式版本：1 = 只有地形（v0.3.4 之前）；2 = 含人口与占据物（v0.3.15 / WP-3.2）；
+		/// 3 = 含同格交战的进攻方槽位（v0.3 / WP-3.6 / `E9`）。</summary>
 		public int SaveVersion { get; set; } = CurrentVersion;
 
-		public const int CurrentVersion = 2;
+		/// <summary>
+		/// 当前支持的存档格式版本。**只增不改**：旧档缺字段即取默认值（v2 档没有 `Invader` → 交战状态为空，
+		/// 与"没在打仗"等价），因此无需为 v3 写迁移；更高版本仍然拒绝加载。
+		/// </summary>
+		public const int CurrentVersion = 3;
 
 		public string Id { get; set; }
 		public int width { get; set; }

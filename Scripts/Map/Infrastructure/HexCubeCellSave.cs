@@ -18,5 +18,11 @@ namespace SciencePotato.Scripts.Map.Infrastructure
 
 		public BuildingSaveDto Building { get; set; }
 		public UnitSaveDto Unit { get; set; }
+
+		/// <summary>
+		/// （v0.3 / WP-3.6 / `E9`）**同格交战的进攻方**（`SaveVersion >= 3`）：被挑战方在 `Unit` 槽位，
+		/// 攻进该格的单位在这里 —— 否则"打了一半的仗"读档后会凭空消失（`cell.Invader` 是交战状态的权威）。
+		/// </summary>
+		public UnitSaveDto Invader { get; set; }
 	}
 }

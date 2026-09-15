@@ -47,10 +47,29 @@ namespace SciencePotato.Scripts.Map.Infrastructure
 				if (cell.Occupant is Building building) cellSave.Building = ToBuildingSave(building);
 				else if (cell.Occupant is Unit unit) cellSave.Unit = ToUnitSave(unit);
 
+				// v0.3 / WP-3.6（`E9`）：同格交战的进攻方（`cell.Invader`）与被挑战方并存，单独一个槽位
+				if (cell.Invader is Unit invader) cellSave.Invader = ToUnitSave(invader);
+
 				save.cells.Add(cellSave);
 			}
 
 			return save;
+		}
+
+		/// <summary>
+		/// （v0.3 / WP-3.6 / `E9`）**读档恢复"同格交战的进攻方"**：重建单位 → 落回该格的 `Invader` 槽位。
+		/// <para>两个地图仓库（Godot 与内存替身）共用这一步，避免"只在一侧恢复交战状态"的偏差；
+		/// `from == to`：被挑战方就是该格的占据物，不参与"离开原格"的清理（`Map.BeginEngagement` 已判相等）。</para>
+		/// </summary>
+		/// <returns>是否恢复出一对交战单位。</returns>
+		public static bool RestoreEngagement(Domain.Map map, SaveRebuilder rebuilder, HexCubeCellSave cellSave)
+		{
+			if (map == null || cellSave?.Invader == null) return false;
+
+			IMapOccupant invader = rebuilder?.RebuildUnit(cellSave.Invader, cellSave.position);
+			if (invader == null) return false;
+
+			return map.BeginEngagement(invader, cellSave.position, cellSave.position);
 		}
 
 		/// <summary>建筑 → DTO（含建造者绑定与训练队列）。</summary>

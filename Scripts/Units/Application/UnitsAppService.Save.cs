@@ -47,7 +47,15 @@ namespace SciencePotato.Scripts.Units.Application
 		}
 
 		/// <summary>
-		/// 读档重建**单位的周期任务**：移动/回蓝循环（每单位一条）+ 攻击循环（`AttackTargetUid` 非空时）。
+		/// 读档重建**单位的周期任务**：移动/回蓝循环（每单位一条）+ 交战循环（`AttackTargetUid` 非空时）。
+		/// <para>（v0.3 / WP-3.6）覆盖三处此前会漏掉的对象：</para>
+		/// <list type="number">
+		/// <item>**交战中的进攻方**（在 `cell.Invader` 槽位，不是 `Occupant`）—— 漏掉它会让"打了一半的仗"
+		/// 读档后只剩被挑战方在打空气；</item>
+		/// <item>**敌方单位的反击循环**（`E19`）—— 敌方不移动（不重建移动循环），但"在打某个单位"必须恢复；
+		/// </item>
+		/// <item>同一格的一对**各自**的一条循环（双向），进度都从快照回填。</item>
+		/// </list>
 		/// </summary>
 		/// <param name="progressByTaskKey">按任务键取回存档进度（键见 `TaskSnapshot.Key`）。</param>
 		/// <returns>重建的任务数。</returns>
@@ -57,23 +65,35 @@ namespace SciencePotato.Scripts.Units.Application
 
 			foreach (MapCell cell in _map.GetAllCells(mapId).ToList())
 			{
-				if (cell.Occupant is not Unit unit || !unit.IsReady) continue;
+				restored += RestoreUnit(mapId, cell.Occupant as Unit, progressByTaskKey);
+				restored += RestoreUnit(mapId, cell.Invader as Unit, progressByTaskKey);
+			}
 
-				// v0.3 / WP-3.8：敌方单位不移动、不巡逻（design/unit.md「行为模式」）→ 不重建移动循环
-				// （旧写法会给每个敌方单位挂一条永远无事可做的日循环；交战循环由 `WP-3.6` 决定）
-				if (unit.IsHostile) continue;
+			return restored;
+		}
 
-				string uid = unit.GetInfo().UId;
+		/// <summary>单个单位的周期任务重建（`Occupant` 与 `Invader` 两个槽位共用这一段）。</summary>
+		private int RestoreUnit(string mapId, Unit unit, IDictionary<string, float> progressByTaskKey)
+		{
+			if (unit == null || !unit.IsReady) return 0;
 
+			int restored = 0;
+			string uid = unit.GetInfo().UId;
+
+			// v0.3 / WP-3.8：敌方单位不移动、不巡逻（design/unit.md「行为模式」）→ 不重建移动循环
+			// （旧写法会给每个敌方单位挂一条永远无事可做的日循环）
+			if (!unit.IsHostile)
+			{
 				RegisterMoveTask(mapId, uid, ProgressOf(progressByTaskKey, "UnitMove", "none", uid));
 				restored++;
+			}
 
-				if (!string.IsNullOrWhiteSpace(unit.AttackTargetUid))
-				{
-					RegisterAttackTask(mapId, uid, unit.AttackTargetUid,
-						ProgressOf(progressByTaskKey, "UnitAttack", "none", $"atk_{uid}_{unit.AttackTargetUid}"));
-					restored++;
-				}
+			// v0.3 / WP-3.6（`E19`）：敌方也会反击 → 攻击循环对两个阵营一视同仁地恢复
+			if (!string.IsNullOrWhiteSpace(unit.AttackTargetUid))
+			{
+				RegisterAttackTask(mapId, uid, unit.AttackTargetUid,
+					ProgressOf(progressByTaskKey, "UnitAttack", "none", $"atk_{uid}_{unit.AttackTargetUid}"));
+				restored++;
 			}
 
 			return restored;

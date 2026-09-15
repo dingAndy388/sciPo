@@ -134,13 +134,71 @@ namespace SciencePotato.Scripts.Map.Application
 		/// <para>占用权威（`WP-3.4`）保证 `cell.Occupant` 与 uid 索引一致，因此"按格取占据物"就是全量视图；
 		/// 经济结算需要它来统计"图上有哪些单位"（单位维护费），但**返回值是 <see cref="IMapOccupant"/>** ——
 		/// 地图模块不必认识 Units 模块的类型，判定留给消费方。</para>
+		/// <para>（v0.3 / WP-3.6）**交战中的进攻方也计入**：攻进敌格的单位仍然是"图上存在、仍在吃粮"的单位，
+		/// 漏掉它会让单位维护费少算（它在 `Invader` 槽位而不是 `Occupant`）。</para>
 		/// </summary>
 		public IEnumerable<IMapOccupant> GetOccupants(string mapId)
 		{
 			var map = _session.Get(mapId);
 			if (map == null) return Enumerable.Empty<IMapOccupant>();
 
-			return map.GetAllCells().Where(cell => cell.Occupant != null).Select(cell => cell.Occupant);
+			return map.GetAllCells()
+				.SelectMany(cell => new[] { cell.Occupant, cell.Invader })
+				.Where(occupant => occupant != null);
+		}
+
+		/// <summary>
+		/// （v0.3 / WP-3.6 / `E9`）该格是否**正有一对单位交战**（被挑战方 + 进攻方）。
+		/// <para>与 <see cref="IsClear"/> 的关系：交战中该格**不是**空地（`IsClear` 看占据物槽位），
+		/// 建造/移动的封锁照旧；"一对"是这条规则的可读判据。</para>
+		/// </summary>
+		public bool IsEngagedAt(string mapId, HexCubePosition position)
+		{
+			var map = _session.Get(mapId);
+			return map != null && map.IsEngagedAt(position);
+		}
+
+		/// <summary>（v0.3 / WP-3.6）该格的**进攻方**（无交战时 null）。</summary>
+		public IMapOccupant GetInvader(string mapId, HexCubePosition position)
+		{
+			var map = _session.Get(mapId);
+			return map?.GetInvader(position);
+		}
+
+		/// <summary>（v0.3 / WP-3.6）该格的占据物对象（槽位权威；空格/地图不存在 → null）。</summary>
+		public IMapOccupant GetOccupantAt(string mapId, HexCubePosition position)
+		{
+			var map = _session.Get(mapId);
+			return map?.GetOccupantAt(position);
+		}
+
+		/// <summary>
+		/// （v0.3 / WP-3.6 / `E9`）**占据物进入交战的唯一入口**（[`Map.BeginEngagement`]）：进攻方挪进目标格、
+		/// 落进该格的 `Invader` 槽位，被挑战方仍是占据物。
+		/// <para>成功即打脏标记：交战状态随地图存档保留（否则读档后"打了一半的仗"会凭空消失）。</para>
+		/// </summary>
+		/// <returns>是否进入成功。</returns>
+		public bool BeginEngagement(string mapId, IMapOccupant invader, HexCubePosition from, HexCubePosition to)
+		{
+			var map = _session.Get(mapId);
+			if (map == null) return false;
+
+			if (!map.BeginEngagement(invader, from, to)) return false;
+
+			_session.MarkDirty(mapId);
+			return true;
+		}
+
+		/// <summary>（v0.3 / WP-3.6）**退出交战**（进攻方离场）：返回退出的进攻方对象。</summary>
+		public IMapOccupant EndEngagement(string mapId, HexCubePosition position)
+		{
+			var map = _session.Get(mapId);
+			if (map == null) return null;
+
+			IMapOccupant invader = map.EndEngagement(position);
+			if (invader != null) _session.MarkDirty(mapId);
+
+			return invader;
 		}
 
 		/// <summary>

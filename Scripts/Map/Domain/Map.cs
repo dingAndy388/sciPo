@@ -78,6 +78,10 @@ namespace SciencePotato.Scripts.Map.Domain
 		/// （v0.3 / WP-3.4）**占据物离开的唯一入口**：格子、建筑槽位、`_occupants` 索引三处一起清。
 		/// <para>旧实现只清 `cell.Occupant` → `_occupants` 里留下**僵尸索引**（`MAP-03`/`UNIT-05`）：
 		/// 已阵亡的单位仍能按 uid 查到，任务/战斗回调于是对着尸体干活。</para>
+		/// <para>（v0.3 / WP-3.6 / `E9`）**收尾时把入侵者顶上位**：被挑战方阵亡/被移除后，
+		/// 同格那一对交战中幸存的进攻方接管该格（design/unit.md「必须先击败敌人才能进入该地块」）。
+		/// 放在这里而不是让战斗服务自己补一步：任何移除路径（阵亡、拆除、脚本）都不会留下
+		/// "格子里有人、占据物槽位却是空的"悬空态（那会让 `IsClear` 误判为可建造）。</para>
 		/// </summary>
 		/// <returns>被移除的占据物（无则 null）。</returns>
 		public IMapOccupant RemoveOccupant(HexCubePosition position)
@@ -91,7 +95,92 @@ namespace SciencePotato.Scripts.Map.Domain
 			if (!string.IsNullOrEmpty(uid)) _occupants.Remove(uid);
 			if (ReferenceEquals(cell.Building, occupant)) cell.RemoveBuilding();
 			cell.RemoveOccupant();
+
+			PromoteInvaderAt(cell);
 			return occupant;
+		}
+
+		/// <summary>
+		/// （v0.3 / WP-3.6 / `E9`）**格内是否有一对正在交战的单位**：`cell.Occupant`（被挑战方）+
+		/// `cell.Invader`（进攻方）同时存在（`D56`：`Invader` 槽位就是留给这条规则的）。
+		/// </summary>
+		public bool IsEngagedAt(HexCubePosition position)
+			=> _cells.TryGetValue(position, out MapCell cell) && cell.Invader != null;
+
+		/// <summary>（v0.3 / WP-3.6）该格的**进攻方**（无交战时为 null）。</summary>
+		public IMapOccupant GetInvader(HexCubePosition position)
+			=> _cells.TryGetValue(position, out MapCell cell) ? cell.Invader : null;
+
+		/// <summary>（v0.3 / WP-3.6）该格的占据物（槽位权威；空格/地图外返回 null）。</summary>
+		public IMapOccupant GetOccupantAt(HexCubePosition position)
+			=> _cells.TryGetValue(position, out MapCell cell) ? cell.Occupant : null;
+
+		/// <summary>
+		/// （v0.3 / WP-3.6 / `E9`）**占据物进入交战的唯一入口**：进攻方从 <paramref name="from"/> 挪进
+		/// <paramref name="to"/>，落进该格的 `Invader` 槽位（被挑战方仍是 `Occupant`）。
+		/// <list type="number">
+		/// <item>目标格必须**已有一个占据物**（被挑战方）——"攻打空地"不是交战，走移动/建造；</item>
+		/// <item>该格**只能有一对**：已有 `Invader` 时拒绝（design/unit.md「每个地块中只能有一个单位或一对正在交战的单位」）；</item>
+		/// <item>`from` 与位移一样从原格摘除，并保持 `_occupants` 索引指向进攻方（任务/存档/查询都靠它）。</item>
+		/// </list>
+		/// <para>**为什么不改 `MapCell` 结构**：一格一个 `Occupant` 的权威已经修好（`WP-3.4`），
+		/// 而 `Invader` 槽位从早期版本就存在、一直空着 —— 用它表达"一对"是最小改动，
+		/// "格内多占据物"（`WP-4.9`）到来时再统一成集合。</para>
+		/// </summary>
+		/// <returns>是否进入交战成功（false = 目标不合法 / 该格已有一对）。</returns>
+		public bool BeginEngagement(IMapOccupant invader, HexCubePosition from, HexCubePosition to)
+		{
+			if (invader == null) return false;
+			if (!_cells.TryGetValue(to, out MapCell target)) return false;
+			if (target.Occupant == null) return false;
+			if (ReferenceEquals(target.Occupant, invader)) return false;
+			if (target.Invader != null) return false; // 一格一对
+
+			if (from != to && _cells.TryGetValue(from, out MapCell origin) && ReferenceEquals(origin.Occupant, invader))
+				origin.RemoveOccupant(); // 与 `MoveOccupant` 同一约定：离开原格
+
+			target.SetInvader(invader);
+
+			string uid = invader.GetInfo().UId;
+			if (!string.IsNullOrEmpty(uid)) _occupants[uid] = invader;
+
+			return true;
+		}
+
+		/// <summary>
+		/// （v0.3 / WP-3.6）**退出交战**：进攻方离开该格（阵亡/停战/换格），被挑战方不受影响。
+		/// <para>注意方向：**被挑战方**阵亡不走这里 —— 它在 <see cref="RemoveOccupant"/> 里被摘除后
+		/// 由 <see cref="PromoteInvaderAt"/> 把进攻方顶上位。</para>
+		/// </summary>
+		/// <returns>退出的进攻方（本就没有交战时为 null）。</returns>
+		public IMapOccupant EndEngagement(HexCubePosition position)
+		{
+			if (!_cells.TryGetValue(position, out MapCell cell)) return null;
+
+			IMapOccupant invader = cell.Invader;
+			cell.RemoveInvader();
+			if (invader == null) return null;
+
+			string uid = invader.GetInfo().UId;
+			if (!string.IsNullOrEmpty(uid)) _occupants.Remove(uid);
+
+			return invader;
+		}
+
+		/// <summary>（v0.3 / WP-3.6）把该格的进攻方顶成占据物（被挑战方已离场时的收尾；返回是否发生了顶替）。</summary>
+		private bool PromoteInvaderAt(MapCell cell)
+		{
+			IMapOccupant invader = cell?.Invader;
+			if (invader == null) return false;
+			if (cell.Occupant != null) return false; // 该格已有占据物（正常不会走到：一格一对）
+
+			cell.RemoveInvader();
+			cell.SetOccupant(invader);
+
+			string uid = invader.GetInfo().UId;
+			if (!string.IsNullOrEmpty(uid)) _occupants[uid] = invader;
+
+			return true;
 		}
 
 		/// <summary>（v0.3 / WP-3.4）**建筑离开的唯一入口**：清 `cell.Building` + 占据物槽位 + 索引。</summary>

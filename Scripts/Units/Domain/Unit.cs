@@ -13,6 +13,15 @@ namespace SciencePotato.Scripts.Units.Domain
 		public HexCubePosition Position { get; set; }
 		public bool IsReady { get; set; }
 		public float HP { get; set; }
+
+		/// <summary>
+		/// （v0.3 / WP-3.6）**生命上限**：生成时取自配置的 `HP`，此后只读（`HP` 才是会变的那一半）。
+		/// <para>用途：单位合并（`E15` / `WP-4.7`）的判据是"两个同模板单位的 HP 之和 ≤ 上限"，
+		/// 没有上限字段就只能拿配置表当上限 —— 那会让"上限被修正器改过"的单位算错。</para>
+		/// <para>与 <see cref="IsHostile"/> 同口径：它是**类型**属性（由配置派生），因此不写进存档；
+		/// 读档时按 `Id` 查配置即可还原（`SaveRebuilder.RebuildUnit` 只回填 `HP`）。</para>
+		/// </summary>
+		public float MaxHP { get; private set; }
 		public float MovementPoint { get; set; }
 		public int Attack { get; set; }
 		public int Movement { get; set; }
@@ -43,6 +52,7 @@ namespace SciencePotato.Scripts.Units.Domain
 			_ownerId = ownerId;
 			_name = name;
 			HP = hp;
+			MaxHP = hp; // WP-3.6：上限 = 配置的 HP（读档只回填当前值，上限仍由这里派生）
 			MovementPoint = mp;
 			Attack = attack;
 			Movement = movement;

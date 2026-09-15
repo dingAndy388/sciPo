@@ -368,6 +368,15 @@ namespace SciencePotato.Scripts.Core.Config
 				if (unit.VisionRadius < 0) report.Error("Units", key, $"VisionRadius={unit.VisionRadius} 不能为负");
 				if (unit.AttackDamage > 0f && unit.Attack <= 0)
 					report.Warn("Units", key, "AttackDamage>0 但 Attack<=0：两套攻击口径混用，请确认哪个被使用");
+
+				// v0.3 / WP-3.6（`E9`/`E11`/`E19`）战斗口径自检：`AttackDamage` 是**每日伤害**，
+				// 而"能不能主动攻击"由 `Actions` 里的 `CanAttack` 决定、"能不能反击/受击"由 `AttackRadius` 决定。
+				// 两条都只在**玩家单位**上判：敌方单位不参与 `Actions` 门控（敌方是"进入射程即自动交火"）。
+				bool canAttack = unit.Actions?.Contains("CanAttack") ?? false;
+				if (canAttack && unit.AttackDamage <= 0f)
+					report.Warn("Units", key, "有 CanAttack 能力但 AttackDamage<=0：战斗不会产生任何效果（近战还会因此进不去敌格）");
+				else if (!hostile && !canAttack && unit.AttackDamage > 0f)
+					report.Warn("Units", key, "有伤害但缺少 CanAttack：玩家无法主动开战（只会被动挨打）");
 				if (unit.PopulationCost < 0) report.Error("Units", key, $"PopulationCost={unit.PopulationCost} 不能为负");
 				else if (unit.PopulationCost == 0 && !hostile) report.Warn("Units", key, "PopulationCost=0：该单位不占人口");
 

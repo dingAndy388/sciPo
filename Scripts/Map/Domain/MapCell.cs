@@ -11,6 +11,12 @@ namespace SciencePotato.Scripts.Map.Domain
 		public IMapOccupant Occupant {  get; private set; }
 		public IMapOccupant Building { get; private set; }
 
+		/// <summary>
+		/// （v0.3 / WP-3.6 / `E9`）**同格交战的进攻方**：被挑战方留在 <see cref="Occupant"/>，
+		/// 攻进该格的单位落在这里 ⇒ "一格内一对正在交战的单位"（design/unit.md）。
+		/// <para>写入/清除的唯一入口是 <c>Map.BeginEngagement</c> / <c>Map.EndEngagement</c>
+		/// （`WP-3.4` 的统一入口口径）；被挑战方阵亡时由 <c>Map.RemoveOccupant</c> 顶替上位。</para>
+		/// </summary>
 		public IMapOccupant Invader { get; private set; }
 		public int Population { get; private set; }
 

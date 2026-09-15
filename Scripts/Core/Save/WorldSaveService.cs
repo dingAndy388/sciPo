@@ -145,6 +145,11 @@ namespace SciencePotato.Scripts.Core.Save
 			// 不清理会让"恢复的新任务"与"旧任务"同时跑（月结翻倍、人口翻倍）
 			_time.Reset();
 
+			// ③.6 交战循环登记同样作废（v0.3 / WP-3.6）：上一步已把旧订阅者全摘掉，
+			// 若战斗侧的"已挂上"登记表还留着键，随后的 `RestoreAttackLoop` 会被自己挡掉
+			// （症状：读档后敌人不再反击、玩家单位"开了火却没伤害"）
+			_units?.Combat?.ResetLoops();
+
 			if (_session.Maps.Get(mapId) == null) return LastLoadSucceeded; // 无存档：无从恢复
 
 			// ④ 建筑附加状态（队列/建造者绑定都在建筑对象上，但回调需要重新挂）

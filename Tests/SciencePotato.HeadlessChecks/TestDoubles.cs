@@ -108,6 +108,9 @@ namespace SciencePotato.HeadlessChecks
 					IMapOccupant unit = Rebuilder?.RebuildUnit(cellSave.Unit, cellSave.position);
 					if (unit != null) map.AddOccupant(unit, cellSave.position);
 				}
+
+				// WP-3.6（`E9`）：同格交战的进攻方与被挑战方相反 —— 走 `BeginEngagement` 落进 `Invader` 槽位
+				SaveMapper.RestoreEngagement(map, Rebuilder, cellSave);
 			}
 
 			return map;
@@ -119,6 +122,19 @@ namespace SciencePotato.HeadlessChecks
 		public void BumpSaveVersion(string id, int version)
 		{
 			if (_store.TryGetValue(id, out MapSave save)) save.SaveVersion = version;
+		}
+
+		/// <summary>
+		/// （v0.3 / WP-3.6）测试用：把存档**降级成 v2**（抹掉交战进攻方槽位）—— 模拟"旧版本写出的档"。
+		/// <para>用来验证"格式只增不改"的兼容口径：缺少 `Invader` 字段 = 未交战，读档不猜字段、也不需要迁移。
+		/// 真实实现里这一情形由 `MapSave.CurrentVersion` 的向前兼容保证（旧档的 JSON 里根本没有该字段）。</para>
+		/// </summary>
+		public void DowngradeToV2(string id)
+		{
+			if (!_store.TryGetValue(id, out MapSave save)) return;
+
+			save.SaveVersion = 2;
+			foreach (HexCubeCellSave cell in save.cells) cell.Invader = null;
 		}
 
 		public IEnumerable<Map> ListMaps()

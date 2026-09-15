@@ -23,6 +23,10 @@ namespace SciencePotato.Scripts.Units.Application
 	/// </list>
 	/// <para>地形消耗来自 `Terrains.json` 的 `MoveCost`（平原 5 / 山地 25 …），通行性来自 `Passable`
 	/// （`E8`：不再看 `MoveCost == 0` 之类的魔法值）。</para>
+	/// <para>（v0.3 / WP-3.6 / `E9`/`E19`）**与战斗的接口**：敌方格在普通位移下仍不可进入，
+	/// 但"能打的单位"会走 <see cref="UnitCombatService.EnterEnemyCell"/> **攻进去**（同格交战）；
+	/// 每走完一格还会通知战斗侧两件事 —— "到位就开火"（`TryOpenFire`）与"进入敌方射程就受击"（`OnUnitMoved`）。
+	/// 旧实现"视距内出现敌人就停步"（`HasEnemyInVision`）已删除：那是 `WP-3.5` 的过渡行为。</para>
 	/// </summary>
 	public sealed class UnitMovementService(
 		MapAppService map,
@@ -37,6 +41,14 @@ namespace SciencePotato.Scripts.Units.Application
 
 		/// <summary>最近累计的"因 MP 不足而未移动"次数（观测/调试用）。</summary>
 		public int WaitingForMp { get; private set; }
+
+		/// <summary>
+		/// （v0.3 / WP-3.6 / `E9`/`E19`）**战斗引擎**（可空 = 纯移动，不交战）。
+		/// <para>用可空属性回连而不是构造参数：`UnitCombatService` 反过来需要本服务（接近目标、通行判定），
+		/// 构造期互相注入会成环；由 `UnitsAppService` 在两者都建好后接上
+		/// （`movement.Combat = combat`）。</para>
+		/// </summary>
+		public UnitCombatService Combat { get; set; }
 
 		/// <summary>单位每个回复周期的 MP 总量（R1；缺配置时按 1 处理，避免死锁）。</summary>
 		public float MovementOf(Unit unit)
@@ -94,7 +106,9 @@ namespace SciencePotato.Scripts.Units.Application
 				if (unit.CurrentMP > movement) unit.CurrentMP = movement;
 
 				unit.MoveTarget = null;
-				unit.IsIdle = true;
+
+				// v0.3 / WP-3.6：**交战中不算空闲** —— 否则建造/驻扎门控会把"正在砍人"的单位当闲人
+				unit.IsIdle = string.IsNullOrWhiteSpace(unit.AttackTargetUid);
 				return;
 			}
 
@@ -117,15 +131,14 @@ namespace SciencePotato.Scripts.Units.Application
 			{
 				HexCubePosition next = unit.MovePath[0];
 
-				if (HasEnemyInVision(mapId, unit))
-				{
-					Stop(unit); // 视距内出现敌人 → 停下（战斗交给 `WP-3.6`）
-					return;
-				}
-
 				if (!CanEnter(mapId, next))
 				{
-					Stop(unit); // 不可通行地形（`Passable=false`，如未解锁的水域）
+					// v0.3 / WP-3.6（`E9`）：敌方格不再是"死路" —— 能打的单位**攻进去**（进入敌格即交战，
+					// 一格一对）；打不动（无伤害 / 该格已有入侵者）或地形不可通行 → 保持封锁、就地停下。
+					// 攻进去**不消耗 MP**（design：攻击不消耗 MP），因此这里不扣地形费。
+					if (Combat != null && Combat.EnterEnemyCell(mapId, unit, next)) return;
+
+					Stop(unit);
 					return;
 				}
 
@@ -147,7 +160,21 @@ namespace SciencePotato.Scripts.Units.Application
 				unit.CurrentMP -= cost;
 				unit.MovePath.RemoveAt(0);
 
-				if (unit.Position == unit.MoveTarget.Value)
+				bool arrived = unit.Position == unit.MoveTarget.Value;
+
+				// v0.3 / WP-3.6：走到位就把攻击指令兑现（近战攻进目标格 / 远程射程内开火）。
+				// 注意顺序：开火会置 `IsIdle = false`，因此**不能**先 `Stop`（那会把战斗中的人当成空闲）。
+				if (Combat != null && Combat.TryOpenFire(mapId, unit))
+				{
+					unit.MovePath.Clear();
+					if (arrived) unit.CurrentMP = 0f; // R6：到达目的地 → 剩余作废
+					return;
+				}
+
+				// v0.3 / WP-3.6（`E19`）：进入敌方射程 → 对方开始按日攻击（取代 `WP-3.5` 的"遇敌即停"）
+				Combat?.OnUnitMoved(mapId, unit);
+
+				if (arrived)
 				{
 					unit.CurrentMP = 0f; // R6：到达目的地 → 剩余作废
 					Stop(unit);
@@ -172,9 +199,10 @@ namespace SciencePotato.Scripts.Units.Application
 		/// <item>`WP-3.8` / `B8`：**被敌方单位占据的格子封锁** —— design/unit.md「若地块被敌方单位占据，
 		/// 必须先击败敌人才能进入」（敌人死亡后自动恢复，因为封锁就是"那格有没有敌方占据物"）。</item>
 		/// </list>
-		/// <para>地图外（格不存在）视为不可进入：寻路一旦把越界格排进路径，位移就会试图"走出地图"。
-		/// 友方占据不在本判据里：一格一占据物由"移动的唯一入口"（`Map.MoveOccupant` 拒绝占用冲突）兜底，
-		/// 而同格交战/合并的规则归 `WP-3.6`。</para>
+		/// <para>（v0.3 / WP-3.6）**封锁不再是死路**：能打的单位通过"攻进去"（`E9` 同格交战）进入敌格 ——
+		/// 那条路径走 <see cref="UnitCombatService.EnterEnemyCell"/>（占据物进入交战的唯一入口），
+		/// 而不是普通位移，因此本方法对敌方格仍然返回 `false`（普通位移挤不进去，这是"一格一个占据物"的机制）。</para>
+		/// <para>地图外（格不存在）视为不可进入：寻路一旦把越界格排进路径，位移就会试图"走出地图"。</para>
 		/// </summary>
 		public bool CanEnter(string mapId, HexCubePosition position)
 		{
@@ -184,24 +212,6 @@ namespace SciencePotato.Scripts.Units.Application
 			if (!(cell.Terrain != null && cell.Terrain.Passable)) return false;
 
 			return !_map.IsHostileAt(mapId, position);
-		}
-
-		/// <summary>视距内是否有敌方单位（有则停止移动）。</summary>
-		private bool HasEnemyInVision(string mapId, Unit unit)
-		{
-			int ownerId = unit.GetInfo().OwnerId;
-			int visionRadius = _configs.GetUnitConfig(unit.GetInfo().Id)?.VisionRadius ?? 3;
-			HexCubePosition position = unit.Position;
-
-			foreach (MapCell cell in _map.GetAllCells(mapId))
-			{
-				if (cell.Occupant is Unit other
-					&& other.GetInfo().OwnerId != ownerId
-					&& position.DistenceTo(cell.Position) <= visionRadius)
-					return true;
-			}
-
-			return false;
 		}
 
 		/// <summary>

@@ -85,6 +85,10 @@ namespace SciencePotato.Scripts.Map.Infrastructure
 					if (unit != null) map.AddOccupant(unit, cellSave.position);
 					else GD.PushWarning($"[GodotMapRepository] 单位「{cellSave.Unit.Id}」(uid={cellSave.Unit.UId}) 无法重建：配置缺失？");
 				}
+
+				// 同格交战的进攻方（v0.3 / WP-3.6 / `E9`）：与被挑战方在同一格，单独一个槽位
+				if (cellSave.Invader != null && !SaveMapper.RestoreEngagement(map, _rebuilder, cellSave))
+					GD.PushWarning($"[GodotMapRepository] 交战进攻方「{cellSave.Invader.Id}」(uid={cellSave.Invader.UId}) 无法恢复：配置缺失或该格已有一对？");
 			}
 
 			return map;

@@ -30,6 +30,12 @@ namespace SciencePotato.Scripts.Units.Application
 		private readonly IDomainEventBus _events;
 		private readonly UnitMovementService _movement;
 
+		/// <summary>
+		/// （v0.3 / WP-3.6 / `E9`~`E12`、`E18`、`E19`）**战斗引擎**：攻击指令、按日结算、敌方反应都在它里面
+		/// （旧实现是散在本类里的两段 tick；`WP-2.2` 起"战报/UI 想查谁在打谁"只能翻 `AttackTargetUid`）。
+		/// </summary>
+		private readonly UnitCombatService _combat;
+
 		public UnitsAppService(
 			MapAppService mapApp,
 			TechTreesAppService techTreeApp,
@@ -40,7 +46,8 @@ namespace SciencePotato.Scripts.Units.Application
 			UnitFactory factory,
 			FogAppService fogAppService,
 			IBuildingConfigRepository buildingRepo = null,
-			IDomainEventBus eventBus = null)
+			IDomainEventBus eventBus = null,
+			ModifierAppService modifierApp = null)
 		{
 			_map = mapApp;
 			_tech = techTreeApp;
@@ -52,9 +59,19 @@ namespace SciencePotato.Scripts.Units.Application
 			_fog = fogAppService;
 			_buildingRepo = buildingRepo;
 			_events = eventBus;
-		// v0.3 / WP-3.5：移动模型（R1~R7）独立成服务，避免继续堆在应用服务里
-		_movement = new UnitMovementService(mapApp, fogAppService, repo, timeService);
+			// v0.3 / WP-3.5：移动模型（R1~R7）独立成服务，避免继续堆在应用服务里
+			_movement = new UnitMovementService(mapApp, fogAppService, repo, timeService);
+			// v0.3 / WP-3.6：战斗独立成服务；两者互相需要（战斗要"接近/通行"，移动要"攻进去/受击"），
+			// 因此用可空属性回连而不是构造注入（构造期互相注入会成环）
+			_combat = new UnitCombatService(mapApp, repo, _movement, timeService, fogAppService, eventBus, modifierApp);
+			_movement.Combat = _combat;
 		}
+
+		/// <summary>（v0.3 / WP-3.6）战斗引擎（UI / 用例可直接查询"在打谁""开了几条循环"）。</summary>
+		public UnitCombatService Combat => _combat;
+
+		/// <summary>（v0.3 / WP-3.6）移动服务（供表现层做可达性预览；与内部实例同一个）。</summary>
+		public UnitMovementService Movement => _movement;
 
 		/// <summary>
 		/// **直接生成**单位（不经过建筑）—— 敌方刷新（`WP-3.8`）/ 调试 / 脚本用。
@@ -224,6 +241,10 @@ namespace SciencePotato.Scripts.Units.Application
 
 			// 推送（v0.3 / WP-2.10）：单位诞生（UI 刷新 / 成就 / 联动）
 			_events?.Publish(new UnitTrainedEvent(mapId, unit.GetInfo().OwnerId, order.UId, order.UnitId, spawn.Value));
+
+			// v0.3 / WP-3.6（`E19`）：落位也是"进入敌方射程"的一种 —— 若训练场旁边就蹲着敌人，
+			// 新兵应当立刻开始挨打（否则"敌人只在移动时才反应"会漏掉这条最常见的入场方式）
+			_combat.OnUnitMoved(mapId, unit);
 		}
 
 		/// <summary>
@@ -279,8 +300,9 @@ namespace SciencePotato.Scripts.Units.Application
 				case "CanUpgrade":
 					return Upgrade(mapId, unit, targetParam, targetPosition);
 				case "CanAttack":
-					Attack(mapId, unit, targetParam);
-					return true;
+					// v0.3 / WP-3.6：攻击委托给战斗引擎（近战攻进敌格 = 同格交战；远程隔格开火），
+					// 返回"是否接受了指令"（旧实现无条件返回 true，UI 无法区分"打不着"与"已开火"）
+					return _combat.Engage(mapId, unit.GetInfo().UId, targetParam);
 				case "CanMove":
 					Move(mapId, unit, targetPosition);
 					return true;
@@ -373,103 +395,28 @@ namespace SciencePotato.Scripts.Units.Application
 		private void MoveTick(string mapId, string uid) => _movement.Tick(mapId, uid); // v0.3 / WP-3.5：保留入口给既有调用点
 
 
-		// ==================== ATTACK ENGINE ====================
+		// ==================== ATTACK ENGINE（v0.3 / WP-3.6 起委托给 UnitCombatService）====================
+		// 旧实现（本类内的 `Attack` / `RegisterAttackTask` / `AttackTick`）有三个绕不过去的问题：
+		// ① 近战要求同格，而敌方格被 `CanEnter` 封锁 → 近战永远贴不上去（缺陷"敌方战斗未实现"）；
+		// ② 只有攻击方有循环，敌方不会反击（design 的"双方按日结算"缺一半）；
+		// ③ 攻击目标只接受 `Unit`（建筑不能打，`E18` 缺口），且没有目标类型衰减（`E12` 缺口）。
+		// 现在全部落在 `UnitCombatService`：交战状态（一格一对）、按日结算、反击、建筑目标、读档恢复。
 
-		private void Attack(string mapId, Unit unit, string targetUid)
-		{
-			var target = _map.GetOccupantByUId(mapId, targetUid);
-			if (target is not Unit targetUnit || targetUnit.GetInfo().OwnerId == unit.GetInfo().OwnerId)
-				return;
+		/// <summary>
+		/// （v0.3 / WP-3.6）**主动攻击**的统一落点（`ExcuteAction("CanAttack")` 与表现层都用它）：
+		/// 近战 → 攻进目标格（同格交战）；远程 → 射程内开火，射程外先接近。
+		/// </summary>
+		public bool AttackUnit(string mapId, string attackerUid, string targetUid)
+			=> _combat.Engage(mapId, attackerUid, targetUid);
 
-			int aRadius = unit.AttackRadius;
-			unit.IsIdle = false;
+		/// <summary>（v0.3 / WP-3.6）停手：注销该单位作为攻击方的全部交战循环。</summary>
+		public int StopAttack(string mapId, string unitUid) => _combat.StopAttacksOf(mapId, unitUid);
 
-			if (aRadius > 0 && unit.Position.DistenceTo(targetUnit.Position) <= aRadius)
-			{
-				// Ranged — attack immediately
-				// v0.3 / WP-3.2：把交战目标**显式记在单位上**（旧实现只有近战才记），
-				// 这样读档才能重建攻击循环（`RestoreUnitTasks`），也能让战报/UI 查到"正在打谁"
-				unit.AttackTargetUid = targetUid;
-				RegisterAttackTask(mapId, unit.GetInfo().UId, targetUid);
-				return;
-			}
-
-			// Melee or out of range → move adjacent
-			var neighbor = targetUnit.Position.GetNeighbor().FirstOrDefault(n => _movement.CanEnter(mapId, n));
-			if (neighbor == default) return;
-
-			unit.MoveTarget = neighbor;
-			unit.AttackTargetUid = targetUid;
-			// When MoveTick reaches target, it will detect AttackTargetUid and start melee
-		}
-
+		/// <summary>
+		/// （v0.3 / WP-3.2 建，WP-3.6 改走战斗引擎）**恢复一条交战循环**：读档时按单位的
+		/// `AttackTargetUid` 重建（任务键与进度见 `RestoreUnitTasks`）。
+		/// </summary>
 		private void RegisterAttackTask(string mapId, string attackerUid, string targetUid, float initialProgress = 0f)
-		{
-			// 口径（v0.3 / WP-1.5）：每 1 游戏日结算一次伤害（原为 1 秒）
-			// 生命周期（v0.3 / WP-2.2）：交战循环的终结状态是"目标消失 / 脱离射程 / 已是尸体"，
-			// 由 AttackTick 自行注销 —— 否则循环任务会永久留在时间总线里空转（`TIME-02`）。
-			IntervalTask task = null;
-			task = new IntervalTask(initialProgress, TimeConstants.UnitAttackDays, $"atk_{attackerUid}_{targetUid}", "UnitAttack", "none", mapId, 0);
-			task.OnCompleted += () => AttackTick(mapId, attackerUid, targetUid, task);
-			_time.Register(task);
-		}
-
-		private void AttackTick(string mapId, string attackerUid, string targetUid, IntervalTask task)
-		{
-			var attacker = _map.FindOccupantByUId(mapId, attackerUid);
-			var target = _map.FindOccupantByUId(mapId, targetUid);
-
-			// 任一方已从地图上消失 → 交战结束（注销本任务）
-			if (attacker is not Unit atkUnit || target is not Unit defUnit)
-			{
-				_time.Unregister(task);
-				return;
-			}
-
-			// 目标已是尸体（等 `WP-3.4` 修好"僵尸索引"后不会再走到这里，此处保留兜底）
-			if (defUnit.HP <= 0)
-			{
-				_time.Unregister(task);
-				return;
-			}
-
-			// Target moved out of range → stop attacking, no pursuit
-			if (atkUnit.AttackRadius > 0 && atkUnit.Position.DistenceTo(defUnit.Position) > atkUnit.AttackRadius)
-			{
-				atkUnit.IsIdle = true;
-				atkUnit.AttackTargetUid = null;
-				_time.Unregister(task);
-				return;
-			}
-			if (atkUnit.AttackRadius == 0 && atkUnit.Position != defUnit.Position)
-			{
-				atkUnit.IsIdle = true;
-				atkUnit.AttackTargetUid = null;
-				_time.Unregister(task);
-				return;
-			}
-
-			defUnit.HP -= atkUnit.AttackDamage;
-
-			if (defUnit.HP <= 0)
-			{
-				var pos = defUnit.Position;
-				string killedUId = defUnit.GetInfo().UId;
-				int killedOwner = defUnit.GetInfo().OwnerId;
-				string killedUnitId = defUnit.GetInfo().Id;
-
-				_map.RemoveOccupantByPosition(mapId, pos, defUnit);
-				_fog.ResetArea(pos, _repo.GetUnitConfig(defUnit.GetInfo().Id)?.VisionRadius ?? 0);
-				atkUnit.IsIdle = true;
-				atkUnit.AttackTargetUid = null;
-
-				// 范围注销（v0.3 / WP-2.2）：阵亡单位名下的移动/训练任务一并回收，避免"已死对象"继续空转
-				_time.UnregisterByUId(targetUid);
-				_time.Unregister(task);
-
-				// 推送（v0.3 / WP-2.10 / `UNIT-08`）：阵亡原本没有任何推送 —— 亡语/击杀奖励/战报/成就都挂在这里
-				_events?.Publish(new UnitDiedEvent(mapId, killedOwner, killedUId, killedUnitId, pos, attackerUid));
-			}
-		}
+			=> _combat.RestoreAttackLoop(mapId, attackerUid, targetUid, initialProgress);
 	}
 }
