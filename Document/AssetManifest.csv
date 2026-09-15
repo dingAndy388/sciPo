@@ -1,48 +1,190 @@
-Category,Id,ConfigSource,FilePath,SizePx,Anchor,Status,Owner,Notes
-Terrain,plain,Config/Terrains.json,res://Texture/Terrain/plain.png,352x406,Center,placeholder,待定,地形贴图文件名 = 地形Id
-Terrain,desert,Config/Terrains.json,res://Texture/Terrain/desert.png,352x406,Center,placeholder,待定,
-Terrain,forest,Config/Terrains.json,res://Texture/Terrain/forest.png,352x406,Center,placeholder,待定,
-Terrain,mountain,Config/Terrains.json,res://Texture/Terrain/mountain.png,352x406,Center,placeholder,待定,
-Terrain,water,Config/Terrains.json,res://Texture/Terrain/water.png,352x406,Center,placeholder,待定,
-Building,camp,Config/Buildings.json,res://Texture/Building/camp.png,256x256,Center,placeholder,待定,营地 lv.I
-Building,camp_ii,Config/Buildings.json,res://Texture/Building/camp_ii.png,256x256,Center,placeholder,待定,营地 lv.II
-Building,camp_iii,Config/Buildings.json,res://Texture/Building/camp_iii.png,256x256,Center,placeholder,待定,营地 lv.III
-Building,workshop,Config/Buildings.json,res://Texture/Building/workshop.png,256x256,Center,placeholder,待定,工坊 lv.I
-Building,workshop_ii,Config/Buildings.json,res://Texture/Building/workshop_ii.png,256x256,Center,placeholder,待定,工坊 lv.II
-Building,workshop_iii,Config/Buildings.json,res://Texture/Building/workshop_iii.png,256x256,Center,placeholder,待定,工坊 lv.III
-Building,school,Config/Buildings.json,res://Texture/Building/school.png,256x256,Center,placeholder,待定,学院 lv.I
-Building,school_ii,Config/Buildings.json,res://Texture/Building/school_ii.png,256x256,Center,placeholder,待定,学院 lv.II
-Building,school_iii,Config/Buildings.json,res://Texture/Building/school_iii.png,256x256,Center,placeholder,待定,学院 lv.III
-Building,military_camp,Config/Buildings.json,res://Texture/Building/military_camp.png,256x256,Center,placeholder,待定,军营 lv.I
-Building,military_camp_ii,Config/Buildings.json,res://Texture/Building/military_camp_ii.png,256x256,Center,placeholder,待定,军营 lv.II
-Building,military_camp_iii,Config/Buildings.json,res://Texture/Building/military_camp_iii.png,256x256,Center,placeholder,待定,军营 lv.III
-Building,(+12 more),design/buildings.md,res://Texture/Building/{Id}.png,256x256,Center,missing,待定,24 条全表归 WP-7.2a/7.2b（农田/矿场/仓库等）
-Unit,worker,Config/Units.json,res://Texture/Unit/worker.png,128x128,Center,placeholder,待定,工人
-Unit,swordsman,Config/Units.json,res://Texture/Unit/swordsman.png,128x128,Center,placeholder,待定,剑士
-Unit,archer,Config/Units.json,res://Texture/Unit/archer.png,128x128,Center,placeholder,待定,弓箭手
-Unit,wolf,Config/Units.json,res://Texture/Unit/wolf.png,128x128,Center,placeholder,待定,敌方
-Unit,boar,Config/Units.json,res://Texture/Unit/boar.png,128x128,Center,placeholder,待定,敌方
-Unit,eagle,Config/Units.json,res://Texture/Unit/eagle.png,128x128,Center,placeholder,待定,敌方
-Unit,ibex,Config/Units.json,res://Texture/Unit/ibex.png,128x128,Center,placeholder,待定,敌方
-Unit,crocodile,Config/Units.json,res://Texture/Unit/crocodile.png,128x128,Center,placeholder,待定,敌方
-Unit,(+7 more),design/unit.md,res://Texture/Unit/{Id}.png,128x128,Center,missing,待定,15 个全表归 WP-7.5（只读/探索/工程/攻城/学者/化学家等）
-Resource,Food,Config/Resources.json,res://Texture/Resource/Food.png,64x64,Center,placeholder,待定,设计稿口径（WP-7.1 已收敛）
-Resource,BasicMinerals,Config/Resources.json,res://Texture/Resource/BasicMinerals.png,64x64,Center,placeholder,待定,设计稿口径（WP-7.1 已收敛）
-Resource,Idea,Config/Resources.json,res://Texture/Resource/Idea.png,64x64,Center,placeholder,待定,设计稿口径（WP-7.1 已收敛）
-Event,gold_rush,Config/Events.json,res://Texture/Event/gold_rush.png,512x288,Center,placeholder,待定,淘金热
-Event,plague,Config/Events.json,res://Texture/Event/plague.png,512x288,Center,placeholder,待定,瘟疫
-Event,enlightenment,Config/Events.json,res://Texture/Event/enlightenment.png,512x288,Center,placeholder,待定,启蒙时代
-Event,(+17 more),design/events.md,res://Texture/Event/{EventId}.png,512x288,Center,missing,待定,20 条全表归 WP-7.4
-TechIcon,(+93),[Icon needed],res://Texture/Tech/{TreeId}/{NodeId}.png,96x96,Center,missing,待定,科技图标归 WP-7.3 + WP-5.4 研究面板
-UI,panel_bg,WP-5.4（待定）,res://Texture/UI/panel_bg.png,九宫格,Center,missing,待定,正式 HUD 归 WP-5.4
-Audio,BGM_main,WP-8.4（待定）,res://Audio/BGM/main.ogg,,,missing,用户提供,WP-8.4 需要 BGM 文件（见 log.md 19.5 U5）
-Audio,SFX_train,WP-8.4（待定）,res://Audio/SFX/train.ogg,,,missing,待定,训练/建造完成音效
-Building,farm,Config/Buildings.json,res://Texture/Building/farm.png,256x256,Center,placeholder,待定,农田 lv.I
-Building,farm_ii,Config/Buildings.json,res://Texture/Building/farm_ii.png,256x256,Center,placeholder,待定,农田 lv.II
-Building,farm_iii,Config/Buildings.json,res://Texture/Building/farm_iii.png,256x256,Center,placeholder,待定,农田 lv.III
-Building,mine,Config/Buildings.json,res://Texture/Building/mine.png,256x256,Center,placeholder,待定,矿场 lv.I
-Building,mine_ii,Config/Buildings.json,res://Texture/Building/mine_ii.png,256x256,Center,placeholder,待定,矿场 lv.II
-Building,mine_iii,Config/Buildings.json,res://Texture/Building/mine_iii.png,256x256,Center,placeholder,待定,矿场 lv.III
-Building,warehouse,Config/Buildings.json,res://Texture/Building/warehouse.png,256x256,Center,placeholder,待定,仓库 lv.I
-Building,warehouse_ii,Config/Buildings.json,res://Texture/Building/warehouse_ii.png,256x256,Center,placeholder,待定,仓库 lv.II
-Building,warehouse_iii,Config/Buildings.json,res://Texture/Building/warehouse_iii.png,256x256,Center,placeholder,待定,仓库 lv.III
+﻿"Category","Id","ConfigSource","FilePath","SizePx","Anchor","Status","Owner","License","Notes"
+"Terrain","plain","Config/Terrains.json","res://Texture/Terrain/plain.png","366x423","Center","missing","待定","待定","平原（平顶六边形：左右尖角贴边、上下边水平、四角透明）"
+"Terrain","desert","Config/Terrains.json","res://Texture/Terrain/desert.png","366x423","Center","missing","待定","待定","沙漠（平顶六边形：左右尖角贴边、上下边水平、四角透明）"
+"Terrain","forest","Config/Terrains.json","res://Texture/Terrain/forest.png","366x423","Center","missing","待定","待定","森林（平顶六边形：左右尖角贴边、上下边水平、四角透明）"
+"Terrain","mountain","Config/Terrains.json","res://Texture/Terrain/mountain.png","366x423","Center","missing","待定","待定","山地（平顶六边形：左右尖角贴边、上下边水平、四角透明）"
+"Terrain","water","Config/Terrains.json","res://Texture/Terrain/water.png","366x423","Center","missing","待定","待定","水域（平顶六边形：左右尖角贴边、上下边水平、四角透明）"
+"Building","sundial","Config/Buildings.json","res://Texture/Building/sundial.png","256x256","BottomCenter","missing","待定","待定","日晷（末级；脚底贴下边、水平居中）"
+"Building","observatory","Config/Buildings.json","res://Texture/Building/observatory.png","256x256","BottomCenter","missing","待定","待定","观星台（末级；脚底贴下边、水平居中）"
+"Building","bone_flute_workshop","Config/Buildings.json","res://Texture/Building/bone_flute_workshop.png","256x256","BottomCenter","missing","待定","待定","骨笛工坊（末级；脚底贴下边、水平居中）"
+"Building","camp","Config/Buildings.json","res://Texture/Building/camp.png","256x256","BottomCenter","missing","待定","待定","营地（可升级→camp_ii；脚底贴下边、水平居中）"
+"Building","camp_ii","Config/Buildings.json","res://Texture/Building/camp_ii.png","256x256","BottomCenter","missing","待定","待定","营地 lv.II（可升级→camp_iii；脚底贴下边、水平居中）"
+"Building","camp_iii","Config/Buildings.json","res://Texture/Building/camp_iii.png","256x256","BottomCenter","missing","待定","待定","营地 lv.III（末级；脚底贴下边、水平居中）"
+"Building","workshop","Config/Buildings.json","res://Texture/Building/workshop.png","256x256","BottomCenter","missing","待定","待定","工坊（可升级→workshop_ii；脚底贴下边、水平居中）"
+"Building","workshop_ii","Config/Buildings.json","res://Texture/Building/workshop_ii.png","256x256","BottomCenter","missing","待定","待定","工坊 lv.II（可升级→workshop_iii；脚底贴下边、水平居中）"
+"Building","workshop_iii","Config/Buildings.json","res://Texture/Building/workshop_iii.png","256x256","BottomCenter","missing","待定","待定","工坊 lv.III（末级；脚底贴下边、水平居中）"
+"Building","school","Config/Buildings.json","res://Texture/Building/school.png","256x256","BottomCenter","missing","待定","待定","学院（可升级→school_ii；脚底贴下边、水平居中）"
+"Building","school_ii","Config/Buildings.json","res://Texture/Building/school_ii.png","256x256","BottomCenter","missing","待定","待定","学院 lv.II（可升级→school_iii；脚底贴下边、水平居中）"
+"Building","school_iii","Config/Buildings.json","res://Texture/Building/school_iii.png","256x256","BottomCenter","missing","待定","待定","学院 lv.III（末级；脚底贴下边、水平居中）"
+"Building","military_camp","Config/Buildings.json","res://Texture/Building/military_camp.png","256x256","BottomCenter","missing","待定","待定","军营（可升级→military_camp_ii；脚底贴下边、水平居中）"
+"Building","military_camp_ii","Config/Buildings.json","res://Texture/Building/military_camp_ii.png","256x256","BottomCenter","missing","待定","待定","军营 lv.II（可升级→military_camp_iii；脚底贴下边、水平居中）"
+"Building","military_camp_iii","Config/Buildings.json","res://Texture/Building/military_camp_iii.png","256x256","BottomCenter","missing","待定","待定","军营 lv.III（末级；脚底贴下边、水平居中）"
+"Building","farm","Config/Buildings.json","res://Texture/Building/farm.png","256x256","BottomCenter","missing","待定","待定","农田 lv.I（可升级→farm_ii；脚底贴下边、水平居中）"
+"Building","farm_ii","Config/Buildings.json","res://Texture/Building/farm_ii.png","256x256","BottomCenter","missing","待定","待定","农田 lv.II（可升级→farm_iii；脚底贴下边、水平居中）"
+"Building","farm_iii","Config/Buildings.json","res://Texture/Building/farm_iii.png","256x256","BottomCenter","missing","待定","待定","农田 lv.III（末级；脚底贴下边、水平居中）"
+"Building","mine","Config/Buildings.json","res://Texture/Building/mine.png","256x256","BottomCenter","missing","待定","待定","矿场 lv.I（可升级→mine_ii；脚底贴下边、水平居中）"
+"Building","mine_ii","Config/Buildings.json","res://Texture/Building/mine_ii.png","256x256","BottomCenter","missing","待定","待定","矿场 lv.II（可升级→mine_iii；脚底贴下边、水平居中）"
+"Building","mine_iii","Config/Buildings.json","res://Texture/Building/mine_iii.png","256x256","BottomCenter","missing","待定","待定","矿场 lv.III（末级；脚底贴下边、水平居中）"
+"Building","warehouse","Config/Buildings.json","res://Texture/Building/warehouse.png","256x256","BottomCenter","missing","待定","待定","仓库 lv.I（可升级→warehouse_ii；脚底贴下边、水平居中）"
+"Building","warehouse_ii","Config/Buildings.json","res://Texture/Building/warehouse_ii.png","256x256","BottomCenter","missing","待定","待定","仓库 lv.II（可升级→warehouse_iii；脚底贴下边、水平居中）"
+"Building","warehouse_iii","Config/Buildings.json","res://Texture/Building/warehouse_iii.png","256x256","BottomCenter","missing","待定","待定","仓库 lv.III（末级；脚底贴下边、水平居中）"
+"Unit","worker","Config/Units.json","res://Texture/Unit/worker.png","128x128","BottomCenter","missing","待定","待定","玩家 单位（脚底贴下边、朝右下）"
+"Unit","swordsman","Config/Units.json","res://Texture/Unit/swordsman.png","128x128","BottomCenter","missing","待定","待定","玩家 单位（脚底贴下边、朝右下）"
+"Unit","archer","Config/Units.json","res://Texture/Unit/archer.png","128x128","BottomCenter","missing","待定","待定","玩家 单位（脚底贴下边、朝右下）"
+"Unit","explorer","Config/Units.json","res://Texture/Unit/explorer.png","128x128","BottomCenter","missing","待定","待定","玩家 单位（脚底贴下边、朝右下）"
+"Unit","spearman","Config/Units.json","res://Texture/Unit/spearman.png","128x128","BottomCenter","missing","待定","待定","玩家 单位（脚底贴下边、朝右下）"
+"Unit","heavy_guard","Config/Units.json","res://Texture/Unit/heavy_guard.png","128x128","BottomCenter","missing","待定","待定","玩家 单位（脚底贴下边、朝右下）"
+"Unit","engineer","Config/Units.json","res://Texture/Unit/engineer.png","128x128","BottomCenter","missing","待定","待定","玩家 单位（脚底贴下边、朝右下）"
+"Unit","ballista","Config/Units.json","res://Texture/Unit/ballista.png","128x128","BottomCenter","missing","待定","待定","玩家 单位（脚底贴下边、朝右下）"
+"Unit","scholar","Config/Units.json","res://Texture/Unit/scholar.png","128x128","BottomCenter","missing","待定","待定","玩家 单位（脚底贴下边、朝右下）"
+"Unit","chemist","Config/Units.json","res://Texture/Unit/chemist.png","128x128","BottomCenter","missing","待定","待定","玩家 单位（脚底贴下边、朝右下）"
+"Unit","wolf","Config/Units.json","res://Texture/Unit/wolf.png","128x128","BottomCenter","missing","待定","待定","敌方 单位（脚底贴下边、朝右下）"
+"Unit","boar","Config/Units.json","res://Texture/Unit/boar.png","128x128","BottomCenter","missing","待定","待定","敌方 单位（脚底贴下边、朝右下）"
+"Unit","eagle","Config/Units.json","res://Texture/Unit/eagle.png","128x128","BottomCenter","missing","待定","待定","敌方 单位（脚底贴下边、朝右下）"
+"Unit","ibex","Config/Units.json","res://Texture/Unit/ibex.png","128x128","BottomCenter","missing","待定","待定","敌方 单位（脚底贴下边、朝右下）"
+"Unit","crocodile","Config/Units.json","res://Texture/Unit/crocodile.png","128x128","BottomCenter","missing","待定","待定","敌方 单位（脚底贴下边、朝右下）"
+"Resource","Idea","Config/Resources.json","res://Texture/Resource/Idea.png","64x64","Center","missing","待定","待定","顶栏 / 面板小图标"
+"Resource","Food","Config/Resources.json","res://Texture/Resource/Food.png","64x64","Center","missing","待定","待定","顶栏 / 面板小图标"
+"Resource","BasicMinerals","Config/Resources.json","res://Texture/Resource/BasicMinerals.png","64x64","Center","missing","待定","待定","顶栏 / 面板小图标"
+"Event","gold_rush","Config/Events.json","res://Texture/Event/gold_rush.png","512x288","Center","missing","待定","待定","淘金热（事件弹窗插图，16:9）"
+"Event","plague","Config/Events.json","res://Texture/Event/plague.png","512x288","Center","missing","待定","待定","瘟疫（事件弹窗插图，16:9）"
+"Event","enlightenment","Config/Events.json","res://Texture/Event/enlightenment.png","512x288","Center","missing","待定","待定","启蒙时代（事件弹窗插图，16:9）"
+"Event","harvest_festival","Config/Events.json","res://Texture/Event/harvest_festival.png","512x288","Center","missing","待定","待定","丰收庆典（事件弹窗插图，16:9）"
+"Event","visiting_scholar","Config/Events.json","res://Texture/Event/visiting_scholar.png","512x288","Center","missing","待定","待定","游学学者来访（事件弹窗插图，16:9）"
+"Event","mine_collapse","Config/Events.json","res://Texture/Event/mine_collapse.png","512x288","Center","missing","待定","待定","矿脉塌方（事件弹窗插图，16:9）"
+"Event","sunspot_observation","Config/Events.json","res://Texture/Event/sunspot_observation.png","512x288","Center","missing","待定","待定","太阳黑子观测（事件弹窗插图，16:9）"
+"Event","pottery_spread","Config/Events.json","res://Texture/Event/pottery_spread.png","512x288","Center","missing","待定","待定","制陶技术传播（事件弹窗插图，16:9）"
+"Event","earthquake","Config/Events.json","res://Texture/Event/earthquake.png","512x288","Center","missing","待定","待定","地震（事件弹窗插图，16:9）"
+"Event","flash_of_inspiration","Config/Events.json","res://Texture/Event/flash_of_inspiration.png","512x288","Center","missing","待定","待定","灵感迸发（事件弹窗插图，16:9）"
+"Event","cold_wave","Config/Events.json","res://Texture/Event/cold_wave.png","512x288","Center","missing","待定","待定","低温寒潮（事件弹窗插图，16:9）"
+"Event","trade_caravan","Config/Events.json","res://Texture/Event/trade_caravan.png","512x288","Center","missing","待定","待定","贸易商队到来（事件弹窗插图，16:9）"
+"Event","volcanic_ash","Config/Events.json","res://Texture/Event/volcanic_ash.png","512x288","Center","missing","待定","待定","火山灰笼罩（事件弹窗插图，16:9）"
+"Event","math_contest","Config/Events.json","res://Texture/Event/math_contest.png","512x288","Center","missing","待定","待定","数学竞赛（事件弹窗插图，16:9）"
+"Event","locust_swarm","Config/Events.json","res://Texture/Event/locust_swarm.png","512x288","Center","missing","待定","待定","蝗虫灾害（事件弹窗插图，16:9）"
+"Event","alchemy_breakthrough","Config/Events.json","res://Texture/Event/alchemy_breakthrough.png","512x288","Center","missing","待定","待定","炼金术突破（事件弹窗插图，16:9）"
+"Event","master_builder","Config/Events.json","res://Texture/Event/master_builder.png","512x288","Center","missing","待定","待定","建造大师到来（事件弹窗插图，16:9）"
+"Event","cultural_renaissance","Config/Events.json","res://Texture/Event/cultural_renaissance.png","512x288","Center","missing","待定","待定","文化复兴（事件弹窗插图，16:9）"
+"Event","drought","Config/Events.json","res://Texture/Event/drought.png","512x288","Center","missing","待定","待定","干旱（事件弹窗插图，16:9）"
+"Event","mysterious_stele","Config/Events.json","res://Texture/Event/mysterious_stele.png","512x288","Center","missing","待定","待定","神秘石碑（事件弹窗插图，16:9）"
+"TechIcon","math/counting","Config/TechTrees.json","res://Texture/Tech/math/counting.png","96x96","Center","missing","待定","待定","计数（math 树）"
+"TechIcon","math/arithmetic","Config/TechTrees.json","res://Texture/Tech/math/arithmetic.png","96x96","Center","missing","待定","待定","算术（math 树）"
+"TechIcon","math/measurement","Config/TechTrees.json","res://Texture/Tech/math/measurement.png","96x96","Center","missing","待定","待定","度量（math 树）"
+"TechIcon","math/basic_geometry","Config/TechTrees.json","res://Texture/Tech/math/basic_geometry.png","96x96","Center","missing","待定","待定","基础几何（math 树）"
+"TechIcon","math/numeral_system","Config/TechTrees.json","res://Texture/Tech/math/numeral_system.png","96x96","Center","missing","待定","待定","记数系统（math 树）"
+"TechIcon","math/elementary_algebra","Config/TechTrees.json","res://Texture/Tech/math/elementary_algebra.png","96x96","Center","missing","待定","待定","初等代数（math 树）"
+"TechIcon","math/simple_sequences","Config/TechTrees.json","res://Texture/Tech/math/simple_sequences.png","96x96","Center","missing","待定","待定","简单数列（math 树）"
+"TechIcon","math/preliminary_survey","Config/TechTrees.json","res://Texture/Tech/math/preliminary_survey.png","96x96","Center","missing","待定","待定","初步测量（math 树）"
+"TechIcon","math/pythagorean_school","Config/TechTrees.json","res://Texture/Tech/math/pythagorean_school.png","96x96","Center","missing","待定","待定","毕达哥拉斯学派（math 树）"
+"TechIcon","math/elements","Config/TechTrees.json","res://Texture/Tech/math/elements.png","96x96","Center","missing","待定","待定","几何原本（math 树）"
+"TechIcon","math/conic_sections","Config/TechTrees.json","res://Texture/Tech/math/conic_sections.png","96x96","Center","missing","待定","待定","圆锥曲线（math 树）"
+"TechIcon","math/number_theory","Config/TechTrees.json","res://Texture/Tech/math/number_theory.png","96x96","Center","missing","待定","待定","数论（math 树）"
+"TechIcon","math/method_of_exhaustion","Config/TechTrees.json","res://Texture/Tech/math/method_of_exhaustion.png","96x96","Center","missing","待定","待定","穷竭法（math 树）"
+"TechIcon","math/spherical_geometry","Config/TechTrees.json","res://Texture/Tech/math/spherical_geometry.png","96x96","Center","missing","待定","待定","球面几何（math 树）"
+"TechIcon","math/diophantine_equations","Config/TechTrees.json","res://Texture/Tech/math/diophantine_equations.png","96x96","Center","missing","待定","待定","丢番图方程（math 树）"
+"TechIcon","math/early_trigonometry","Config/TechTrees.json","res://Texture/Tech/math/early_trigonometry.png","96x96","Center","missing","待定","待定","三角学萌芽（math 树）"
+"TechIcon","math/mechanical_geometry","Config/TechTrees.json","res://Texture/Tech/math/mechanical_geometry.png","96x96","Center","missing","待定","待定","机械几何（math 树）"
+"TechIcon","math/hindu_arabic_numerals","Config/TechTrees.json","res://Texture/Tech/math/hindu_arabic_numerals.png","96x96","Center","missing","待定","待定","印度-阿拉伯数字（math 树）"
+"TechIcon","math/algebra","Config/TechTrees.json","res://Texture/Tech/math/algebra.png","96x96","Center","missing","待定","待定","代数学（math 树）"
+"TechIcon","math/algorithms","Config/TechTrees.json","res://Texture/Tech/math/algorithms.png","96x96","Center","missing","待定","待定","算法（math 树）"
+"TechIcon","math/quadratic_formula","Config/TechTrees.json","res://Texture/Tech/math/quadratic_formula.png","96x96","Center","missing","待定","待定","二次方程求根（math 树）"
+"TechIcon","math/combinatorics","Config/TechTrees.json","res://Texture/Tech/math/combinatorics.png","96x96","Center","missing","待定","待定","组合数学（math 树）"
+"TechIcon","math/spherical_trigonometry","Config/TechTrees.json","res://Texture/Tech/math/spherical_trigonometry.png","96x96","Center","missing","待定","待定","球面三角学（math 树）"
+"TechIcon","math/arabic_geometry","Config/TechTrees.json","res://Texture/Tech/math/arabic_geometry.png","96x96","Center","missing","待定","待定","阿拉伯几何（math 树）"
+"TechIcon","math/early_algebraic_geometry","Config/TechTrees.json","res://Texture/Tech/math/early_algebraic_geometry.png","96x96","Center","missing","待定","待定","代数几何萌芽（math 树）"
+"TechIcon","math/fibonacci_sequence","Config/TechTrees.json","res://Texture/Tech/math/fibonacci_sequence.png","96x96","Center","missing","待定","待定","斐波那契数列（math 树）"
+"TechIcon","math/perspective_geometry","Config/TechTrees.json","res://Texture/Tech/math/perspective_geometry.png","96x96","Center","missing","待定","待定","透视几何（math 树）"
+"TechIcon","math/infinity_and_limits","Config/TechTrees.json","res://Texture/Tech/math/infinity_and_limits.png","96x96","Center","missing","待定","待定","无限与极限（math 树）"
+"TechIcon","math/early_probability","Config/TechTrees.json","res://Texture/Tech/math/early_probability.png","96x96","Center","missing","待定","待定","概率论萌芽（math 树）"
+"TechIcon","math/equations_and_curves","Config/TechTrees.json","res://Texture/Tech/math/equations_and_curves.png","96x96","Center","missing","待定","待定","方程与曲线（math 树）"
+"TechIcon","physics/simple_machine_intuition","Config/TechTrees.json","res://Texture/Tech/physics/simple_machine_intuition.png","96x96","Center","missing","待定","待定","简单机械直觉（physics 树）"
+"TechIcon","physics/shadow_observation","Config/TechTrees.json","res://Texture/Tech/physics/shadow_observation.png","96x96","Center","missing","待定","待定","影子观测（physics 树）"
+"TechIcon","physics/acoustics","Config/TechTrees.json","res://Texture/Tech/physics/acoustics.png","96x96","Center","missing","待定","待定","声学初探（physics 树）"
+"TechIcon","physics/material_hardness","Config/TechTrees.json","res://Texture/Tech/physics/material_hardness.png","96x96","Center","missing","待定","待定","材料硬度（physics 树）"
+"TechIcon","physics/buoyancy_observation","Config/TechTrees.json","res://Texture/Tech/physics/buoyancy_observation.png","96x96","Center","missing","待定","待定","浮沉观察（physics 树）"
+"TechIcon","physics/mirror_reflection","Config/TechTrees.json","res://Texture/Tech/physics/mirror_reflection.png","96x96","Center","missing","待定","待定","镜面反射（physics 树）"
+"TechIcon","physics/inclined_plane","Config/TechTrees.json","res://Texture/Tech/physics/inclined_plane.png","96x96","Center","missing","待定","待定","斜面原理（physics 树）"
+"TechIcon","physics/wheel_and_rolling","Config/TechTrees.json","res://Texture/Tech/physics/wheel_and_rolling.png","96x96","Center","missing","待定","待定","轮子与滚动（physics 树）"
+"TechIcon","physics/aristotelian_motion","Config/TechTrees.json","res://Texture/Tech/physics/aristotelian_motion.png","96x96","Center","missing","待定","待定","亚里士多德运动论（physics 树）"
+"TechIcon","physics/lever_balance","Config/TechTrees.json","res://Texture/Tech/physics/lever_balance.png","96x96","Center","missing","待定","待定","杠杆平衡（physics 树）"
+"TechIcon","physics/buoyancy_law","Config/TechTrees.json","res://Texture/Tech/physics/buoyancy_law.png","96x96","Center","missing","待定","待定","浮力定律（physics 树）"
+"TechIcon","physics/center_of_gravity","Config/TechTrees.json","res://Texture/Tech/physics/center_of_gravity.png","96x96","Center","missing","待定","待定","重心理论（physics 树）"
+"TechIcon","physics/compound_machines","Config/TechTrees.json","res://Texture/Tech/physics/compound_machines.png","96x96","Center","missing","待定","待定","简单机械组合（physics 树）"
+"TechIcon","physics/law_of_reflection","Config/TechTrees.json","res://Texture/Tech/physics/law_of_reflection.png","96x96","Center","missing","待定","待定","反射定律（physics 树）"
+"TechIcon","physics/refraction_observation","Config/TechTrees.json","res://Texture/Tech/physics/refraction_observation.png","96x96","Center","missing","待定","待定","折射观察（physics 树）"
+"TechIcon","physics/four_elements_combustion","Config/TechTrees.json","res://Texture/Tech/physics/four_elements_combustion.png","96x96","Center","missing","待定","待定","燃烧四元素说（physics 树）"
+"TechIcon","physics/atomism","Config/TechTrees.json","res://Texture/Tech/physics/atomism.png","96x96","Center","missing","待定","待定","原子论（physics 树）"
+"TechIcon","physics/projectile_analysis","Config/TechTrees.json","res://Texture/Tech/physics/projectile_analysis.png","96x96","Center","missing","待定","待定","抛体运动分析（physics 树）"
+"TechIcon","physics/pulley_systems","Config/TechTrees.json","res://Texture/Tech/physics/pulley_systems.png","96x96","Center","missing","待定","待定","滑轮组（physics 树）"
+"TechIcon","physics/hydrostatics","Config/TechTrees.json","res://Texture/Tech/physics/hydrostatics.png","96x96","Center","missing","待定","待定","流体静力学（physics 树）"
+"TechIcon","physics/impetus_theory","Config/TechTrees.json","res://Texture/Tech/physics/impetus_theory.png","96x96","Center","missing","待定","待定","冲力理论（physics 树）"
+"TechIcon","physics/alhazen_optics","Config/TechTrees.json","res://Texture/Tech/physics/alhazen_optics.png","96x96","Center","missing","待定","待定","阿尔哈曾光学（physics 树）"
+"TechIcon","physics/magnifying_lens","Config/TechTrees.json","res://Texture/Tech/physics/magnifying_lens.png","96x96","Center","missing","待定","待定","放大透镜（physics 树）"
+"TechIcon","physics/speed_and_acceleration","Config/TechTrees.json","res://Texture/Tech/physics/speed_and_acceleration.png","96x96","Center","missing","待定","待定","速度与加速度（physics 树）"
+"TechIcon","physics/projectile_quantification","Config/TechTrees.json","res://Texture/Tech/physics/projectile_quantification.png","96x96","Center","missing","待定","待定","抛体运动定量化（physics 树）"
+"TechIcon","physics/time_measurement","Config/TechTrees.json","res://Texture/Tech/physics/time_measurement.png","96x96","Center","missing","待定","待定","时间测量革新（physics 树）"
+"TechIcon","physics/statics_analysis","Config/TechTrees.json","res://Texture/Tech/physics/statics_analysis.png","96x96","Center","missing","待定","待定","静力学分析（physics 树）"
+"TechIcon","physics/rainbow_formation","Config/TechTrees.json","res://Texture/Tech/physics/rainbow_formation.png","96x96","Center","missing","待定","待定","彩虹成因（physics 树）"
+"TechIcon","physics/early_combustion_oxidation","Config/TechTrees.json","res://Texture/Tech/physics/early_combustion_oxidation.png","96x96","Center","missing","待定","待定","燃烧与氧化萌芽（physics 树）"
+"TechIcon","physics/latent_heat","Config/TechTrees.json","res://Texture/Tech/physics/latent_heat.png","96x96","Center","missing","待定","待定","潜热概念雏形（physics 树）"
+"TechIcon","physics/vibration_and_waves","Config/TechTrees.json","res://Texture/Tech/physics/vibration_and_waves.png","96x96","Center","missing","待定","待定","振动与波（physics 树）"
+"TechIcon","physics/static_electricity","Config/TechTrees.json","res://Texture/Tech/physics/static_electricity.png","96x96","Center","missing","待定","待定","静电观察（physics 树）"
+"TechIcon","physics/magnetism","Config/TechTrees.json","res://Texture/Tech/physics/magnetism.png","96x96","Center","missing","待定","待定","磁石研究（physics 树）"
+"TechIcon","physics/perspective_and_vision","Config/TechTrees.json","res://Texture/Tech/physics/perspective_and_vision.png","96x96","Center","missing","待定","待定","透视学与视觉（physics 树）"
+"TechIcon","physics/impetus_and_angular_momentum","Config/TechTrees.json","res://Texture/Tech/physics/impetus_and_angular_momentum.png","96x96","Center","missing","待定","待定","冲力与角动量（physics 树）"
+"TechIcon","chemistry/taming_of_fire","Config/TechTrees.json","res://Texture/Tech/chemistry/taming_of_fire.png","96x96","Center","missing","待定","待定","火的驯服（chemistry 树）"
+"TechIcon","chemistry/pottery","Config/TechTrees.json","res://Texture/Tech/chemistry/pottery.png","96x96","Center","missing","待定","待定","制陶术（chemistry 树）"
+"TechIcon","chemistry/fermentation","Config/TechTrees.json","res://Texture/Tech/chemistry/fermentation.png","96x96","Center","missing","待定","待定","酿造发酵（chemistry 树）"
+"TechIcon","chemistry/natural_dyes","Config/TechTrees.json","res://Texture/Tech/chemistry/natural_dyes.png","96x96","Center","missing","待定","待定","天然染料（chemistry 树）"
+"TechIcon","chemistry/early_metallurgy","Config/TechTrees.json","res://Texture/Tech/chemistry/early_metallurgy.png","96x96","Center","missing","待定","待定","冶金萌芽（chemistry 树）"
+"TechIcon","chemistry/potash_alkali","Config/TechTrees.json","res://Texture/Tech/chemistry/potash_alkali.png","96x96","Center","missing","待定","待定","草木灰制碱（chemistry 树）"
+"TechIcon","chemistry/alloying","Config/TechTrees.json","res://Texture/Tech/chemistry/alloying.png","96x96","Center","missing","待定","待定","合金尝试（chemistry 树）"
+"TechIcon","chemistry/early_glassmaking","Config/TechTrees.json","res://Texture/Tech/chemistry/early_glassmaking.png","96x96","Center","missing","待定","待定","玻璃初制（chemistry 树）"
+"TechIcon","chemistry/four_elements","Config/TechTrees.json","res://Texture/Tech/chemistry/four_elements.png","96x96","Center","missing","待定","待定","四元素说（chemistry 树）"
+"TechIcon","chemistry/metal_refining","Config/TechTrees.json","res://Texture/Tech/chemistry/metal_refining.png","96x96","Center","missing","待定","待定","金属精炼（chemistry 树）"
+"TechIcon","chemistry/mineral_classification","Config/TechTrees.json","res://Texture/Tech/chemistry/mineral_classification.png","96x96","Center","missing","待定","待定","矿物分类（chemistry 树）"
+"TechIcon","chemistry/acid_base_concepts","Config/TechTrees.json","res://Texture/Tech/chemistry/acid_base_concepts.png","96x96","Center","missing","待定","待定","酸碱概念（chemistry 树）"
+"TechIcon","chemistry/atomism","Config/TechTrees.json","res://Texture/Tech/chemistry/atomism.png","96x96","Center","missing","待定","待定","原子论（chemistry 树）"
+"TechIcon","chemistry/distillation","Config/TechTrees.json","res://Texture/Tech/chemistry/distillation.png","96x96","Center","missing","待定","待定","蒸馏技术（chemistry 树）"
+"TechIcon","chemistry/combustion_and_air","Config/TechTrees.json","res://Texture/Tech/chemistry/combustion_and_air.png","96x96","Center","missing","待定","待定","燃烧与空气（chemistry 树）"
+"TechIcon","chemistry/metal_displacement","Config/TechTrees.json","res://Texture/Tech/chemistry/metal_displacement.png","96x96","Center","missing","待定","待定","金属置换（chemistry 树）"
+"TechIcon","chemistry/alchemy_rise","Config/TechTrees.json","res://Texture/Tech/chemistry/alchemy_rise.png","96x96","Center","missing","待定","待定","炼金术兴起（chemistry 树）"
+"TechIcon","chemistry/mineral_acids","Config/TechTrees.json","res://Texture/Tech/chemistry/mineral_acids.png","96x96","Center","missing","待定","待定","矿物酸制备（chemistry 树）"
+"TechIcon","chemistry/alcohol_purification","Config/TechTrees.json","res://Texture/Tech/chemistry/alcohol_purification.png","96x96","Center","missing","待定","待定","酒精提纯（chemistry 树）"
+"TechIcon","chemistry/pharmaceutical_chemistry","Config/TechTrees.json","res://Texture/Tech/chemistry/pharmaceutical_chemistry.png","96x96","Center","missing","待定","待定","制药化学（chemistry 树）"
+"TechIcon","chemistry/salts_research","Config/TechTrees.json","res://Texture/Tech/chemistry/salts_research.png","96x96","Center","missing","待定","待定","盐类研究（chemistry 树）"
+"TechIcon","chemistry/saltpeter_and_gunpowder","Config/TechTrees.json","res://Texture/Tech/chemistry/saltpeter_and_gunpowder.png","96x96","Center","missing","待定","待定","硝石与火药（chemistry 树）"
+"TechIcon","chemistry/metallurgy_innovation","Config/TechTrees.json","res://Texture/Tech/chemistry/metallurgy_innovation.png","96x96","Center","missing","待定","待定","金属冶炼革新（chemistry 树）"
+"TechIcon","chemistry/gas_collection","Config/TechTrees.json","res://Texture/Tech/chemistry/gas_collection.png","96x96","Center","missing","待定","待定","气体收集（chemistry 树）"
+"TechIcon","chemistry/compounds_and_mixtures","Config/TechTrees.json","res://Texture/Tech/chemistry/compounds_and_mixtures.png","96x96","Center","missing","待定","待定","化合与混合（chemistry 树）"
+"TechIcon","chemistry/calcination_and_roasting","Config/TechTrees.json","res://Texture/Tech/chemistry/calcination_and_roasting.png","96x96","Center","missing","待定","待定","煅烧与焙烧（chemistry 树）"
+"TechIcon","chemistry/acid_base_theory","Config/TechTrees.json","res://Texture/Tech/chemistry/acid_base_theory.png","96x96","Center","missing","待定","待定","酸碱理论深化（chemistry 树）"
+"TechIcon","chemistry/alchemical_symbols","Config/TechTrees.json","res://Texture/Tech/chemistry/alchemical_symbols.png","96x96","Center","missing","待定","待定","炼金术符号体系（chemistry 树）"
+"UI","panel_bg","Document/ArtSpec.md","res://Texture/UI/panel_bg.png","96x96(九宫格 24)","Center","missing","待定","待定","通用面板底（研究/建造/事件弹窗共用）"
+"UI","button_normal","Document/ArtSpec.md","res://Texture/UI/button_normal.png","96x96(九宫格 24)","Center","missing","待定","待定","按钮：常态"
+"UI","button_hover","Document/ArtSpec.md","res://Texture/UI/button_hover.png","96x96(九宫格 24)","Center","missing","待定","待定","按钮：悬停"
+"UI","button_pressed","Document/ArtSpec.md","res://Texture/UI/button_pressed.png","96x96(九宫格 24)","Center","missing","待定","待定","按钮：按下"
+"UI","button_icon","Document/ArtSpec.md","res://Texture/UI/button_icon.png","64x64(九宫格 16)","Center","missing","待定","待定","图标按钮底"
+"UI","tab_normal","Document/ArtSpec.md","res://Texture/UI/tab_normal.png","64x64(九宫格 16)","Center","missing","待定","待定","分类页签：常态"
+"UI","tab_active","Document/ArtSpec.md","res://Texture/UI/tab_active.png","64x64(九宫格 16)","Center","missing","待定","待定","分类页签：选中"
+"UI","icon_speed_pause","Document/ArtSpec.md","res://Texture/UI/icon_speed_pause.png","48x48","Center","missing","待定","待定","时间：暂停"
+"UI","icon_speed_1x","Document/ArtSpec.md","res://Texture/UI/icon_speed_1x.png","48x48","Center","missing","待定","待定","时间：1 档"
+"UI","icon_speed_3x","Document/ArtSpec.md","res://Texture/UI/icon_speed_3x.png","48x48","Center","missing","待定","待定","时间：3 档"
+"UI","icon_speed_6x","Document/ArtSpec.md","res://Texture/UI/icon_speed_6x.png","48x48","Center","missing","待定","待定","时间：6 档"
+"UI","icon_population","Document/ArtSpec.md","res://Texture/UI/icon_population.png","48x48","Center","missing","待定","待定","人口"
+"UI","icon_research","Document/ArtSpec.md","res://Texture/UI/icon_research.png","48x48","Center","missing","待定","待定","研究面板入口"
+"UI","icon_build","Document/ArtSpec.md","res://Texture/UI/icon_build.png","48x48","Center","missing","待定","待定","建造入口"
+"UI","icon_move","Document/ArtSpec.md","res://Texture/UI/icon_move.png","48x48","Center","missing","待定","待定","指令：移动"
+"UI","icon_attack","Document/ArtSpec.md","res://Texture/UI/icon_attack.png","48x48","Center","missing","待定","待定","指令：攻击"
+"UI","icon_hold","Document/ArtSpec.md","res://Texture/UI/icon_hold.png","48x48","Center","missing","待定","待定","指令：待命"
+"UI","select_hex","Document/ArtSpec.md","res://Texture/UI/select_hex.png","366x423","Center","missing","待定","待定","选中格高亮（与地形同几何）"
+"UI","tech_node_frame","Document/ArtSpec.md","res://Texture/UI/tech_node_frame.png","96x96","Center","missing","待定","待定","科技节点框（4 态用 modulate，不用 4 张）"
+"UI","progress_fill","Document/ArtSpec.md","res://Texture/UI/progress_fill.png","32x32(九宫格 8)","Center","missing","待定","待定","进度条填充（也可纯色，代码兜底）"
+"UI","main_menu_bg","Document/ArtSpec.md","res://Texture/UI/main_menu_bg.png","1920x1080","Center","missing","待定","待定","主菜单背景"
+"UI","victory_bg","Document/ArtSpec.md","res://Texture/UI/victory_bg.png","1920x1080","Center","missing","待定","待定","结局：胜利"
+"UI","defeat_bg","Document/ArtSpec.md","res://Texture/UI/defeat_bg.png","1920x1080","Center","missing","待定","待定","结局：失败"
+"UI","logo","Document/ArtSpec.md","res://Texture/UI/logo.png","512x256","Center","missing","待定","待定","标题 logo（可选）【P2 可选】"
+"UI","range_hex","Document/ArtSpec.md","res://Texture/UI/range_hex.png","366x423","Center","missing","待定","待定","攻击/视野范围覆盖（可选）【P2 可选】"
+"UI","cursor_default","Document/ArtSpec.md","res://Texture/UI/cursor_default.png","32x32","Center","missing","待定","待定","光标：默认（可选）【P2 可选】"
+"UI","cursor_build","Document/ArtSpec.md","res://Texture/UI/cursor_build.png","32x32","Center","missing","待定","待定","光标：建造（可选）【P2 可选】"
+"UI","cursor_attack","Document/ArtSpec.md","res://Texture/UI/cursor_attack.png","32x32","Center","missing","待定","待定","光标：攻击（可选）【P2 可选】"
+"Audio","BGM_main","Document/ArtSpec.md","res://Audio/BGM/main.ogg","—","—","missing","待定","待定","主 BGM：ogg、44.1kHz 立体声、无缝循环、60~120s"

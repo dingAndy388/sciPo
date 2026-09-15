@@ -29,6 +29,8 @@ namespace SciencePotato.HeadlessChecks
 			Check.Run("WP-5.4 交互·点选：返回该格信息（地形 / 占据物 / 人口）", SelectReturnsCellInfo);
 			Check.Run("WP-5.4 交互·单位指令：属己可动（真进入移动态），越权给 `intent.not_human`", MoveModeGuardsOwnership);
 			Check.Run("WP-5.4 交互·事件与门控：弹窗决策走意图、门控查询随科技解锁变化", EventDecisionAndUiGate);
+			Check.Run("WP-8.1 贴图路径口径：建筑/单位/资源/事件/科技/UI 一律 `res://Texture/{类别}/{id}.png`", SpritePathsFollowTheRule);
+			Check.Run("WP-8.1 清单闭合：`AssetManifest.csv` 覆盖我们实际会加载的每一个 id（含 5 张地形、189 行）", ManifestCoversEveryAsset);
 		}
 
 		private static void LayerMembershipFollowsOccupant()
@@ -146,6 +148,56 @@ namespace SciencePotato.HeadlessChecks
 
 			Check.Assert(model.IsUiUnlocked(SciencePotato.Scripts.Common.Application.UiGateService.HarvestPanel),
 				"研究算术后面板应解锁（UI 应亮起）");
+		}
+
+		// ────────────────────────── 美术清单闭合（v0.9.10 / WP-8.1） ──────────────────────────
+
+		private static void SpritePathsFollowTheRule()
+		{
+			CoreServices core = NewField();
+
+			// 建造一栋、放一个单位，拿真实占据物验路径
+			var site = new HexCubePosition(6, 6);
+			core.Fog.RevealArea(1, site, 2);
+			core.Intent.Handle(PlayerIntent.Build(MapId, 1, "camp", site));
+			core.Units.PlaceInitialUnit(MapId, "worker", new HexCubePosition(8, 8), 1);
+
+			var building = core.Map.FindOccupantByUId(MapId, core.Map.GetOccupantInfo(MapId, site).Value.UId);
+			var unit = core.Map.FindOccupantByUId(MapId, core.Map.GetOccupantInfo(MapId, new HexCubePosition(8, 8)).Value.UId);
+
+			Check.AssertEqual("res://Texture/Building/camp.png", MapLayerModel.OccupantSpritePath(building), "建筑贴图路径");
+			Check.AssertEqual("res://Texture/Unit/worker.png", MapLayerModel.OccupantSpritePath(unit), "单位贴图路径");
+			Check.AssertEqual("res://Texture/Resource/Food.png", MapLayerModel.ResourceSpritePath("Food"), "资源图标路径");
+			Check.AssertEqual("res://Texture/Event/gold_rush.png", MapLayerModel.EventSpritePath("gold_rush"), "事件插图路径");
+			Check.AssertEqual("res://Texture/Tech/math/counting.png", MapLayerModel.TechSpritePath("math", "counting"), "科技图标路径");
+			Check.AssertEqual("res://Texture/UI/panel_bg.png", MapLayerModel.UiSpritePath("panel_bg"), "UI 贴图路径");
+		}
+
+		private static void ManifestCoversEveryAsset()
+		{
+			string path = System.IO.Path.Combine(Check.FindRepoRoot(), "Document", "AssetManifest.csv");
+			Check.Assert(System.IO.File.Exists(path), $"清单应存在：{path}（由 Tools/gen_asset_manifest.ps1 生成）");
+
+			string manifest = System.IO.File.ReadAllText(path);
+			foreach (string expected in new[]
+			{
+				"res://Texture/Terrain/plain.png",
+				"res://Texture/Building/camp.png",
+				"res://Texture/Unit/worker.png",
+				"res://Texture/Resource/Food.png",
+				"res://Texture/Event/gold_rush.png",
+				"res://Texture/Tech/math/counting.png",
+				"res://Texture/UI/panel_bg.png",
+				"res://Audio/BGM/main.ogg",
+			})
+			{
+				Check.Assert(manifest.Contains(expected), $"清单应包含 `{expected}`");
+			}
+
+			int terrainRows = manifest.Split('\n')
+				.Count(line => line.Replace("\"", string.Empty).StartsWith("Terrain,", System.StringComparison.Ordinal));
+			Check.AssertEqual(5, terrainRows, "地形行数（历史 bug：清单曾把 8 个 .NET 数组属性当地形登记）");
+			Check.Assert(manifest.Split('\n').Length >= 190, "清单应至少 189 行数据 + 1 行表头");
 		}
 
 		// ────────────────────────── 夹具 ──────────────────────────

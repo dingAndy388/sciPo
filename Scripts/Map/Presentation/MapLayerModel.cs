@@ -24,6 +24,42 @@ namespace SciencePotato.Scripts.Map.Presentation
 		public const string Units = "units";
 		public const string Fog = "fog";
 
+		// ── （v0.9.10 / WP-8.1）**贴图路径口径**：与 `Document/AssetManifest.csv` 完全一致 ──
+		// 一句话：`res://Texture/{类别}/{id}.png`，id 就是配置表里的 id（表即文件名）。
+		public const string TerrainSpriteDir = "res://Texture/Terrain/";
+		public const string BuildingSpriteDir = "res://Texture/Building/";
+		public const string UnitSpriteDir = "res://Texture/Unit/";
+		public const string ResourceSpriteDir = "res://Texture/Resource/";
+		public const string EventSpriteDir = "res://Texture/Event/";
+		public const string TechSpriteDir = "res://Texture/Tech/";
+		public const string UiSpriteDir = "res://Texture/UI/";
+		public const string AudioDir = "res://Audio/";
+
+		/// <summary>占据物（建筑 / 单位）的贴图路径；<c>null</c> = 这类占据物没有贴图约定。</summary>
+		public static string OccupantSpritePath(IMapOccupant occupant)
+		{
+			if (occupant?.GetInfo() == null || string.IsNullOrWhiteSpace(occupant.GetInfo().Id)) return null;
+
+			return occupant switch
+			{
+				Building => BuildingSpriteDir + occupant.GetInfo().Id + ".png",
+				Unit => UnitSpriteDir + occupant.GetInfo().Id + ".png",
+				_ => null,
+			};
+		}
+
+		/// <summary>资源图标路径（顶栏/面板用；资源 id 见 `Config/Resources.json`）。</summary>
+		public static string ResourceSpritePath(string resourceId) => ResourceSpriteDir + resourceId + ".png";
+
+		/// <summary>事件插图路径（弹窗用；事件 id 见 `Config/Events.json` 的 `EventId`）。</summary>
+		public static string EventSpritePath(string eventId) => EventSpriteDir + eventId + ".png";
+
+		/// <summary>科技图标路径（树/节点 id 见 `Config/TechTrees.json`）。</summary>
+		public static string TechSpritePath(string treeId, string nodeId) => TechSpriteDir + treeId + "/" + nodeId + ".png";
+
+		/// <summary>UI 贴图路径（id 见 `Document/ArtSpec.md` 的 UI 规格表）。</summary>
+		public static string UiSpritePath(string uiId) => UiSpriteDir + uiId + ".png";
+
 		/// <summary>该格应出现在哪些图层上（雾层按 `ownerId` 的可见性判定；未探索的格子**不出现**在任何层）。</summary>
 		public static IReadOnlyList<string> LayersOf(MapAppService map, FogAppService fog, string mapId, int ownerId, HexCubePosition position)
 		{

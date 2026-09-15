@@ -13,6 +13,9 @@ public partial class MapCellView : Node2D
 	/// <summary>（v0.9.7 / WP-5.4）占据物占位标记（懒建；空格时隐藏）——缺美术期的"看得出格子上有东西"。</summary>
 	private Polygon2D _occupantMarker;
 
+	/// <summary>（v0.9.10 / WP-8.1）占据物**真贴图**（懒建；有图时显示、无图时回退占位六边形）。</summary>
+	private Sprite2D _occupantSprite;
+
 
 	/// <summary>已经警告过的贴图路径（缺贴图时**每种只提示一次**：10439 格的图上逐格刷警告会把日志打爆）。</summary>
 	private static readonly System.Collections.Generic.HashSet<string> WarnedMissingTextures = new();
@@ -125,8 +128,26 @@ public partial class MapCellView : Node2D
 		if (occupant == null)
 		{
 			if (_occupantMarker != null && GodotObject.IsInstanceValid(_occupantMarker)) _occupantMarker.Visible = false;
+			if (_occupantSprite != null && GodotObject.IsInstanceValid(_occupantSprite)) _occupantSprite.Visible = false;
 			return;
 		}
+
+		// （v0.9.10 / WP-8.1）**有真贴图就用贴图**：`res://Texture/{Building|Unit}/{id}.png`（口径见 `MapLayerModel`）
+		string path = MapLayerModel.OccupantSpritePath(occupant);
+		Texture2D texture = !string.IsNullOrWhiteSpace(path) && ResourceLoader.Exists(path) ? GD.Load<Texture2D>(path) : null;
+		if (texture != null)
+		{
+			Sprite2D sprite = OccupantSprite;
+			sprite.Texture = texture;
+			sprite.Visible = true;
+			FitOccupantSprite(sprite, texture); // 先按"不超出格子"定缩放，再按缩放后的高度贴脚底
+			sprite.Position = new Vector2(0f, OccupantBaselineY() - texture.GetHeight() * sprite.Scale.Y / 2f);
+			if (_occupantMarker != null && GodotObject.IsInstanceValid(_occupantMarker)) _occupantMarker.Visible = false;
+			return;
+		}
+
+		// 缺图回退：占位小六边形（颜色表在 `MapLayerModel`）—— 缺任何图都不会崩，也不会看不见
+		if (_occupantSprite != null && GodotObject.IsInstanceValid(_occupantSprite)) _occupantSprite.Visible = false;
 
 		Polygon2D marker = OccupantMarker;
 		RgbColor color = MapLayerModel.OccupantPlaceholderColor(occupant, viewerOwnerId);
@@ -134,6 +155,34 @@ public partial class MapCellView : Node2D
 		marker.Color = new Color(color.R / 255f, color.G / 255f, color.B / 255f, color.A / 255f);
 		marker.ZIndex = 1;
 		marker.Visible = true;
+	}
+
+	/// <summary>占据物的"脚底基准线"（格内 y）：贴图底边落在这里 —— 建筑/单位都站在格子偏下位置。</summary>
+	private float OccupantBaselineY() => HexHeight() * 0.30f;
+
+	/// <summary>六边形高度（= 行步长 × 4/3，见 `TerrainAppearance.HexOutline` 的几何口径）。</summary>
+	private float HexHeight() => CellYStep * 4f / 3f;
+
+	/// <summary>占据物贴图节点（懒建；与占位多边形二选一显示）。</summary>
+	private Sprite2D OccupantSprite
+	{
+		get
+		{
+			if (_occupantSprite != null && GodotObject.IsInstanceValid(_occupantSprite)) return _occupantSprite;
+
+			_occupantSprite = new Sprite2D { Name = "OccupantSprite", ZIndex = 1 };
+			AddChild(_occupantSprite);
+			return _occupantSprite;
+		}
+	}
+
+	/// <summary>按"不超出格子"定缩放：宽 ≤ 格宽×0.9、高 ≤ 格高×0.9（美术不必自己控制相对大小；只缩不放大）。</summary>
+	private void FitOccupantSprite(Sprite2D sprite, Texture2D texture)
+	{
+		if (sprite == null || texture == null || texture.GetWidth() <= 0 || texture.GetHeight() <= 0) return;
+
+		float scale = Math.Min(CellXStep * 0.9f / texture.GetWidth(), HexHeight() * 0.9f / texture.GetHeight());
+		sprite.Scale = Vector2.One * Math.Min(1f, scale);
 	}
 
 	/// <summary>占据物标记节点（懒建；只建一次）。</summary>
