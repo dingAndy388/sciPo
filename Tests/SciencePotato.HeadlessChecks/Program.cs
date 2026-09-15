@@ -60,6 +60,7 @@ namespace SciencePotato.HeadlessChecks
 			("SessionEntry", SessionEntryChecks.RunAll),
 			("MapSavePerf", MapSavePerfChecks.RunAll),
 			("FogPerf", FogPerfChecks.RunAll),
+			("Presentation", PresentationChecks.RunAll),
 			};
 
 			// `--list-groups`：只输出组名（不给脚本混进横幅），供 `Tools/verify.ps1` 分片

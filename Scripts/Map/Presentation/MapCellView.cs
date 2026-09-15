@@ -2,9 +2,18 @@ using Godot;
 using SciencePotato.Scripts.Common.Domain;
 using SciencePotato.Scripts.Map.Domain;
 using System;
+using SciencePotato.Scripts.Map.Presentation;
+
 
 public partial class MapCellView : Node2D
-{
+	{
+	/// <summary>（v0.9.7 / WP-5.4）该格当前的雾档位（`FogAppService.Visible/Fogged/Unexplored`）。</summary>
+	public byte FogVisibility { get; private set; } = SciencePotato.Scripts.Fog.Application.FogAppService.Visible;
+
+	/// <summary>（v0.9.7 / WP-5.4）占据物占位标记（懒建；空格时隐藏）——缺美术期的"看得出格子上有东西"。</summary>
+	private Polygon2D _occupantMarker;
+
+
 	/// <summary>已经警告过的贴图路径（缺贴图时**每种只提示一次**：10439 格的图上逐格刷警告会把日志打爆）。</summary>
 	private static readonly System.Collections.Generic.HashSet<string> WarnedMissingTextures = new();
 
@@ -92,6 +101,61 @@ public partial class MapCellView : Node2D
 			AddChild(_placeholder);
 			return _placeholder;
 		}
+	}
+
+	/// <summary>
+	/// （v0.9.7 / WP-5.4）**雾层**：未探索不画、迷雾半透明、可见全亮 —— 档位口径来自 `MapLayerModel`（无头已验）。
+	/// <para>雾必须由**格子自己**承担（`Modulate`），不能拆成上一层独立节点：否则上层遮罩盖不住该格的贴图。</para>
+	/// </summary>
+	public void SetFogVisibility(byte visibility)
+	{
+		FogVisibility = visibility;
+
+		float opacity = MapLayerModel.FogOpacity(visibility);
+		Visible = opacity > 0f;
+		Modulate = new Color(1f, 1f, 1f, opacity);
+	}
+
+	/// <summary>
+	/// （v0.9.7 / WP-5.4）**占据物占位标记**：建筑/单位在缺美术时用一个彩色小六边形标出（颜色表在 `MapLayerModel`）。
+	/// <para>换美术时把这里换成真正的建筑/单位贴图即可 —— 口径（哪些该画、什么颜色）不用动。</para>
+	/// </summary>
+	public void SetOccupantMarker(IMapOccupant occupant, int viewerOwnerId)
+	{
+		if (occupant == null)
+		{
+			if (_occupantMarker != null && GodotObject.IsInstanceValid(_occupantMarker)) _occupantMarker.Visible = false;
+			return;
+		}
+
+		Polygon2D marker = OccupantMarker;
+		RgbColor color = MapLayerModel.OccupantPlaceholderColor(occupant, viewerOwnerId);
+		marker.Polygon = InnerHexagon();
+		marker.Color = new Color(color.R / 255f, color.G / 255f, color.B / 255f, color.A / 255f);
+		marker.ZIndex = 1;
+		marker.Visible = true;
+	}
+
+	/// <summary>占据物标记节点（懒建；只建一次）。</summary>
+	private Polygon2D OccupantMarker
+	{
+		get
+		{
+			if (_occupantMarker != null && GodotObject.IsInstanceValid(_occupantMarker)) return _occupantMarker;
+
+			_occupantMarker = new Polygon2D { Name = "OccupantMarker" };
+			AddChild(_occupantMarker);
+			return _occupantMarker;
+		}
+	}
+
+	/// <summary>略小的六边形（与地形占位同形状，缩到 55% ⇒ 看得出"里面还有东西"）。</summary>
+	private Vector2[] InnerHexagon()
+	{
+		Vector2[] full = HexPolygon();
+		var inner = new Vector2[full.Length];
+		for (int i = 0; i < full.Length; i++) inner[i] = full[i] * 0.55f;
+		return inner;
 	}
 
 	/// <summary>按当前步长算出的 6 个顶点（Godot 坐标）。</summary>

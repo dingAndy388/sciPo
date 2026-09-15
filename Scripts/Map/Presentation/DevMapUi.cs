@@ -123,6 +123,7 @@ public partial class DevMapUi : CanvasLayer
 		{
 			_mapView.MapId = mapId;
 			_mapView.UpdateAllCells();
+			_mapView.RefreshPresentation(); // （v0.9.7 / WP-5.4）按迷雾/占据物把图层画全
 		}
 
 		FocusCameraOnMapCenter(width, height, mapId);
