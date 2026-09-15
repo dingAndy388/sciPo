@@ -57,12 +57,14 @@ namespace SciencePotato.HeadlessChecks
 			Check.AssertEqual(0, trainingWarnings, $"训练字段不应有 warning，实际：{core.ConfigReport.ToLines()}");
 
 			IBuildingConfig workshop = tables.Buildings.GetBuildingConfig("workshop");
-			Check.Assert(workshop.TrainableUnits.SequenceEqual(new[] { "worker" }), "工坊可训练工人（设计稿）");
+			Check.Assert(workshop.TrainableUnits.SequenceEqual(new[] { "worker", "engineer" }),
+			"工坊可训练工人 + 工程师（`WP-7.5`：工程师 @工坊lv.II）");
 			Check.AssertEqual(5, workshop.TrainingQueueLimit, "工坊训练队列上限（设计稿：5）");
 			Check.Assert(workshop.Actions.Contains("CanTrain"), "工坊应声明 CanTrain 能力");
 
 			IBuildingConfig military = tables.Buildings.GetBuildingConfig("military_camp");
-			Check.Assert(military.TrainableUnits.SequenceEqual(new[] { "swordsman", "archer" }), "军营可训练民兵/弓箭手");
+			Check.Assert(military.TrainableUnits.SequenceEqual(new[] { "swordsman", "explorer" }),
+			"军营可训练民兵/探险者（`WP-7.5`：弓箭手升到军营lv.II）");
 
 			foreach (string none in new[] { "camp", "school" })
 			{

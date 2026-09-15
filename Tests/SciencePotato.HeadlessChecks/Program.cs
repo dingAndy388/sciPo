@@ -50,6 +50,7 @@ namespace SciencePotato.HeadlessChecks
 			("AiFairness", AiFairnessChecks.RunAll),
 			("AiVictory", AiVictoryChecks.RunAll),
 			("EventPause", EventPauseChecks.RunAll),
+			("ContentCoverage", ContentCoverageChecks.RunAll),
 			};
 
 			// `--list-groups`：只输出组名（不给脚本混进横幅），供 `Tools/verify.ps1` 分片

@@ -414,9 +414,9 @@ namespace SciencePotato.HeadlessChecks
 		{
 			ConfigTables tables = ConfigFixtures.BuildRealCore().Tables;
 
-			// 真实表：5 个敌种 + 3 个玩家单位；敌方行必须落在设计稿的地形/概率上
+			// 真实表：5 个敌种 + 10 个玩家单位（`WP-7.5` 全表）；敌方行必须落在设计稿的地形/概率上
 			Check.AssertEqual(5, tables.AllUnits().Count(u => u.IsHostile), "敌方单位条目数（design/unit.md：野狼/野猪/山鹰/巨角山羊/巨鳄）");
-			Check.AssertEqual(3, tables.AllUnits().Count(u => !u.IsHostile), "玩家单位条目数");
+			Check.AssertEqual(10, tables.AllUnits().Count(u => !u.IsHostile), "玩家单位条目数（`WP-7.5`）");
 			Check.AssertEqual(0, tables.AllUnits().Count(u => !u.IsHostile && (u.SpawnChance > 0f || !string.IsNullOrWhiteSpace(u.SpawnTerrain))),
 				"玩家单位不参与刷新（不得填生成字段）");
 
