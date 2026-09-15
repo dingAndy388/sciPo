@@ -116,8 +116,16 @@ namespace SciencePotato.Scripts.Core.Save
 		/// ③ 丢弃内存地图并重新读盘（拿到含占据物/人口的新实例）；④ 恢复建筑附加状态（训练队列、建造者绑定）；
 		/// ⑤ 按类型重建全部周期任务；⑥ 恢复事件状态并重启事件引擎（幂等 + 重挂日节拍）。
 		/// </summary>
-		public bool LoadWorld(string mapId, int ownerId)
+		/// <summary>
+		/// **读档（多势力）**：与 <see cref="LoadWorld(string, int)"/> 同一流程，但**按玩家表逐 owner 恢复**
+		/// 月度结算状态 / 周期任务 / 事件引擎。
+		/// <para>（v0.9.6 / `WP-5.11` / `U7`）旧口径只恢复传入的那一个 owner ⇒ 多个 AI 势力时，
+		/// 读档后 AI 的月结、成长、训练任务全部丢失（`--ai=1` 冒烟实测：9 条周期任务只回来 4 条）。</para>
+		/// </summary>
+		public bool LoadWorld(string mapId, IReadOnlyList<int> ownerIds)
 		{
+			if (ownerIds == null || ownerIds.Count == 0) ownerIds = new[] { 1 };
+
 			if (string.IsNullOrWhiteSpace(mapId)) return false;
 
 			LastLoadSucceeded = true;
@@ -147,7 +155,6 @@ namespace SciencePotato.Scripts.Core.Save
 
 			// ③.6 交战循环登记同样作废（v0.3 / WP-3.6）：上一步已把旧订阅者全摘掉，
 			// 若战斗侧的"已挂上"登记表还留着键，随后的 `RestoreAttackLoop` 会被自己挡掉
-			// （症状：读档后敌人不再反击、玩家单位"开了火却没伤害"）
 			_units?.Combat?.ResetLoops();
 
 			if (_session.Maps.Get(mapId) == null) return LastLoadSucceeded; // 无存档：无从恢复
@@ -158,19 +165,27 @@ namespace SciencePotato.Scripts.Core.Save
 			// ④.5 迷雾（`FogAppService` 是内存矩阵，读档必须显式加载，否则地图全黑 —— `WP-3.2` 补齐）
 			_fog?.Load(mapId);
 
-			// ④.6 月度结算状态（v0.3 / WP-3.9）：先恢复赤字月数并作废月结任务的幂等登记，
-			// 再由 ⑤ 按快照重建任务 —— 顺序反了会让"刚恢复的任务"被随后的恢复流程当成重复登记
-			_settlement?.RestoreSettlement(mapId, ownerId);
+			// ④.6 / ⑤ / ⑥：**按玩家表逐 owner** 恢复月度结算状态 → 周期任务 → 事件状态与引擎
+			// （顺序不能反：先恢复结算并作废幂等登记，再由任务快照重建，否则"刚恢复的任务"会被当成重复登记）
+			foreach (int owner in ownerIds)
+				_settlement?.RestoreSettlement(mapId, owner);
 
-			// ⑤ 周期任务
-			LastRestoredTaskCount = RestoreTasks(mapId, ownerId);
+			LastRestoredTaskCount = RestoreTasks(mapId, ownerIds);
 
-			// ⑥ 事件状态 + 引擎（先恢复状态（同时注销旧登记），再启动 → 日节拍重新挂上）
-			_events?.RestoreEvents(mapId, ownerId);
-			_events?.StartEventsEngine(mapId, ownerId);
+			foreach (int owner in ownerIds)
+			{
+				_events?.RestoreEvents(mapId, owner);
+				_events?.StartEventsEngine(mapId, owner);
+			}
 
 			return LastLoadSucceeded;
 		}
+
+		/// <summary>
+		/// **读档（单势力）**：`WP-5.11` 之前的口径（只恢复一个 owner）。保留它以便既有调用方/用例平滑，
+		/// 多势力场景请用 <see cref="LoadWorld(string, IReadOnlyList{int})"/>。
+		/// </summary>
+		public bool LoadWorld(string mapId, int ownerId) => LoadWorld(mapId, new[] { ownerId });
 
 		/// <summary>
 		/// 按任务类型分发恢复：
@@ -180,14 +195,33 @@ namespace SciencePotato.Scripts.Core.Save
 		/// 进度从快照表回填 —— 否则"每格一行快照"会变成重复注册。</item>
 		/// </list>
 		/// </summary>
-		private int RestoreTasks(string mapId, int ownerId)
+		private int RestoreTasks(string mapId, IReadOnlyList<int> ownerIds)
 		{
 			List<TaskSnapshot> snapshots = _tasks?.GetCurrentTasks(mapId) ?? new List<TaskSnapshot>();
+			if (snapshots.Count == 0) return 0;
 
-			int restored = 0;
 			var progress = new Dictionary<string, float>(StringComparer.Ordinal);
 			foreach (TaskSnapshot snapshot in snapshots) progress[snapshot.Key] = snapshot.Progress;
 
+			// ① **与 owner 无关**的那部分：快照里本来就带 `OwnerId`，逐个重建即可（每类只重建一次，不能按 owner 重复调）
+			int restored = RestoreEntityTasks(mapId, snapshots);
+			restored += _units?.RestoreUnitTasks(mapId, progress) ?? 0;
+
+			// ② **按 owner 注册**的那部分（周期任务）：每方一条，`U7` 的缺口就在这里
+			foreach (int ownerId in ownerIds)
+			{
+				restored += _resources?.RestoreGrowthTasks(mapId, ownerId, progress) ?? 0;
+				restored += _construction?.RestoreHousingTasks(mapId, ownerId, progress) ?? 0;
+				restored += _settlement?.RestoreSettlementTask(mapId, ownerId, progress) ?? 0;
+			}
+
+			return restored;
+		}
+
+		/// <summary>按任务类型重建**实体类**任务（建造 / 升级 / 训练 / 研究）：快照自带 owner ⇒ 与调用者无关。</summary>
+		private int RestoreEntityTasks(string mapId, List<TaskSnapshot> snapshots)
+		{
+			int restored = 0;
 			foreach (TaskSnapshot snapshot in snapshots)
 			{
 				switch (snapshot.Type)
@@ -209,22 +243,16 @@ namespace SciencePotato.Scripts.Core.Save
 						break;
 
 					default:
-						break; // 周期任务见下方按实体重建
+						break; // 周期任务见 `RestoreTasks` 的第 ② 步
 				}
 			}
-
-			if (snapshots.Count > 0)
-			{
-				restored += _resources?.RestoreGrowthTasks(mapId, ownerId, progress) ?? 0;
-				restored += _construction?.RestoreHousingTasks(mapId, ownerId, progress) ?? 0;
-				restored += _units?.RestoreUnitTasks(mapId, progress) ?? 0;
-
-				// 月度结算（v0.3 / WP-3.9）：与上面三类周期任务同一口径 —— 按实体重建 + 回填进度
-				restored += _settlement?.RestoreSettlementTask(mapId, ownerId, progress) ?? 0;
-			}
-
 			return restored;
 		}
+
+		/// <summary>
+		/// **读档（旧签名，保留）**：只恢复一个 owner 的周期任务。
+		/// </summary>
+		private int RestoreTasks(string mapId, int ownerId) => RestoreTasks(mapId, new[] { ownerId });
 
 		private int Register(IProgressTask task)
 		{

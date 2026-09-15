@@ -161,6 +161,12 @@ namespace SciencePotato.Scripts.Core
 		public IActionHandler Intent { get; init; }
 
 		/// <summary>
+		/// （v0.9.6 / `WP-5.11`）**会话入口**：新开局 / 存档 / 读档 / 退出 + 自动存档点。
+		/// <para>宿主只跟它打交道，不必自己拼"生成地图 → 启动编排器 → 存档点"的顺序；读档按**玩家表逐 owner**恢复（`U7`）。</para>
+		/// </summary>
+		public SessionEntryService Entry { get; init; }
+
+		/// <summary>
 		/// （v0.6.5 / WP-5.10）**多语言（i18n）**：UI 文案的键 → 文本解析器（缺键可见、可回退到默认语言）。
 		/// <para>表现层今后**只允许**写键（如 <c>i18n.T("ui.generate")</c>），不允许写死文案（`R4`）。</para>
 		/// </summary>

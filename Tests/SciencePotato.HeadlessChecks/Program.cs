@@ -57,6 +57,7 @@ namespace SciencePotato.HeadlessChecks
 			("InfoGate", InfoGateChecks.RunAll),
 			("Intent", IntentChecks.RunAll),
 			("Balance", BalanceChecks.RunAll),
+			("SessionEntry", SessionEntryChecks.RunAll),
 			};
 
 			// `--list-groups`：只输出组名（不给脚本混进横幅），供 `Tools/verify.ps1` 分片

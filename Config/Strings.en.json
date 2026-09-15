@@ -29,6 +29,11 @@
     "intent.ui_locked": "Not unlocked yet (research the required tech first)",
     "intent.prereq": "Tech prerequisite unmet, already researching, or already researched",
     "intent.rejected": "Rules reject this action (resources / terrain / gates)",
-    "intent.unknown_kind": "Unknown intent kind"
+    "intent.unknown_kind": "Unknown intent kind",
+
+    "session.no_map": "No map id given",
+    "session.no_game": "No game in progress (start a new game or load one)",
+    "session.start_failed": "Could not start the game (map or factions failed)",
+    "session.load_failed": "Could not load the save (missing or newer version)"
   }
 }

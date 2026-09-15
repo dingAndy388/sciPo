@@ -222,6 +222,9 @@ namespace SciencePotato.Scripts.Core
 			// 6.16) 意图契约（v0.9.4 / WP-5.7）：表现层唯一入口 —— UI 只表达意图，规则（谁/门控/资源）在这里判
 			var intent = new HumanIntentHandler(session, mapService, construction, units, tech, uiGate, events);
 
+			// 6.17) 会话入口（v0.9.6 / WP-5.11）：新开局 / 存档 / 读档 / 退出 + 自动存档点（含 U7 多 owner 读档）
+			var entry = new SessionEntryService(session, mapService, orchestrator, worldSave);
+
 			// 6.13) AI 与胜负（v0.7.6 / WP-6.6）：出局即停（不再决策/下单）
 			ai.AttachVictory(victory);
 
@@ -258,6 +261,7 @@ namespace SciencePotato.Scripts.Core
 				Attribution = attribution,
 				UiGate = uiGate,
 				Intent = intent,
+				Entry = entry,
 				I18n = i18n,
 			};
 		}

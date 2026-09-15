@@ -63,7 +63,8 @@ namespace SciencePotato.HeadlessChecks
 		/// <para>敌方玩法本身由 <c>EnemySpawnChecks</c> 显式传 `true` 验收；生产装配默认开
 		/// （`CoreDependencies.EnableEnemySpawn`，见 `ServiceContainer`）。</para>
 		/// </param>
-		public static CoreServices BuildCore(InMemoryConfigSource configSource, bool failOnConfigErrors = true, InMemoryMapRepository mapRepository = null, bool enableEnemySpawn = false)
+		public static CoreServices BuildCore(InMemoryConfigSource configSource, bool failOnConfigErrors = true, InMemoryMapRepository mapRepository = null, bool enableEnemySpawn = false,
+			ISaveStore saveStore = null, string saveRoot = null, IEnumerable<PlayerContext> players = null)
 		{
 			return CoreBootstrap.Build(new CoreDependencies
 			{
@@ -74,6 +75,9 @@ namespace SciencePotato.HeadlessChecks
 				GeneratorConfigPath = null,
 				FailOnConfigErrors = failOnConfigErrors,
 				EnableEnemySpawn = enableEnemySpawn,
+				// （v0.9.6 / WP-5.11）统一存档单元：会话入口（新开局/存档/读档）与周期任务分区需要它
+				SaveStore = saveStore,
+				SaveRoot = saveRoot ?? "user://save/",
 				MapRepositoryFactory = tables =>
 				{
 					InMemoryMapRepository repository = mapRepository ?? new InMemoryMapRepository();
@@ -84,11 +88,12 @@ namespace SciencePotato.HeadlessChecks
 				SessionId = "test",
 				// （v0.7.1 / WP-6.1）**夹具显式给"单人类玩家"**：不给的话装配层会按 `Config/AI.json` 的 `Count`
 				// 自动补 AI（生产路径要的行为），而绝大多数用例只想有一个人类玩家、再按需 `AddPlayer`。
-				Players = new[] { PlayerContext.Human(PlayerContext.FirstOwnerId) },
+				Players = players ?? new[] { PlayerContext.Human(PlayerContext.FirstOwnerId) },
 			});
 		}
 
-		public static CoreServices BuildRealCore(bool failOnConfigErrors = true, InMemoryMapRepository mapRepository = null)
-			=> BuildCore(RealConfigSource(), failOnConfigErrors, mapRepository);
+		public static CoreServices BuildRealCore(bool failOnConfigErrors = true, InMemoryMapRepository mapRepository = null,
+			ISaveStore saveStore = null, string saveRoot = null)
+			=> BuildCore(RealConfigSource(), failOnConfigErrors, mapRepository, saveStore: saveStore, saveRoot: saveRoot);
 	}
 }

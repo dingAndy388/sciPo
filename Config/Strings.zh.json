@@ -29,6 +29,11 @@
     "intent.ui_locked": "该功能尚未解锁（先研究对应科技）",
     "intent.prereq": "科技前置未满足，或在研究中/已研究",
     "intent.rejected": "规则不允许该操作（资源 / 地形 / 门控）",
-    "intent.unknown_kind": "未知的意图类型"
+    "intent.unknown_kind": "未知的意图类型",
+
+    "session.no_map": "没有指定地图",
+    "session.no_game": "还没有开局（先新开局或读档）",
+    "session.start_failed": "开局失败（地图或势力没起来）",
+    "session.load_failed": "读档失败（存档不存在或版本过新）"
   }
 }

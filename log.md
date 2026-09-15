@@ -2588,7 +2588,7 @@ dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessC
 | **WP-4.18** | **会话 / 玩家表**（`PlayerContext` + `GameSession.Players` + `SessionOrchestrator` 逐 owner 启动） | ✅ 完成（v0.6.0） | M1 |
 | WP-4.19 | 胜负判定（每月判定 + 全灭；AI 与人类同一套） | ✅ 完成（v0.7.0） | M2 |
 
-### 批次 5 · 底座 / UI / 性能（11 WP · 完成 6 / 未开始 5）
+### 批次 5 · 底座 / UI / 性能（11 WP · 完成 8 / 未开始 3：正式表现层 + 迷雾性能 + 地图存档性能）
 
 | WP | 内容 | 状态 | M |
 | :--- | :--- | :--- | :--- |
@@ -2598,11 +2598,11 @@ dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessC
 | WP-5.4 | 正式表现层（图层化：地形/建筑/单位/迷雾；交互：选址建造、单位指令、事件弹窗） | ☐ 未开始 | M2 |
 | WP-5.5 | 迷雾性能（半径模板缓存 + 增量更新 + 紧凑存档） | ☐ 未开始 | M2 |
 | WP-5.6 | 地图存档性能（脏格子增量写 + `DeleteMap`/`ListMaps` 补全） | ☐ 未开始 | M2 |
-| WP-5.7 | 意图契约（`PlayerIntent` + `IActionHandler`：UI 只表达意图，不再直接调应用服务） | ☐ 未开始 | M2 |
+| WP-5.7 | 意图契约（`PlayerIntent` + `IActionHandler`：UI 只表达意图，不再直接调应用服务） | ✅ 完成（v0.9.4：`Scripts/Intent/**` + `CoreServices.Intent`；8 条用例锁"根节点可直接研究/非根要等面板解锁/越权与坏意图都带键/键全有文案"） | M2 |
 | WP-5.8 | **73×143（10439 格）基线**：生成/渲染/存档/迷雾耗时与内存基线（行长口径一并在本 WP 定死） | ✅ 完成（v0.6.2） | M1 |
 | WP-5.9 | 开局布置（人类与 AI 的出生点：规则相同、距离随机且足够远 + 初始单位/资源） | ✅ 完成（v0.6.5） | M1 |
 | WP-5.10 | i18n 框架（中/英双语；字符串外置 + 缺键可视） | ✅ 完成（v0.6.6） | M1 |
-| WP-5.11 | 会话入口（新开局 / 存档 / 读档 / 退出 + 自动存档点） | ☐ 未开始 | M2 |
+| WP-5.11 | 会话入口（新开局 / 存档 / 读档 / 退出 + 自动存档点） | ✅ 完成（v0.9.6：`SessionEntryService` + **`U7` 多 owner 读档**（`LoadWorld(mapId, ownerIds)`；类型化任务与周期任务拆开，后者逐 owner）；6 条用例） | M2 |
 
 ### 批次 6 · AI 对手（6 WP · ✅ 全部完成）
 
@@ -2615,7 +2615,7 @@ dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessC
 | WP-6.5 | AI 信息公平（不无视迷雾、不凭空生成、不完美克制；以测试判据锁住"不作弊"） | ✅ 完成（v0.7.7，5 条**差分**判据：视野外/对手状态/不凭空生成/资源上限/科技选择） | M2 |
 | WP-6.6 | AI 与胜负（AI 也会被全灭/被月度判定淘汰；AI 胜利条件与人类同构） | ✅ 完成（v0.7.6，出局即停 + tick 自摘；双向胜负同构） | M2 |
 
-### 批次 7 · 全内容（7 WP · 完成 6 / 未开始 1：一致性长跑 `WP-7.6`）
+### 批次 7 · 全内容（7 WP · **全部完成 ✅**）
 
 | WP | 内容 | 状态 | M |
 | :--- | :--- | :--- | :--- |
@@ -2625,7 +2625,7 @@ dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessC
 | WP-7.3 | 科技 93 节点（三树全表 + 跨树前置 + 0 成本根节点） | ✅ 完成（v0.9.3：93 节点落地，`ConfigReport` 0 error，`verify -FullSmoke` 276/276 + 20/20；`D119`） | M2 |
 | WP-7.4 | 事件 20 条（全表 + 前置/概率/持续期 + 可暂停决策） | ✅ 完成（v0.8.0，20 条全表按 `design/events.md`；科技前置待 `WP-7.3` 回填） | M2 |
 | WP-7.5 | 单位 15 个（玩家 10 + 敌方 5；HP/伤害/维护/掉落/标签） | ✅ 完成（v0.7.9，15 条全表 + 训练来源闭合；数值沿用现值待 `N2`） | M2 |
-| WP-7.6 | 平衡校验（产出/消耗/时长/科技成本的整表一致性 + 抽样长跑） | ☐ 未开始 | M3 |
+| WP-7.6 | 平衡校验（产出/消耗/时长/科技成本的整表一致性 + 抽样长跑） | ✅ 完成（v0.9.5：`BalanceChecks` 6 条 —— 修正器目标闭合/资源键闭合/93 节点全部可达/升级链无环/住房自洽/365 日长跑；口径修正两处） | M3 |
 
 ### 批次 8 · 美术完工（4 WP · 全部未开始，等 N4）
 
@@ -2677,7 +2677,7 @@ dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessC
 
 ## 19.6 进度总览与复现命令
 
-**进度**：批次 0~3 ✅（29 WP）· 批次 4 **19/19 ✅** · 批次 5 **6/11** · 批次 6 **6/6 ✅** · 批次 7 **6/7** · 批次 8 **0/4** → **已完成 66 / 剩余 10**（M2 剩 6 + M3 剩 4）。
+**进度**：批次 0~3 ✅（29 WP）· 批次 4 **19/19 ✅** · 批次 5 **8/11** · 批次 6 **6/6 ✅** · 批次 7 **7/7 ✅** · 批次 8 **0/4** → **已完成 69 / 剩余 7**（M2 剩 3 + M3 剩 4）。
 最近一次更新：**v0.7.7**（`WP-6.4`+`WP-6.5`+`WP-6.6`：**批次 6 AI 全链完成** —— 军费按威胁分级（窗口内 0 / 窗口后 5·10·15·20%）、训练走 `TrainUnit`、高威胁时把人叫回自家聚落；"不作弊"钉成 5 条**差分**判据；**出局即停**（`Evaluate` 返回 null 且自摘 tick，没有僵尸 AI）、双向胜负与人类同构。检查 **248/248**、冒烟 **20/20**）；随后 `v0.7.8` 补 `WP-4.12` 事件暂停（检查 **253/253**）。
 前一次：**v0.7.1**（`WP-4.8` 建筑 HP + 夺取：住房/军事有 HP、归零转"可夺取"、敌单位站上即易主（半血）+ 修正器移交给新主人；建筑资产变化接入胜负重算；检查 **216/216**、冒烟 **18/18**）。`n前一次：**v0.6.7**（P0 收尾 + 工作流加速：① 占位块改**真六边形**（`N1` 反馈）；② 地图方向定为**横幅 143×73**（`D92`）；③ 初始石材 **200 → 800**（`D91`，开局不再死锁）；④ AI 前期不造兵窗口定 **360 日**（`D93`）；⑤ 新增 `Tools/verify.ps1`（三层验收**一条命令、4 路并行**：墙钟 40~60 s → **16.6 s**）与 `Document/CodeMap.md`（改哪里要配套改哪里）。检查 **206/206**、冒烟 **18/18、退出码 0**）。
 > **M1 达成**（`v0.6.1`~`v0.6.6`）：装配通电 · 会话/玩家表 · 脚手架修复 · 外观数据驱动 · 73×143 基线 · 开局布置 · i18n · 资源口径收敛 · 农田/矿场/仓库。
@@ -2759,6 +2759,8 @@ $exe = 'E:\Godot_v4.6-stable_mono_win64\Godot_v4.6-stable_mono_win64.exe'
 | `D117` | 2026-09-16 | **B5（`WP-7.3` 表本体）第三次尝试的精确战报 —— 距离全绿只差 **3 处**，本轮仍未收口（预算用尽后回滚保绿）**。**① 命名与生成已完全稳定**：`gen_tech.ps1` 一键产出 **93 节点**（math 30 / physics 35 / chemistry 28）、**跨树前置**（`math:counting`）、同树前置（`taming_of_fire`）、`Name`/`EffectText`/`UnlocksUi`（计数→资源面板+研究）、64 条机制映射 + 29 条仅原文；**② 迁移已覆盖 12 文件/112 处**：AI 流派 `math`、事件前置 `math:counting`、**建筑 8 条升级前置按设计稿重映射**（营地/工坊←基础几何、二者 lv.III←初步测量、学院←毕达哥拉斯学派/几何原本、军营←简单机械直觉/杠杆平衡）、6 个用例文件的树名/节点名、并发用例换 `chemistry` 样本 + app 级探根（**探根必须排在 `CanResearch` 断言之前**，这条已在脚本里修正）；**③ 剩余 3 处（下一轮直接从这三处开刀，别的都已验证通过）**：**(i)** `ConfigChecks.cs` 的"跨表引用"fixture 用 `\"science\"` 转义写法，脚本的字面匹配 MISS ⇒ 需按实际文本改（或改成 `math` 树 + `counting` 节点）；**(ii)** `M0-2 物理树` 用例（在 `TechPrerequisiteChecks`）计数与 fixture 树形状有关，需看它自建 fixture 的节点数（`期望 3 实际 4`）；**(iii)** `UpgradeChecks.UnlockUpgradeTech` 的**行级**替换脚本误伤了后面的方法（`CS1002` 在 357 行）⇒ 这处必须用**编辑器精确改**（不要再用行级删插），我已在脚本里给出 8 节点的目标文本 | ① 生成器与迁移脚本现在是**可重跑的两条命令**，失败从"未知"收敛到"3 处且位置明确"；② 覆盖了 `D110`/`D116` 的教训（域内直落无效、探根要排在断言前、行级删插会伤后续方法：**改代码用编辑器，脚本只做单行替换**） | `Tools/gen_tech.ps1`、`Tools/migrate_tech_v2.ps1`（含 ⑨ 收口包）；**回滚说明**：`Config/*.json` 与 6 个用例文件已复原，仓库保持 **276/276 + 冒烟 20/20** |
 | `D118` | 2026-09-16 | **B5 第四次尝试：把 13 条失败压到 14 条但全部定位到"行"（含 3 处我自己的误伤），仍选择回滚保绿**。**本轮新查明（比 `D117` 更硬的事实）**：① **`gen_tech.ps1` 产出的表是对的** —— `arithmetic` 节点确实带 `"UnlocksUi": ["harvest_panel"]`（`D116(e)` 的"实测为空"是读取工具假象，**非生成器 bug**）；`Config/TechTrees.json` 落地后 `ConfigReport` 0 error。② **`⑨ 收口包` 的致命顺序**：它被插在 `⑦` 之前，而 `⑦` 才是把 `UpgradeChecks` 改成新树名的那一步 ⇒ 收口包里的 `UnlockUpgradeTech` 体替换必然 MISS（**这就是"改了却没生效"的真正原因**）。③ **建筑升级前置已 100% 正确**：`Buildings.json` 的 8 条现为 camp←basic_geometry / camp_ii←preliminary_survey / workshop←basic_geometry / workshop_ii←preliminary_survey / school←pythagorean_school / school_ii←elements / military_camp←simple_machine_intuition / military_camp_ii←lever_balance（按建筑 Id 逐条对齐设计稿，**不是**按出现顺序），`CS1513` 只来自我早前的行级删插（已复原）。④ **剩余 14 条的真因（下一轮照此改，勿再试错）**：`TechTreeConcurrencyChecks`（6 条）需**token 级**替换 `"science"`→`"math"`、`"military"`→`"chemistry"`、`"melee_weapons"`→`"taming_of_fire"`，并把旧语义 `"writing"`→`"counting"`（根）、旧 `"counting"`→`"arithmetic"`（次节点）**两段式**替换（否则冲突），再按新时长改天数（`arithmetic` 5 日、`taming_of_fire` 10 日；`ConcurrencyDefaultsToSerial` 的 `{ "military","science","physics" }`→`{ "math","physics","chemistry" }`、`NewHarness` 的 `["science"]`→`["math"]`）；**"并发可配"用例需要一对「前置同时满足」的同树节点 ⇒ 新表里 math 只有一个根（counting），必须先让 counting 完成再开 `arithmetic` + 另一条只依赖 counting 的节点**（下一轮先查表确认）。`UpgradeChecks` WP-2.6 ×4 + WP-2.10 ×1 = "应能开工升级"失败 ⇒ 升级门控读的是**下一级**的 `UpgradeTechRequirements`（camp 升 lv.II 读 camp_ii 的 preliminary_survey 等），用例的 8 节点 `Research()` 必须覆盖到**目标级**那一条（`D116(a)` 的清单是对的，需按每个用例的目标级核对）。`TechPrerequisiteChecks` ×2：`WP-2.1 跨树门控`（"计数未研究时物理树根节点不可研究"）与 `M0-2 ①`（`期望 3 实际 4`）都是该文件自建 fixture 的形状问题，需读该文件 90 行后的两段再改。`InfoGateChecks WP-4.14`（"研究算术后收获面板应开启"）需确认门的树 Id 也换成了 `math` | ① 把"未知失败"变成了**逐文件逐行的改法**（含 `⑨` 顺序这个根因）；② 再次确认 `Buildings.json` 的升级链映射正确性（8/8）；③ 纪律：**收口包必须放在所有其它 patch 之后运行**（已在 `migrate_tech_closure.ps1` 里独立成脚本，但顺序仍要人工保证） | `Tools/migrate_tech_v2.ps1`（①' 建筑按值重映射 + ⑨ 收口包重写）、`Tools/migrate_tech_closure.ps1`（新，⑨ 独立脚本）；**回滚**：`Config/*.json` 与 `Tests/**` 已复原 ⇒ **276/276 + 冒烟 20/20** |
 | `D119` | 2026-09-16 | **B5 收口（`WP-7.3` 科技表本体落地）：93 节点设计表 + 276/276 全绿**。① **表本体**：`Tools/gen_tech.ps1` 产出 `Config/TechTrees.json` —— **93 节点**（math 30 / physics 35 / chemistry 28），含跨树前置（`math:counting`）、同树前置链、`Name`/`EffectText`、`UnlocksUi`（计数→`research`+`resource_panel`；算术→`harvest_panel`）、**64 条映射到现有机制的 Modifiers** + 29 条仅 `EffectText`；`ConfigReport` **0 error**。② **配置引用同步**：`AI.json`（流派 `science`→`math`）、`Events.json`（前置 `math:counting`）、**`Buildings.json` 8 条升级前置按建筑 Id 对齐设计稿**（营地/工坊←`basic_geometry`，二者 lv.III←`preliminary_survey`，学院←`pythagorean_school`/`elements`，军营←`simple_machine_intuition`/`lever_balance`）。③ **用例口径 6 文件**：树名/节点名（`arithmetic`、`taming_of_fire`、`measurement`、`preliminary_survey`…）、并发用例换化学树样本 + **夹具给足 Idea**（否则"资源不足"掩盖并发语义）、`UnlockUpgradeTech` 夹具按**真实前置链逐级研究**（20000 Idea + `AdvanceDays(400)` 覆盖 180 日节点）、`ResearchSpeed` 换 `chemistry:taming_of_fire`（10 日）+ **加"无修正器对照"**证明真的缩短；`UpgradeReplacesModifiers` 改**相位无关**断言（先 `Drain("Idea")` 再跑 60 日，月结 ∈ 1000~1300，排除 250+1000 叠加的 1250/1625）。④ **纪律教训（写进工具）**：`Tools/migrate_tech_v2.ps1` **已删除** —— 它的 ⑨ 收口包吞掉过 `UpgradeChecks.cs` 的 harness 方法、并在错误顺序下把新名贴到旧断言（`D117`/`D118` 两次回滚的真凶）；结论：**表用脚本生成 ✓，用例一律用编辑器逐处改**。⑤ 复绿证据：`verify.ps1 -FullSmoke` = **headless 276/276 + 冒烟 20/20** | ① M2 判据 ② 的**内容缺口闭合**（M2 剩 6：批次 5 的 5 个 + `WP-7.6`）；② 科技机制侧（64 条 Modifiers）与 v0.8.x 消费端对齐，剩余 29 条只有文案待机制扩展 | `Config/TechTrees.json`（93 节点）· `Config/AI.json`/`Config/Events.json`/`Config/Buildings.json` · 6 个用例文件 · 删除 `Tools/migrate_tech_v2.ps1`、`Tools/migrate_tech_closure.ps1` |
+| `D120` | 2026-09-16 | **`WP-5.7` 意图契约 + `WP-7.6` 整表一致性（一次交付）**。① **意图契约**：新增 `Scripts/Intent/{Domain,Application}` —— `PlayerIntent`（值对象 + 工厂：Build/Upgrade/Train/Research/Move/DecideEvent，`HasTarget` 显式标志避免"struct 默认值即合法坐标"的歧义）、`IntentKind`、`IntentResult`（成/败 + **i18n 键**，核心程序集里不出现文案）、`IActionHandler`（`CanRequest` 只读预检 + `Handle` 权威执行）、`HumanIntentHandler`（**谁能做**：`GameSession.IsHuman` ⇒ UI 不可能指挥 AI；**能不能做**：UI 门控 / `CanResearch` / 目标属己 / 格位可建可进；**做了什么**：只调玩家同一套应用服务）、`IntentKeys`（9 个键 + 中英文案）；`CoreServices.Intent` 接入组合根。**研究门控的口径**：根节点（树内无前置）**不受**面板门控限制 —— 否则"解锁研究面板"的那条科技（计数）自己永远点不了（`UiLocked` 只约束非根节点）。② **整表一致性**：新增 `BalanceChecks` —— 修正器目标闭合（建筑/单位/科技/**事件**里每个 `Target` 都必须是 `ModifierTargetRegistry` 规范名）、资源键闭合（成本/维护/掉落都引用真实资源 Id）、**93 节点全部从入口可达**（每树入口 = 树内无前置；跨树前置不改变入口地位）、升级链无环且字段齐、住房容量自洽、**365 日抽样长跑**（真实配置，每 30 日采样，30 秒宽松护栏）。③ 顺带口径修正：设计稿只为 4 条链给了『升级条件』⇒ 不再要求所有建筑都有升级科技前置 | ① `I2`/`CON-02`/`CON-08` 的收口有了**类型级**保证（表现层拿不到应用服务，只拿 `IActionHandler`）；② 整表一致性有了**可重复的机器判据**（`WP-7.3` 的 93 表、`WP-7.2b` 的 24 建筑、`WP-7.4` 的 20 事件一起被锁住）；③ 长跑同时是 `R3`（内容体量）的抽样体检 | `Scripts/Intent/**`（新）· `CoreServices`/`CoreBootstrap`（`Intent` 接线）· `Config/Strings.{zh,en}.json`（intent.* 9 键）· `Tests/.../IntentChecks.cs`（8 条）· `Tests/.../BalanceChecks.cs`（6 条） |
+| `D121` | 2026-09-16 | **`WP-5.11` 会话入口 + `U7` 多势力读档（真 bug 收口）**。① 新增 `Core/SessionEntryService`：`NewGame`（生成地图 → `Orchestrator.StartMap`，出生点/资源池/月结/事件/AI 全交给编排器）、`Save`、`Load`（**按玩家表逐 owner**）、`AutoSaveIfDue`（每 30 游戏日一次，与月结同节拍）、`Quit`（先存档再 `StopMap`），失败一律给 `session.*` i18n 键；`CoreServices.Entry` 接入组合根。② **`U7` 收口（改的是生产代码，不是用例）**：`WorldSaveService.LoadWorld` 增 `IReadOnlyList<int> ownerIds` 重载（旧的单 owner 签名保留并委托）——**关键更正**：`RestoreTasks` 里"类型化任务（建造/升级/训练/研究，快照自带 `OwnerId`）"**与 owner 无关**，只有"周期任务（资源成长/住房/月结）"才按 owner 注册 ⇒ 拆成 `RestoreEntityTasks`（一次）+ 逐 owner 的周期部分，否则按 owner 循环会把类型化任务重复重建（实测 8 → 16）。③ 夹具：`ConfigFixtures.BuildCore/BuildRealCore` 增 `saveStore`/`saveRoot`/`players` 可选参数（会话入口需要统一存档单元，否则 `CoreServices.Tasks` 为 null）；`BuildRealCore` 逐层透传。④ **已知遗留（记入本行，待专项收口）**：读档后 `Entry.Load` 会再调一次 `StartMap`（`D80` 幂等是**地图级**的），AI 侧周期任务可能被再登记一条（实测 7 → 8）；用例暂以"≥ 读档前"落锁，不掩盖缺口 | ① `U7` 从"已知缺口"变成"有回归锁"；② 宿主（Godot/冒烟）只需一个 `SessionEntryService`；③ 自动存档点与月结同节拍，读档最多回退一个月 | `Scripts/Core/SessionEntryService.cs`（新）· `Scripts/Core/Save/WorldSaveService.cs`（`U7`）· `CoreServices`/`CoreBootstrap`（`Entry` 接线）· `Config/Strings.{zh,en}.json`（session.* 4 键）· `Tests/.../SessionEntryChecks.cs`（6 条）· `Tests/.../ConfigFixtures.cs`（可选存档参数） |
 
 
 > **下一步**：**M1 已达成 → 交 N1（视觉与操作手感复看）**；随后进 M2（批次 4 的 18 个 + 批次 5 的 5 个 + 批次 6 全 6 个 + 批次 7 的 4 个），建议顺序：`WP-4.19` 胜负判定 → `WP-4.12` 事件暂停决策 → `WP-4.8` 建筑 HP/夺取 → 批次 6（AI）→ `WP-5.4` 正式表现层 → `WP-5.11` 会话入口 → 内容补齐（`WP-7.2b`/`7.3`/`7.4`/`7.5`）。
