@@ -76,11 +76,11 @@ namespace SciencePotato.HeadlessChecks
 		private static void CrossTreeGateIsFailClosed()
 		{
 			ITechTreesConfigRepository config = ConfigFixtures.BuildRealCore().Tables.TechTrees;
-			var science = new TechTree("science", 1, config.GetTechTreeConfig("science"));
+			var science = new TechTree("math", 1, config.GetTechTreeConfig("math"));
 			var physics = new TechTree("physics", 1, config.GetTechTreeConfig("physics"));
 
 			TechPrerequisite prerequisite = physics.GetPrerequisites("simple_machine_intuition").Single();
-			Check.Assert(prerequisite.IsCrossTree && prerequisite.TreeId == "science",
+			Check.Assert(prerequisite.IsCrossTree && prerequisite.TreeId == "math",
 				"物理树根节点的前置应是跨树的 science 节点");
 
 			// ① fail closed：没挂跨树解析器时跨树前置一律"未满足"（宁可暂时不可研究，也不能错误放行）
@@ -89,14 +89,15 @@ namespace SciencePotato.HeadlessChecks
 
 			// ② 同树前置**不**走跨树查询：解析器一旦被调用就抛，用来证明它没被用上
 			science.AttachResearchLookup((treeId, nodeId) => throw new Exception("同树前置不应调用跨树解析器"));
-			Check.Assert(science.CanResearch("writing"), "writing 是根节点（无前置）→ 应可研究");
-			Check.Assert(!science.CanResearch("mathematics"), "writing 未研究时 mathematics 不可研究（本树前置生效）");
-			science.Research("writing");
-			Check.Assert(science.CanResearch("mathematics"), "writing 研究后 mathematics 应可研究");
+			Check.Assert(science.CanResearch("counting"), "counting 是根节点（无前置）→ 应可研究");
+			Check.Assert(!science.CanResearch("arithmetic"), "counting 未研究时 arithmetic 不可研究（本树前置生效）");
 
-			// ③ 跨树查询：兄弟树未研究 → 不可研究
-			physics.AttachResearchLookup((treeId, nodeId) => treeId == "science" && science.IsResearched(nodeId));
+			// ③ 跨树查询：兄弟树未研究 → 不可研究（先挂解析器，再验证门控）
+			physics.AttachResearchLookup((treeId, nodeId) => treeId == "math" && science.IsResearched(nodeId));
 			Check.Assert(!physics.CanResearch("simple_machine_intuition"), "计数未研究时物理树根节点不可研究");
+
+			science.Research("counting");
+			Check.Assert(science.CanResearch("arithmetic"), "counting 研究后 arithmetic 应可研究");
 
 			// ④ 兄弟树研究完成 → 可研究、可研究完成（`TECH-07` 的核心断言）
 			science.Research("counting");
@@ -108,9 +109,9 @@ namespace SciencePotato.HeadlessChecks
 			Check.Assert(!physics.CanResearch("simple_machine_intuition"), "已研究的节点不应再次可研究");
 
 			// ⑤ 跨树查询只认"目标树 + 目标节点"，不能因为树对了就放行任意节点
-			physics.AttachResearchLookup((treeId, nodeId) => treeId == "science" && nodeId == "writing");
-			Check.Assert(physics.IsPrerequisiteMet(TechPrerequisite.Cross("science", "writing")), "writing 已研究 → 应判满足");
-			Check.Assert(!physics.IsPrerequisiteMet(TechPrerequisite.Cross("science", "no_such_node")),
+			physics.AttachResearchLookup((treeId, nodeId) => treeId == "math" && nodeId == "counting");
+			Check.Assert(physics.IsPrerequisiteMet(TechPrerequisite.Cross("math", "counting")), "writing 已研究 → 应判满足");
+			Check.Assert(!physics.IsPrerequisiteMet(TechPrerequisite.Cross("math", "no_such_node")),
 				"目标树的未知节点应判未满足（不能因树名对就放行）");
 			Check.Assert(physics.IsPrerequisiteMet(TechPrerequisite.InTree("simple_machine_intuition")), "本树前置仍查本树集合");
 		}
@@ -149,9 +150,9 @@ namespace SciencePotato.HeadlessChecks
 					"计数未研究时，物理树根节点不应可研究");
 
 				// ② 研究「计数」（0 idea / 0 日）→ 1 个日节拍即完成
-				app.Research(mapId, 1, "science", "counting");
+				app.Research(mapId, 1, "math", "counting");
 				clock.AdvanceDays(1);
-				Check.Assert(app.GetOrCreateTechTree(mapId, 1, "science").IsResearched("counting"), "计数应在 1 日内完成");
+				Check.Assert(app.GetOrCreateTechTree(mapId, 1, "math").IsResearched("counting"), "计数应在 1 日内完成");
 
 				// ③ 跨树前置满足 → 物理树根节点变为可研究（M0-2 ①）
 				Check.Assert(app.CanResearch(mapId, 1, "physics", "simple_machine_intuition"),
@@ -178,7 +179,7 @@ namespace SciencePotato.HeadlessChecks
 
 				// ⑥ 前置未满足时不得"先扣资源、再在完成回调里静默丢弃"：不注册研发任务
 				int subscribersBefore = time.SubscriberCount;
-				reopened.Research(mapId, 1, "science", "mathematics"); // 前置 writing 未研究
+				reopened.Research(mapId, 1, "math", "basic_geometry"); // 前置（测量）未研究
 				Check.AssertEqual(subscribersBefore, time.SubscriberCount, "前置未满足时不应注册研发任务");
 			}
 			finally
@@ -287,7 +288,7 @@ namespace SciencePotato.HeadlessChecks
 		}
 
 		/// <summary>
-		/// 真实配置的 warning **白名单**：`WP-2.1` 起 <c>science/counting</c> 按设计就是 0 日（瞬间完成），
+		/// 真实配置的 warning **白名单**：`WP-2.1` 起 <c>math/counting</c> 按设计就是 0 日（瞬间完成），
 		/// 因此真实配置第一次出现 1 条预期 warning。用"允许清单 + 非空转断言"保住原来的 canary
 		/// （任何**其它** warning 都算回归）。
 		/// </summary>
@@ -300,8 +301,8 @@ namespace SciencePotato.HeadlessChecks
 			Check.Assert(warnings.All(w => w.Message.Contains("Duration=0")),
 				"真实配置只允许\"设计即 0 日\"的预期 warning：" +
 				string.Join(" | ", warnings.Select(w => w.ToString())));
-			Check.Assert(warnings.Any(w => w.Id == "science/counting"),
-				"science/counting 的 Duration=0 预期 warning 应存在（白名单不能空转）");
+			Check.Assert(warnings.Any(w => w.Id == "math/counting"),
+				"math/counting 的 Duration=0 预期 warning 应存在（白名单不能空转）");
 		}
 
 		// ────────────────────────── 工具 ──────────────────────────

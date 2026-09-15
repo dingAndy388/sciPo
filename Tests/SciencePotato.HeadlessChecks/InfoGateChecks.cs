@@ -100,15 +100,15 @@ namespace SciencePotato.HeadlessChecks
 			Check.Assert(!core.UiGate.IsResourcePanelUnlocked(MapId, 1), "准备：资源面板应关闭");
 			Check.Assert(!core.UiGate.IsHarvestPanelUnlocked(MapId, 1), "准备：收获面板应关闭（需「算术」）");
 
-			core.Tech.Research(MapId, 1, "science", "counting");
+			core.Tech.Research(MapId, 1, "math", "counting");
 			core.Session.Clock.AdvanceDays(1); // 计数 0 日 ⇒ 次日完成
 			Check.Assert(core.UiGate.IsResearchUnlocked(MapId, 1), "研究「计数」后应开启研究功能");
 			Check.Assert(core.UiGate.IsResourcePanelUnlocked(MapId, 1), "研究「计数」后应开启资源面板");
-			Check.Assert(!core.UiGate.IsHarvestPanelUnlocked(MapId, 1), "收获面板要等「算术」（当前占位表里挂在 writing 上）");
+			Check.Assert(!core.UiGate.IsHarvestPanelUnlocked(MapId, 1), "收获面板要等「算术」（在 arithmetic 的 UnlocksUi 上）");
 
-			core.Tech.Research(MapId, 1, "science", "writing");
+			core.Tech.Research(MapId, 1, "math", "arithmetic");
 			core.Session.Clock.AdvanceDays(15); // writing 15 日
-			Check.Assert(core.UiGate.IsHarvestPanelUnlocked(MapId, 1), "研究占位节点后收获面板应开启");
+			Check.Assert(core.UiGate.IsHarvestPanelUnlocked(MapId, 1), "研究算术 节点后收获面板应开启");
 
 			Check.Assert(!core.UiGate.IsResearchUnlocked(MapId, 2), "AI 未研究 ⇒ 其研究功能仍关闭（按 owner 隔离）");
 		}

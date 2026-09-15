@@ -46,15 +46,15 @@ namespace SciencePotato.HeadlessChecks
 			Check.AssertEqual(0, core.ConfigReport.Issues.Count(i => i.ToString().Contains("Concurrency")),
 				$"Concurrency 不应产生任何问题行：{core.ConfigReport.ToLines()}");
 
-			foreach (string treeId in new[] { "military", "science", "physics" })
+			foreach (string treeId in new[] { "math", "physics", "chemistry" })
 				Check.AssertEqual(1, core.Tables.TechTrees.GetTechTreeConfig(treeId).Concurrency,
 					$"{treeId} 的并发上限（设计稿：每棵树同时只能进行一项研发）");
 
 			Harness h = NewHarness();
 			try
 			{
-				Check.AssertEqual(1, h.Tech.GetConcurrency(MapId, h.OwnerId, "science"), "域内并发上限随配置");
-				Check.AssertEqual(0, h.Tech.GetInProgress(MapId, h.OwnerId, "science").Count, "初始没有进行中的研究");
+				Check.AssertEqual(1, h.Tech.GetConcurrency(MapId, h.OwnerId, "chemistry"), "域内并发上限随配置");
+				Check.AssertEqual(0, h.Tech.GetInProgress(MapId, h.OwnerId, "chemistry").Count, "初始没有进行中的研究");
 			}
 			finally { Cleanup(h.Dir); }
 		}
@@ -64,30 +64,33 @@ namespace SciencePotato.HeadlessChecks
 			Harness h = NewHarness();
 			try
 			{
-				// science 树的两个根节点：writing（30 idea / 15 日）与 counting（0 idea / 0 日）
-				Check.Assert(h.Tech.CanResearch(MapId, h.OwnerId, "science", "writing"), "writing 是根节点");
-				h.Tech.Research(MapId, h.OwnerId, "science", "writing");
-				Check.AssertEqual(1, h.Tech.GetInProgress(MapId, h.OwnerId, "science").Count, "开工后占用 1 个槽位");
+				// 化学树的根节点：taming_of_fire（10 日）→ 其下 pottery（15 日）与 potash_alkali（12 日）
+				Check.Assert(h.Tech.CanResearch(MapId, h.OwnerId, "chemistry", "taming_of_fire"), "taming_of_fire 是化学树根节点");
+				Check.Assert(!h.Tech.CanResearch(MapId, h.OwnerId, "chemistry", "pottery"), "pottery 前置（火的驯服）未满足 → 不可研究");
+				h.Tech.Research(MapId, h.OwnerId, "chemistry", "taming_of_fire");
+				h.Clock.AdvanceDays(10);   // 火的驯服 10 日 ⇒ 之后 potash_alkali / pottery 前置已满足
+				h.Tech.Research(MapId, h.OwnerId, "chemistry", "pottery");
+				Check.AssertEqual(1, h.Tech.GetInProgress(MapId, h.OwnerId, "chemistry").Count, "开工后占用 1 个槽位");
 				Check.Assert(h.Tasks.GetCurrentTasks(MapId).Any(t => t.Type == "Research"), "应产生研究任务");
 
 				// 同树第二个请求：counting 的前置本就满足，但槽位已满 → 被拒（树内串行）
-				Check.Assert(h.Tech.CanResearch(MapId, h.OwnerId, "science", "counting"), "counting 本身够格研究");
-				Check.Assert(!h.Tech.CanStartResearch(MapId, h.OwnerId, "science", "counting"), "但同树已有研究在进行 → 不能开工");
+				Check.Assert(h.Tech.CanResearch(MapId, h.OwnerId, "chemistry", "potash_alkali"), "potash_alkali 本身够格研究");
+				Check.Assert(!h.Tech.CanStartResearch(MapId, h.OwnerId, "chemistry", "potash_alkali"), "但同树已有研究在进行 → 不能开工");
 
-				h.Tech.Research(MapId, h.OwnerId, "science", "counting");
+				h.Tech.Research(MapId, h.OwnerId, "chemistry", "potash_alkali");
 				Check.AssertEqual(1, h.Tasks.GetCurrentTasks(MapId).Count(t => t.Type == "Research"), "被拒的请求不得产生第二条任务");
-				Check.AssertEqual(1, h.Tech.GetInProgress(MapId, h.OwnerId, "science").Count, "槽位仍只有 1 个");
+				Check.AssertEqual(1, h.Tech.GetInProgress(MapId, h.OwnerId, "chemistry").Count, "槽位仍只有 1 个");
 
 				// 15 日 → writing 完成 → 槽位释放，counting 可以开工
 				h.Clock.AdvanceDays(15);
-				Check.Assert(h.Tech.GetOrCreateTechTree(MapId, h.OwnerId, "science").IsResearched("writing"), "writing 应研究完成");
-				Check.AssertEqual(0, h.Tech.GetInProgress(MapId, h.OwnerId, "science").Count, "完成后应释放槽位");
+				Check.Assert(h.Tech.GetOrCreateTechTree(MapId, h.OwnerId, "chemistry").IsResearched("pottery"), "pottery 应研究完成");
+				Check.AssertEqual(0, h.Tech.GetInProgress(MapId, h.OwnerId, "chemistry").Count, "完成后应释放槽位");
 				Check.AssertEqual(0, h.Tasks.GetCurrentTasks(MapId).Count(t => t.Type == "Research"), "研究任务应被回收");
 
-				h.Tech.Research(MapId, h.OwnerId, "science", "counting");
-				Check.AssertEqual(1, h.Tech.GetInProgress(MapId, h.OwnerId, "science").Count, "串行结束后下一个才开工");
-				h.Clock.AdvanceDays(1);
-				Check.Assert(h.Tech.GetOrCreateTechTree(MapId, h.OwnerId, "science").IsResearched("counting"), "counting（0 日）应在次日完成");
+				h.Tech.Research(MapId, h.OwnerId, "chemistry", "potash_alkali");
+				Check.AssertEqual(1, h.Tech.GetInProgress(MapId, h.OwnerId, "chemistry").Count, "串行结束后下一个才开工");
+				h.Clock.AdvanceDays(15);
+				Check.Assert(h.Tech.GetOrCreateTechTree(MapId, h.OwnerId, "chemistry").IsResearched("potash_alkali"), "potash_alkali（12 日）应在此完成");
 			}
 			finally { Cleanup(h.Dir); }
 		}
@@ -97,19 +100,23 @@ namespace SciencePotato.HeadlessChecks
 			Harness h = NewHarness();
 			try
 			{
-				h.Tech.Research(MapId, h.OwnerId, "science", "writing");
-				h.Tech.Research(MapId, h.OwnerId, "military", "melee_weapons");
+				h.Tech.Research(MapId, h.OwnerId, "chemistry", "taming_of_fire");
+				h.Clock.AdvanceDays(10);   // 火的驯服 10 日 ⇒ 之后 potash_alkali / pottery 前置已满足
+				h.Tech.Research(MapId, h.OwnerId, "chemistry", "pottery");
+				h.Tech.Research(MapId, h.OwnerId, "math", "counting");
+				h.Clock.AdvanceDays(1);    // 计数 0 日
+				h.Tech.Research(MapId, h.OwnerId, "physics", "simple_machine_intuition");
 
 				Check.AssertEqual(2, h.Tasks.GetCurrentTasks(MapId).Count(t => t.Type == "Research"), "两棵树的任务应并存（三树并行）");
-				Check.AssertEqual(1, h.Tech.GetInProgress(MapId, h.OwnerId, "science").Count, "科学树 1 项");
-				Check.AssertEqual(1, h.Tech.GetInProgress(MapId, h.OwnerId, "military").Count, "军事树 1 项");
+				Check.AssertEqual(1, h.Tech.GetInProgress(MapId, h.OwnerId, "chemistry").Count, "化学树 1 项");
+				Check.AssertEqual(1, h.Tech.GetInProgress(MapId, h.OwnerId, "physics").Count, "物理树 1 项");
 
 				h.Clock.AdvanceDays(15);
-				Check.Assert(h.Tech.GetOrCreateTechTree(MapId, h.OwnerId, "science").IsResearched("writing"), "科学树先完成");
-				Check.AssertEqual(1, h.Tasks.GetCurrentTasks(MapId).Count(t => t.Type == "Research"), "军事树仍在研究（互不阻塞）");
+				Check.Assert(h.Tech.GetOrCreateTechTree(MapId, h.OwnerId, "chemistry").IsResearched("pottery"), "化学树先完成");
+				Check.AssertEqual(1, h.Tasks.GetCurrentTasks(MapId).Count(t => t.Type == "Research"), "物理树仍在研究（互不阻塞）");
 
-				h.Clock.AdvanceDays(5);
-				Check.Assert(h.Tech.GetOrCreateTechTree(MapId, h.OwnerId, "military").IsResearched("melee_weapons"), "军事树随后完成");
+				h.Clock.AdvanceDays(30);
+				Check.Assert(h.Tech.GetOrCreateTechTree(MapId, h.OwnerId, "physics").IsResearched("simple_machine_intuition"), "物理树随后完成");
 				Check.AssertEqual(0, h.Tasks.GetCurrentTasks(MapId).Count(t => t.Type == "Research"), "两棵树的任务都已回收");
 			}
 			finally { Cleanup(h.Dir); }
@@ -117,21 +124,23 @@ namespace SciencePotato.HeadlessChecks
 
 		private static void ConcurrencyIsConfigurable()
 		{
-			Harness h = NewHarness(scienceConcurrency: 2); // 测试夹具：把科学树的并发改成 2
+			Harness h = NewHarness(scienceConcurrency: 2); // 测试夹具：把化学树的并发改成 2
 			try
 			{
-				Check.AssertEqual(2, h.Tech.GetConcurrency(MapId, h.OwnerId, "science"), "并发上限应来自配置");
+				Check.AssertEqual(2, h.Tech.GetConcurrency(MapId, h.OwnerId, "chemistry"), "并发上限应来自配置");
 
-				h.Tech.Research(MapId, h.OwnerId, "science", "writing");
-				h.Tech.Research(MapId, h.OwnerId, "science", "counting");
+				h.Tech.Research(MapId, h.OwnerId, "chemistry", "taming_of_fire");
+				h.Clock.AdvanceDays(10);   // 火的驯服 10 日 ⇒ 之后 potash_alkali / pottery 前置已满足
+				h.Tech.Research(MapId, h.OwnerId, "chemistry", "pottery");
+				h.Tech.Research(MapId, h.OwnerId, "chemistry", "potash_alkali");
 
-				Check.AssertEqual(2, h.Tech.GetInProgress(MapId, h.OwnerId, "science").Count, "并发 2：同树可并行两项（为「一树多研发」预留）");
+				Check.AssertEqual(2, h.Tech.GetInProgress(MapId, h.OwnerId, "chemistry").Count, "并发 2：同树可并行两项（为「一树多研发」预留）");
 				Check.AssertEqual(2, h.Tasks.GetCurrentTasks(MapId).Count(t => t.Type == "Research"), "两条研究任务并存");
 
 				h.Clock.AdvanceDays(15);
-				Check.Assert(h.Tech.GetOrCreateTechTree(MapId, h.OwnerId, "science").IsResearched("writing"), "并行两项都应各自完成");
-				Check.Assert(h.Tech.GetOrCreateTechTree(MapId, h.OwnerId, "science").IsResearched("counting"), "counting 也完成（0 日）");
-				Check.AssertEqual(0, h.Tech.GetInProgress(MapId, h.OwnerId, "science").Count, "完成后槽位归零");
+				Check.Assert(h.Tech.GetOrCreateTechTree(MapId, h.OwnerId, "chemistry").IsResearched("pottery"), "并行两项都应各自完成");
+				Check.Assert(h.Tech.GetOrCreateTechTree(MapId, h.OwnerId, "chemistry").IsResearched("potash_alkali"), "counting 也完成（0 日）");
+				Check.AssertEqual(0, h.Tech.GetInProgress(MapId, h.OwnerId, "chemistry").Count, "完成后槽位归零");
 			}
 			finally { Cleanup(h.Dir); }
 		}
@@ -141,24 +150,28 @@ namespace SciencePotato.HeadlessChecks
 			Harness h = NewHarness();
 			try
 			{
-				h.Tech.Research(MapId, h.OwnerId, "science", "writing");
+				h.Tech.Research(MapId, h.OwnerId, "chemistry", "taming_of_fire");
+				h.Clock.AdvanceDays(10);   // 火的驯服 10 日 ⇒ 之后 potash_alkali / pottery 前置已满足
+				h.Tech.Research(MapId, h.OwnerId, "chemistry", "pottery");
 
 				TaskSnapshot snapshot = h.Tasks.GetCurrentTasks(MapId).Single(t => t.Type == "Research");
-				Check.AssertEqual("science", snapshot.UId, "研究任务的 `UId` 应是**所属树**（旧实现为 none）");
-				Check.AssertEqual("writing", snapshot.Id, "业务键 = 节点 Id");
-				Check.AssertEqual("Research:science:writing", snapshot.Key, "存储键 = `Research:{treeId}:{nodeId}`");
+				Check.AssertEqual("chemistry", snapshot.UId, "研究任务的 `UId` 应是**所属树**（旧实现为 none）");
+				Check.AssertEqual("pottery", snapshot.Id, "业务键 = 节点 Id");
+				Check.AssertEqual("Research:chemistry:pottery", snapshot.Key, "存储键 = `Research:{treeId}:{nodeId}`");
 			}
 			finally { Cleanup(h.Dir); }
 
-			// 续跑：树 Id 从 `UId` 取 → 研究真正落到科学树（旧实现把 nodeId 当 treeId，读档后数据错乱）
+			// 续跑：树 Id 从 `UId` 取 → 研究真正落到化学树（旧实现把 nodeId 当 treeId，读档后数据错乱）
 			Harness resumed = NewHarness();
 			try
 			{
-				resumed.Resources.AddResource("Idea", 200f, MapId, resumed.OwnerId);
+				resumed.Resources.AddResource("Idea", 20000f, MapId, resumed.OwnerId);
+				resumed.Tech.Research(MapId, resumed.OwnerId, "chemistry", "taming_of_fire");
+				resumed.Clock.AdvanceDays(10); // 先满足 pottery 的前置（火的驯服 10 日）
 				var resumeSnapshot = new TaskSnapshot
 				{
 					MapId = MapId, OwnerId = resumed.OwnerId, Progress = 14f, Target = 15f,
-					Id = "writing", Type = "Research", UId = "science", IsCompleted = false,
+					Id = "pottery", Type = "Research", UId = "chemistry", IsCompleted = false,
 				};
 
 				LinearTask task = resumed.Tech.CreateResearchTask(MapId, resumed.OwnerId, resumeSnapshot);
@@ -166,16 +179,16 @@ namespace SciencePotato.HeadlessChecks
 				resumed.Time.Register(task);
 				resumed.Clock.AdvanceDays(1);
 
-				Check.Assert(resumed.Tech.GetOrCreateTechTree(MapId, resumed.OwnerId, "science").IsResearched("writing"),
-					"续跑完成应研究**科学树**的节点");
-				Check.Assert(!resumed.Tech.GetOrCreateTechTree(MapId, resumed.OwnerId, "writing").IsResearched("writing"),
+				Check.Assert(resumed.Tech.GetOrCreateTechTree(MapId, resumed.OwnerId, "chemistry").IsResearched("pottery"),
+					"续跑完成应研究**化学树**的节点");
+				Check.Assert(!resumed.Tech.GetOrCreateTechTree(MapId, resumed.OwnerId, "pottery").IsResearched("pottery"),
 					"不应把 nodeId 当成 treeId 建出一棵叫 writing 的树（`TECH-01`）");
 
 				// 旧口径快照（UId=none）：无法判断所属树 → 拒绝续跑（不静默猜）
 				var legacy = new TaskSnapshot
 				{
 					MapId = MapId, OwnerId = resumed.OwnerId, Progress = 1f, Target = 15f,
-					Id = "writing", Type = "Research", UId = "none", IsCompleted = false,
+					Id = "pottery", Type = "Research", UId = "none", IsCompleted = false,
 				};
 				Check.Assert(resumed.Tech.CreateResearchTask(MapId, resumed.OwnerId, legacy) == null,
 					"旧口径快照（UId=none）应被拒绝续跑，而不是猜一棵树出来");
@@ -197,7 +210,7 @@ namespace SciencePotato.HeadlessChecks
 		private static ConfigReport BuildReport(int concurrency)
 		{
 			var root = JObject.Parse(File.ReadAllText(ConfigFixtures.TablePath("TechTrees")));
-			((JObject)((JObject)root["TechTrees"])["science"])["Concurrency"] = concurrency;
+			((JObject)((JObject)root["TechTrees"])["chemistry"])["Concurrency"] = concurrency;
 
 			return ConfigFixtures.BuildCore(
 				ConfigFixtures.RealConfigSourceWith("TechTrees", root.ToString()),
@@ -221,7 +234,7 @@ namespace SciencePotato.HeadlessChecks
 			public void Dispose() => Cleanup(Dir);
 		}
 
-		/// <summary>真实配置（可选覆盖科学树的并发上限），任务仓落在独立临时目录。</summary>
+		/// <summary>真实配置（可选覆盖化学树的并发上限），任务仓落在独立临时目录。</summary>
 		private static Harness NewHarness(int ownerId = 1, int? scienceConcurrency = null)
 		{
 			string dir = Path.Combine(Path.GetTempPath(), "sp-wp29-" + Guid.NewGuid().ToString("N"));
@@ -231,7 +244,7 @@ namespace SciencePotato.HeadlessChecks
 			if (scienceConcurrency.HasValue)
 			{
 				var root = JObject.Parse(File.ReadAllText(ConfigFixtures.TablePath("TechTrees")));
-				((JObject)((JObject)root["TechTrees"])["science"])["Concurrency"] = scienceConcurrency.Value;
+				((JObject)((JObject)root["TechTrees"])["chemistry"])["Concurrency"] = scienceConcurrency.Value;
 				core = ConfigFixtures.BuildCore(ConfigFixtures.RealConfigSourceWith("TechTrees", root.ToString()));
 			}
 			else
@@ -248,6 +261,7 @@ namespace SciencePotato.HeadlessChecks
 				time,
 				new ModifierRepository(Path.Combine(dir, "mod_")));
 			var modifier = new ModifierAppService(new ModifierRepository(Path.Combine(dir, "mod_")));
+			resources.AddResource("Idea", 50000f, MapId, ownerId); // 夹具：给足 Idea，避免"资源不足"掩盖并发语义
 			var tech = new TechTreesAppService(
 				new TechTreesRepository(Path.Combine(dir, "tech_"), core.Tables.TechTrees),
 				core.Tables.TechTrees,

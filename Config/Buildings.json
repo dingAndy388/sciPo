@@ -110,7 +110,7 @@
       "UpgradeTo": "camp_ii",
       "UpgradeCost": { "BasicMinerals": 40, "Food": 10 },
       "UpgradeDuration": 30,
-      "UpgradeTechRequirements": { "science": ["mathematics"] }
+      "UpgradeTechRequirements": { "math": ["basic_geometry"] }
     },
     "camp_ii": {
       "BuildingId": "camp_ii",
@@ -133,7 +133,7 @@
       "UpgradeTo": "camp_iii",
       "UpgradeCost": { "BasicMinerals": 80, "Food": 20 },
       "UpgradeDuration": 60,
-      "UpgradeTechRequirements": { "physics": ["simple_machine_intuition"] }
+      "UpgradeTechRequirements": { "math": ["preliminary_survey"] }
     },
     "camp_iii": {
       "BuildingId": "camp_iii",
@@ -177,7 +177,7 @@
       "UpgradeTo": "workshop_ii",
       "UpgradeCost": { "BasicMinerals": 80, "Food": 20 },
       "UpgradeDuration": 60,
-      "UpgradeTechRequirements": { "physics": ["simple_machine_intuition"] }
+      "UpgradeTechRequirements": { "math": ["basic_geometry"] }
     },
     "workshop_ii": {
       "BuildingId": "workshop_ii",
@@ -200,7 +200,7 @@
       "UpgradeTo": "workshop_iii",
       "UpgradeCost": { "BasicMinerals": 160, "Food": 40 },
       "UpgradeDuration": 90,
-      "UpgradeTechRequirements": { "military": ["melee_weapons"] }
+      "UpgradeTechRequirements": { "math": ["preliminary_survey"] }
     },
     "workshop_iii": {
       "BuildingId": "workshop_iii",
@@ -246,7 +246,7 @@
       "UpgradeTo": "school_ii",
       "UpgradeCost": { "BasicMinerals": 400, "Food": 50 },
       "UpgradeDuration": 120,
-      "UpgradeTechRequirements": { "science": ["mathematics"] }
+      "UpgradeTechRequirements": { "math": ["pythagorean_school"] }
     },
     "school_ii": {
       "BuildingId": "school_ii",
@@ -268,7 +268,7 @@
       "UpgradeTo": "school_iii",
       "UpgradeCost": { "BasicMinerals": 800, "Idea": 50 },
       "UpgradeDuration": 120,
-      "UpgradeTechRequirements": { "physics": ["simple_machine_intuition"] }
+      "UpgradeTechRequirements": { "math": ["elements"] }
     },
     "school_iii": {
       "BuildingId": "school_iii",
@@ -339,7 +339,7 @@
       "UpgradeTo": "military_camp_iii",
       "UpgradeCost": { "BasicMinerals": 160, "Idea": 30 },
       "UpgradeDuration": 90,
-      "UpgradeTechRequirements": { "military": ["advanced_armor"] }
+      "UpgradeTechRequirements": { "physics": ["lever_balance"] }
     },
     "military_camp_iii": {
       "BuildingId": "military_camp_iii",

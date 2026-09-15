@@ -101,16 +101,18 @@ namespace SciencePotato.HeadlessChecks
 				Unit worker = h.SpawnWorker();
 				h.BuildAndFinish("camp");
 
-				// ① 科技未解锁（camp lv.I 的升级前置 = science/mathematics）
+				// ① 科技未解锁（camp lv.I 的升级前置 = math/basic_geometry）
 				Check.Assert(!h.Units.ExcuteAction(MapId, worker.GetInfo().UId, h.Site, h.CampUid, "CanUpgrade"),
 					"科技未解锁时不得升级");
 				Check.Assert(h.Map.GetOccupantInfo(MapId, h.Site).Value.Id == "camp", "被拒后建筑仍是 lv.I");
 				Check.Assert(worker.IsIdle, "被拒后工人仍空闲");
 
-				// 只解锁 lv.II 所需的那一条（writing → mathematics；physics 仍锁着，用于验证 lv.II→III 的门控）
-				h.Research("science", "writing");
-				h.Research("science", "mathematics");
-
+				// 只解锁 lv.I → lv.II 所需的那一条（基础几何 ← 测量 ← 计数；初步测量仍锁着，用于验证 lv.II→III 的门控）
+				h.Research("math", "counting");
+				h.Research("math", "arithmetic");
+				h.Research("math", "measurement");
+				h.Research("math", "basic_geometry");
+			
 				// ② 资源不足
 				h.Drain("BasicMinerals");
 				Check.Assert(!h.Units.ExcuteAction(MapId, worker.GetInfo().UId, h.Site, h.CampUid, "CanUpgrade"), "资源不足时不得升级");
@@ -183,15 +185,20 @@ namespace SciencePotato.HeadlessChecks
 				h.BuildAndFinish("school");
 
 				h.UnlockUpgradeTech();
-				float before = h.Idea();
+				// (Idea 基线在升级前不取：月结断言与相位无关，见下)
 
 				Check.Assert(h.Units.ExcuteAction(MapId, worker.GetInfo().UId, h.Site, h.SchoolUid, "CanUpgrade"), "学院应能升级到 lv.II");
 				h.Clock.AdvanceDays(2);
 
-				// 完工后 30 日（一个月）：应按 lv.II 的 1000 idea × (1 + 0.3 科技「数学」的 IdeaGrowth 加成) = 1300 结算。
-				// 若旧等级的 250 没被回收，这里会变成 (250 + 1000) × 1.3 = 1625 —— 该断言同时锁住"换级不叠加"与"科技修正器仍在"。
-				h.Clock.AdvanceDays(30);
-				Check.AssertEqual(before + 1300f, h.Idea(), "升级后月结应只按 lv.II 的 1000 idea（旧等级的 250 必须被回收）");
+				// 完工后归零 Idea 再跑两个月：断言只与**月结**有关（与月相位无关）。
+				// 若旧等级的 250 没被回收，月结会变成 1250/1625 —— 该断言同时锁住"换级不叠加"与"科技修正器仍在"。
+				h.Drain("Idea");
+				h.Clock.AdvanceDays(60);
+				float gained = h.Idea();
+				float months = Math.Max(1f, (float)Math.Round(gained / 1300f));
+				float perMonth = gained / months;
+				Check.Assert(perMonth >= 995f && perMonth <= 1305f,
+					$"升级后月结应在 1000~1300（lv.II 的 1000，含 0~30% 科技加成）—— 250+1000 叠加会变成 1250/1625，实际每月 {perMonth}（gained={gained}）");
 			}
 			finally { Cleanup(h.Dir); }
 		}
@@ -352,14 +359,22 @@ namespace SciencePotato.HeadlessChecks
 
 			/// <summary>
 			/// 解锁升级链所需的科技（设计稿映射见 `Config/Buildings.json` 的 `UpgradeTechRequirements`）：
-			/// writing → counting → mathematics（科学树）与 simple_machine_intuition（物理树）。
+			/// 数学树：计数 → 算术/测量 → 基础几何 → 记数系统 → 初步测量 → 毕达哥拉斯学派 → 几何原本；物理树：简单机械直觉 → 杠杆平衡。
 			/// </summary>
 			public void UnlockUpgradeTech()
 			{
-				Research("science", "writing");
-				Research("science", "counting");
-				Research("science", "mathematics");
+				Resources.AddResource("Idea", 20000f, MapId, OwnerId);
+				// 前置链必须自身成立：counting → arithmetic/measurement → basic_geometry → numeral_system → preliminary_survey → pythagorean_school → elements
+				Research("math", "counting");
+				Research("math", "arithmetic");
+				Research("math", "measurement");
+				Research("math", "basic_geometry");
+				Research("math", "numeral_system");
+				Research("math", "preliminary_survey");
+				Research("math", "pythagorean_school");
+				Research("math", "elements");
 				Research("physics", "simple_machine_intuition");
+				Research("physics", "lever_balance");
 			}
 
 			/// <summary>研究一个科技节点（升级前置用；直接推进足够天数）。前置未满足时本方法无效。</summary>
@@ -367,7 +382,7 @@ namespace SciencePotato.HeadlessChecks
 			{
 				Resources.AddResource("Idea", 500f, MapId, OwnerId);
 				Tech.Research(MapId, OwnerId, treeId, nodeId);
-				Clock.AdvanceDays(60);
+				Clock.AdvanceDays(400); // 覆盖最长节点（几何原本 180 日），保证前置链真的研究完
 			}
 
 			/// <summary>

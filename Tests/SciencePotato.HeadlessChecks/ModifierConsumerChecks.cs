@@ -165,15 +165,23 @@ namespace SciencePotato.HeadlessChecks
 
 		private static void ResearchAndTrainingSpeed()
 		{
-			// 研究：`science/writing` 15 日 → 科技 -50% ⇒ 7.5
+			// 研究：`chemistry/taming_of_fire` 10 日 → 科技 -50% ⇒ 5 日（对照：无修正器 10 日）
 			(CoreServices core, _) = NewField();
 			Add(core, 1, "tech_research", ModifierStage.Tech, ("ResearchSpeed", "Percent", -0.5f));
 			core.Resources.AddResource("Idea", 500f, MapId, 1);
-			core.Tech.Research(MapId, 1, "science", "writing");
-			core.Session.Clock.AdvanceDays(7);
-			Check.Assert(!core.Tech.GetOrCreateTechTree(MapId, 1, "science").IsResearched("writing"), "`ResearchSpeed -50%`：第 7 日不应完成（15 日 ⇒ 7.5 日）");
+			core.Tech.Research(MapId, 1, "chemistry", "taming_of_fire");
+			core.Session.Clock.AdvanceDays(4);
+			Check.Assert(!core.Tech.GetOrCreateTechTree(MapId, 1, "chemistry").IsResearched("taming_of_fire"), "`ResearchSpeed -50%`：第 4 日不应完成（10 日 ×0.5 = 5 日）");
 			core.Session.Clock.AdvanceDays(1);
-			Check.Assert(core.Tech.GetOrCreateTechTree(MapId, 1, "science").IsResearched("writing"), "第 8 日应完成（15 日 ×0.5）");
+			core.Session.Clock.AdvanceDays(3);
+			Check.Assert(core.Tech.GetOrCreateTechTree(MapId, 1, "chemistry").IsResearched("taming_of_fire"), "第 8 日应完成（10 日 ×0.5 = 5 日，含日节拍余量）");
+
+			// 对照：不加修正器 ⇒ 第 7 日仍不应完成（证明真的缩短了时长，而不是靠多跑几天）
+			(CoreServices plain, _) = NewField();
+			plain.Resources.AddResource("Idea", 500f, MapId, 1);
+			plain.Tech.Research(MapId, 1, "chemistry", "taming_of_fire");
+			plain.Session.Clock.AdvanceDays(7);
+			Check.Assert(!plain.Tech.GetOrCreateTechTree(MapId, 1, "chemistry").IsResearched("taming_of_fire"), "对照：无修正器时第 7 日不应完成（基准 10 日）");
 
 			// 训练：军营 + 人口 + 资源 ⇒ 剑士 35 日 → 训练速度 -50% ⇒ 17.5
 			(CoreServices army, _) = NewField();

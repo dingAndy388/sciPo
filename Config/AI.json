@@ -3,7 +3,7 @@
     "Count": 1,
     "NoMilitaryDays": 360,
     "DecisionIntervalDays": 30,
-    "SciencePreference": "science",
+    "SciencePreference": "math",
     "ExploreRadius": 12,
     "ReserveMonths": 1,
     "ThreatThresholds": {

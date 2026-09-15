@@ -1,77 +1,111 @@
-{
+﻿{
   "TechTrees": {
-    "military": {
+    "math": {
       "Concurrency": 1,
       "Techs": {
-        "melee_weapons": {
-          "Id": "melee_weapons",
-          "Prerequisites": [],
-          "Cost": 50,
-          "Duration": 20,
-          "Modifiers": [
-            { "Target": "swordsmanAttack", "Type": "Percent", "Value": 0.1 }
-          ]
-        },
-        "advanced_armor": {
-          "Id": "advanced_armor",
-          "Prerequisites": ["melee_weapons"],
-          "Cost": 100,
-          "Duration": 40,
-          "Modifiers": [
-            { "Target": "swordsmanHP", "Type": "Absolute", "Value": 20 }
-          ]
-        },
-        "siege_tech": {
-          "Id": "siege_tech",
-          "Prerequisites": ["melee_weapons"],
-          "Cost": 150,
-          "Duration": 60,
-          "Modifiers": [
-            { "Target": "Attack", "Type": "Absolute", "Value": 5 }
-          ]
-        }
-      }
-    },
-    "science": {
-      "Concurrency": 1,
-      "Techs": {
-        "counting": {
-          "Id": "counting",
-          "Prerequisites": [],
-          "Cost": 0,
-          "Duration": 0,
-          "Modifiers": [],
-          "UnlocksUi": [ "resource_panel", "research" ]
-        },
-        "writing": {
-          "Id": "writing",
-          "Prerequisites": [],
-          "Cost": 30,
-          "Duration": 15,
-          "Modifiers": [],
-          "UnlocksUi": [ "harvest_panel" ]
-        },
-        "mathematics": {
-          "Id": "mathematics",
-          "Prerequisites": ["writing"],
-          "Cost": 80,
-          "Duration": 30,
-          "Modifiers": [
-            { "Target": "IdeaGrowth", "Type": "Percent", "Value": 0.3 }
-          ]
-        }
+        "counting": { "Id": "counting", "Name": "计数", "Prerequisites": [], "Cost": 0, "Duration": 0, "Modifiers": [], "UnlocksUi": [ "resource_panel", "research" ], "EffectText": "解锁资源面板，显示资源数量。开启\"研究\"功能。" },
+        "arithmetic": { "Id": "arithmetic", "Name": "算术", "Prerequisites": [ "counting" ], "Cost": 100, "Duration": 5, "Modifiers": [], "UnlocksUi": [ "harvest_panel" ], "EffectText": "解锁资源收获面板，允许查看资源的加减项。" },
+        "measurement": { "Id": "measurement", "Name": "度量", "Prerequisites": [ "counting" ], "Cost": 100, "Duration": 5, "Modifiers": [], "UnlocksUi": [], "EffectText": "农田产出 +20 Food/年。" },
+        "basic_geometry": { "Id": "basic_geometry", "Name": "基础几何", "Prerequisites": [ "measurement" ], "Cost": 200, "Duration": 8, "Modifiers": [ { "Target": "BasicMineralsLimit", "Type": "Absolute", "Value": 200 } ], "UnlocksUi": [], "EffectText": "解锁\"工坊lv.II\"、\"营地lv.II\"、\"矿场lv.II\"升级；基础石材存储上限 +200。" },
+        "numeral_system": { "Id": "numeral_system", "Name": "记数系统", "Prerequisites": [ "arithmetic" ], "Cost": 800, "Duration": 60, "Modifiers": [ { "Target": "IdeaGrowth", "Type": "Absolute", "Value": 100 } ], "UnlocksUi": [], "EffectText": "Idea 产出 +100/月。" },
+        "elementary_algebra": { "Id": "elementary_algebra", "Name": "初等代数", "Prerequisites": [ "arithmetic" ], "Cost": 500, "Duration": 15, "Modifiers": [ { "Target": "BuildingUpgradeCost", "Type": "Percent", "Value": -0.1 } ], "UnlocksUi": [], "EffectText": "所有建筑升级消耗 -10%。" },
+        "simple_sequences": { "Id": "simple_sequences", "Name": "简单数列", "Prerequisites": [ "arithmetic" ], "Cost": 300, "Duration": 10, "Modifiers": [ { "Target": "BasicMineralsLimit", "Type": "Absolute", "Value": 500 } ], "UnlocksUi": [], "EffectText": "解锁\"仓库lv.II\"升级；基础石材存储上限 +500。" },
+        "preliminary_survey": { "Id": "preliminary_survey", "Name": "初步测量", "Prerequisites": [ "basic_geometry" ], "Cost": 1200, "Duration": 90, "Modifiers": [ { "Target": "BuildingSpeed", "Type": "Absolute", "Value": -30 } ], "UnlocksUi": [], "EffectText": "解锁\"工坊lv.III\"、\"营地lv.III\"、\"农田lv.II\"升级；所有建筑建造时间 -30日。" },
+        "pythagorean_school": { "Id": "pythagorean_school", "Name": "毕达哥拉斯学派", "Prerequisites": [ "numeral_system", "preliminary_survey" ], "Cost": 2000, "Duration": 120, "Modifiers": [], "UnlocksUi": [], "EffectText": "解锁\"School lv.II\"升级。" },
+        "elements": { "Id": "elements", "Name": "几何原本", "Prerequisites": [ "pythagorean_school" ], "Cost": 8000, "Duration": 180, "Modifiers": [], "UnlocksUi": [], "EffectText": "解锁\"School lv.III\"升级；Idea 产出 +5%（永久）。" },
+        "conic_sections": { "Id": "conic_sections", "Name": "圆锥曲线", "Prerequisites": [ "elements" ], "Cost": 4000, "Duration": 60, "Modifiers": [], "UnlocksUi": [], "EffectText": "解锁\"观星台\"建筑。" },
+        "number_theory": { "Id": "number_theory", "Name": "数论", "Prerequisites": [ "elements" ], "Cost": 3000, "Duration": 90, "Modifiers": [], "UnlocksUi": [], "EffectText": "解锁\"仓库lv.III\"升级；Idea 产出 +10%（永久）。" },
+        "method_of_exhaustion": { "Id": "method_of_exhaustion", "Name": "穷竭法", "Prerequisites": [ "conic_sections" ], "Cost": 2500, "Duration": 60, "Modifiers": [ { "Target": "BuildingSpeed", "Type": "Percent", "Value": -0.1 } ], "UnlocksUi": [], "EffectText": "建筑建造时间 -10%。" },
+        "spherical_geometry": { "Id": "spherical_geometry", "Name": "球面几何", "Prerequisites": [ "conic_sections" ], "Cost": 3000, "Duration": 90, "Modifiers": [ { "Target": "VisionRadius", "Type": "Absolute", "Value": 1 } ], "UnlocksUi": [], "EffectText": "视野半径 +1。" },
+        "diophantine_equations": { "Id": "diophantine_equations", "Name": "丢番图方程", "Prerequisites": [ "elementary_algebra", "number_theory" ], "Cost": 2000, "Duration": 60, "Modifiers": [ { "Target": "FoodConsumption", "Type": "Percent", "Value": -0.1 } ], "UnlocksUi": [], "EffectText": "食物消耗 -10%。" },
+        "early_trigonometry": { "Id": "early_trigonometry", "Name": "三角学萌芽", "Prerequisites": [ "spherical_geometry" ], "Cost": 1500, "Duration": 60, "Modifiers": [ { "Target": "IdeaGrowth", "Type": "Percent", "Value": 0.05 } ], "UnlocksUi": [], "EffectText": "Idea 产出 +5%。" },
+        "mechanical_geometry": { "Id": "mechanical_geometry", "Name": "机械几何", "Prerequisites": [ "method_of_exhaustion" ], "Cost": 1800, "Duration": 60, "Modifiers": [ { "Target": "BuildingSpeed", "Type": "Percent", "Value": -0.1 } ], "UnlocksUi": [], "EffectText": "建筑建造时间 -10%。" },
+        "hindu_arabic_numerals": { "Id": "hindu_arabic_numerals", "Name": "印度-阿拉伯数字", "Prerequisites": [ "numeral_system" ], "Cost": 1200, "Duration": 60, "Modifiers": [ { "Target": "IdeaGrowth", "Type": "Percent", "Value": 0.1 } ], "UnlocksUi": [], "EffectText": "Idea 产出 +10%。" },
+        "algebra": { "Id": "algebra", "Name": "代数学", "Prerequisites": [ "elementary_algebra", "hindu_arabic_numerals" ], "Cost": 2500, "Duration": 90, "Modifiers": [ { "Target": "BuildingUpgradeCost", "Type": "Percent", "Value": -0.15 } ], "UnlocksUi": [], "EffectText": "建筑升级消耗 -15%。" },
+        "algorithms": { "Id": "algorithms", "Name": "算法", "Prerequisites": [ "algebra" ], "Cost": 2000, "Duration": 90, "Modifiers": [ { "Target": "IdeaGrowth", "Type": "Percent", "Value": 0.1 } ], "UnlocksUi": [], "EffectText": "Idea 产出 +10%。" },
+        "quadratic_formula": { "Id": "quadratic_formula", "Name": "二次方程求根", "Prerequisites": [ "algebra" ], "Cost": 1500, "Duration": 60, "Modifiers": [ { "Target": "BuildingUpgradeCost", "Type": "Percent", "Value": -0.1 } ], "UnlocksUi": [], "EffectText": "建筑升级消耗 -10%。" },
+        "combinatorics": { "Id": "combinatorics", "Name": "组合数学", "Prerequisites": [ "hindu_arabic_numerals" ], "Cost": 1800, "Duration": 60, "Modifiers": [ { "Target": "ResourceLimit", "Type": "Percent", "Value": 0.1 } ], "UnlocksUi": [], "EffectText": "资源上限 +10%。" },
+        "spherical_trigonometry": { "Id": "spherical_trigonometry", "Name": "球面三角学", "Prerequisites": [ "early_trigonometry", "spherical_geometry" ], "Cost": 2500, "Duration": 90, "Modifiers": [ { "Target": "VisionRadius", "Type": "Absolute", "Value": 1 } ], "UnlocksUi": [], "EffectText": "视野半径 +1。" },
+        "arabic_geometry": { "Id": "arabic_geometry", "Name": "阿拉伯几何", "Prerequisites": [ "elements", "algebra" ], "Cost": 3000, "Duration": 120, "Modifiers": [ { "Target": "BuildingSpeed", "Type": "Percent", "Value": -0.1 } ], "UnlocksUi": [], "EffectText": "建筑建造时间 -10%。" },
+        "early_algebraic_geometry": { "Id": "early_algebraic_geometry", "Name": "代数几何萌芽", "Prerequisites": [ "arabic_geometry", "conic_sections" ], "Cost": 2800, "Duration": 90, "Modifiers": [ { "Target": "IdeaGrowth", "Type": "Percent", "Value": 0.1 } ], "UnlocksUi": [], "EffectText": "Idea 产出 +10%。" },
+        "fibonacci_sequence": { "Id": "fibonacci_sequence", "Name": "斐波那契数列", "Prerequisites": [ "simple_sequences" ], "Cost": 1200, "Duration": 60, "Modifiers": [], "UnlocksUi": [], "EffectText": "农田产出 +10%。" },
+        "perspective_geometry": { "Id": "perspective_geometry", "Name": "透视几何", "Prerequisites": [ "arabic_geometry" ], "Cost": 2000, "Duration": 90, "Modifiers": [ { "Target": "BuildingSpeed", "Type": "Percent", "Value": -0.1 } ], "UnlocksUi": [], "EffectText": "建筑建造时间 -10%。" },
+        "infinity_and_limits": { "Id": "infinity_and_limits", "Name": "无限与极限", "Prerequisites": [ "method_of_exhaustion", "algorithms" ], "Cost": 3500, "Duration": 120, "Modifiers": [ { "Target": "IdeaGrowth", "Type": "Percent", "Value": 0.15 } ], "UnlocksUi": [], "EffectText": "Idea 产出 +15%。" },
+        "early_probability": { "Id": "early_probability", "Name": "概率论萌芽", "Prerequisites": [ "combinatorics" ], "Cost": 2200, "Duration": 90, "Modifiers": [], "UnlocksUi": [], "EffectText": "灾害资源损失 -20%。" },
+        "equations_and_curves": { "Id": "equations_and_curves", "Name": "方程与曲线", "Prerequisites": [ "early_algebraic_geometry", "quadratic_formula" ], "Cost": 3000, "Duration": 120, "Modifiers": [], "UnlocksUi": [], "EffectText": "所有资源产出 +10%。" }
       }
     },
     "physics": {
       "Concurrency": 1,
       "Techs": {
-        "simple_machine_intuition": {
-          "Id": "simple_machine_intuition",
-          "Prerequisites": [ { "TreeId": "science", "NodeId": "counting" } ],
-          "Cost": 2000,
-          "Duration": 30,
-          "Modifiers": []
-        }
+        "simple_machine_intuition": { "Id": "simple_machine_intuition", "Name": "简单机械直觉", "Prerequisites": [ "math:counting" ], "Cost": 2000, "Duration": 30, "Modifiers": [ { "Target": "BuildingSpeed", "Type": "Absolute", "Value": -30 } ], "UnlocksUi": [], "EffectText": "解锁\"军营lv.II\"升级；所有建筑建造时间 -30日。" },
+        "shadow_observation": { "Id": "shadow_observation", "Name": "影子观测", "Prerequisites": [ "math:counting" ], "Cost": 2000, "Duration": 90, "Modifiers": [], "UnlocksUi": [], "EffectText": "解锁\"日晷\"建筑。" },
+        "acoustics": { "Id": "acoustics", "Name": "声学初探", "Prerequisites": [ "math:arithmetic" ], "Cost": 2000, "Duration": 30, "Modifiers": [], "UnlocksUi": [], "EffectText": "解锁\"骨笛工坊\"建筑。" },
+        "material_hardness": { "Id": "material_hardness", "Name": "材料硬度", "Prerequisites": [ "math:measurement" ], "Cost": 200, "Duration": 20, "Modifiers": [ { "Target": "HP", "Type": "Percent", "Value": 0.2 } ], "UnlocksUi": [], "EffectText": "建筑 HP +20%。" },
+        "buoyancy_observation": { "Id": "buoyancy_observation", "Name": "浮沉观察", "Prerequisites": [ "math:basic_geometry" ], "Cost": 300, "Duration": 25, "Modifiers": [ { "Target": "VisionRadius", "Type": "Absolute", "Value": 1 } ], "UnlocksUi": [], "EffectText": "视野半径 +1。" },
+        "mirror_reflection": { "Id": "mirror_reflection", "Name": "镜面反射", "Prerequisites": [ "math:basic_geometry" ], "Cost": 300, "Duration": 25, "Modifiers": [ { "Target": "IdeaGrowth", "Type": "Percent", "Value": 0.05 } ], "UnlocksUi": [], "EffectText": "Idea 产出 +5%。" },
+        "inclined_plane": { "Id": "inclined_plane", "Name": "斜面原理", "Prerequisites": [ "simple_machine_intuition", "math:preliminary_survey" ], "Cost": 600, "Duration": 40, "Modifiers": [ { "Target": "BuildingSpeed", "Type": "Percent", "Value": -0.1 } ], "UnlocksUi": [], "EffectText": "解锁\"矿场lv.III\"升级；建筑建造时间 -10%。" },
+        "wheel_and_rolling": { "Id": "wheel_and_rolling", "Name": "轮子与滚动", "Prerequisites": [ "simple_machine_intuition" ], "Cost": 400, "Duration": 30, "Modifiers": [ { "Target": "UnitSpeed", "Type": "Percent", "Value": 0.1 } ], "UnlocksUi": [], "EffectText": "单位移动速度 +10%。" },
+        "aristotelian_motion": { "Id": "aristotelian_motion", "Name": "亚里士多德运动论", "Prerequisites": [ "simple_machine_intuition", "math:numeral_system" ], "Cost": 800, "Duration": 50, "Modifiers": [ { "Target": "IdeaGrowth", "Type": "Percent", "Value": 0.05 } ], "UnlocksUi": [], "EffectText": "Idea 产出 +5%。" },
+        "lever_balance": { "Id": "lever_balance", "Name": "杠杆平衡", "Prerequisites": [ "inclined_plane", "math:elements" ], "Cost": 1000, "Duration": 60, "Modifiers": [ { "Target": "BuildingSpeed", "Type": "Percent", "Value": -0.15 } ], "UnlocksUi": [], "EffectText": "解锁\"军营lv.III\"升级；建筑建造时间 -15%。" },
+        "buoyancy_law": { "Id": "buoyancy_law", "Name": "浮力定律", "Prerequisites": [ "buoyancy_observation", "math:method_of_exhaustion" ], "Cost": 1200, "Duration": 70, "Modifiers": [ { "Target": "ResourceLimit", "Type": "Percent", "Value": 0.1 } ], "UnlocksUi": [], "EffectText": "解锁水域通行（移动消耗 5.0）；资源上限 +10%。" },
+        "center_of_gravity": { "Id": "center_of_gravity", "Name": "重心理论", "Prerequisites": [ "lever_balance", "math:elements" ], "Cost": 1500, "Duration": 80, "Modifiers": [ { "Target": "HP", "Type": "Percent", "Value": 0.2 } ], "UnlocksUi": [], "EffectText": "建筑 HP +20%。" },
+        "compound_machines": { "Id": "compound_machines", "Name": "简单机械组合", "Prerequisites": [ "lever_balance", "inclined_plane" ], "Cost": 1200, "Duration": 60, "Modifiers": [ { "Target": "BuildingSpeed", "Type": "Percent", "Value": -0.15 } ], "UnlocksUi": [], "EffectText": "建筑建造时间 -15%。" },
+        "law_of_reflection": { "Id": "law_of_reflection", "Name": "反射定律", "Prerequisites": [ "mirror_reflection", "math:elements" ], "Cost": 1000, "Duration": 50, "Modifiers": [ { "Target": "VisionRadius", "Type": "Absolute", "Value": 1 } ], "UnlocksUi": [], "EffectText": "视野半径 +1。" },
+        "refraction_observation": { "Id": "refraction_observation", "Name": "折射观察", "Prerequisites": [ "law_of_reflection" ], "Cost": 800, "Duration": 40, "Modifiers": [ { "Target": "IdeaGrowth", "Type": "Percent", "Value": 0.05 } ], "UnlocksUi": [], "EffectText": "Idea 产出 +5%。" },
+        "four_elements_combustion": { "Id": "four_elements_combustion", "Name": "燃烧四元素说", "Prerequisites": [ "material_hardness" ], "Cost": 600, "Duration": 40, "Modifiers": [], "UnlocksUi": [], "EffectText": "矿物产出 +5%。" },
+        "atomism": { "Id": "atomism", "Name": "原子论", "Prerequisites": [ "four_elements_combustion", "math:diophantine_equations" ], "Cost": 1000, "Duration": 60, "Modifiers": [ { "Target": "IdeaGrowth", "Type": "Percent", "Value": 0.1 } ], "UnlocksUi": [], "EffectText": "Idea 产出 +10%。" },
+        "projectile_analysis": { "Id": "projectile_analysis", "Name": "抛体运动分析", "Prerequisites": [ "aristotelian_motion", "math:conic_sections" ], "Cost": 2000, "Duration": 90, "Modifiers": [ { "Target": "UnitAttack", "Type": "Percent", "Value": 0.1 } ], "UnlocksUi": [], "EffectText": "单位攻击力 +10%。" },
+        "pulley_systems": { "Id": "pulley_systems", "Name": "滑轮组", "Prerequisites": [ "compound_machines" ], "Cost": 1000, "Duration": 50, "Modifiers": [ { "Target": "BuildingSpeed", "Type": "Percent", "Value": -0.1 } ], "UnlocksUi": [], "EffectText": "建筑建造时间 -10%。" },
+        "hydrostatics": { "Id": "hydrostatics", "Name": "流体静力学", "Prerequisites": [ "buoyancy_law", "center_of_gravity" ], "Cost": 2000, "Duration": 100, "Modifiers": [], "UnlocksUi": [], "EffectText": "农田产出 +10%。" },
+        "impetus_theory": { "Id": "impetus_theory", "Name": "冲力理论", "Prerequisites": [ "projectile_analysis", "math:algebra" ], "Cost": 2500, "Duration": 120, "Modifiers": [ { "Target": "UnitAttack", "Type": "Percent", "Value": 0.15 } ], "UnlocksUi": [], "EffectText": "单位攻击力 +15%。" },
+        "alhazen_optics": { "Id": "alhazen_optics", "Name": "阿尔哈曾光学", "Prerequisites": [ "refraction_observation", "math:conic_sections" ], "Cost": 1500, "Duration": 70, "Modifiers": [ { "Target": "IdeaGrowth", "Type": "Percent", "Value": 0.15 } ], "UnlocksUi": [], "EffectText": "Idea 产出 +15%。" },
+        "magnifying_lens": { "Id": "magnifying_lens", "Name": "放大透镜", "Prerequisites": [ "alhazen_optics" ], "Cost": 1200, "Duration": 60, "Modifiers": [ { "Target": "IdeaGrowth", "Type": "Percent", "Value": 0.1 } ], "UnlocksUi": [], "EffectText": "Idea 产出 +10%。" },
+        "speed_and_acceleration": { "Id": "speed_and_acceleration", "Name": "速度与加速度", "Prerequisites": [ "impetus_theory", "math:infinity_and_limits" ], "Cost": 3000, "Duration": 150, "Modifiers": [ { "Target": "UnitSpeed", "Type": "Percent", "Value": 0.15 } ], "UnlocksUi": [], "EffectText": "单位移动速度 +15%。" },
+        "projectile_quantification": { "Id": "projectile_quantification", "Name": "抛体运动定量化", "Prerequisites": [ "speed_and_acceleration", "math:equations_and_curves" ], "Cost": 3500, "Duration": 160, "Modifiers": [ { "Target": "UnitAttack", "Type": "Percent", "Value": 0.15 } ], "UnlocksUi": [], "EffectText": "单位攻击力 +15%。" },
+        "time_measurement": { "Id": "time_measurement", "Name": "时间测量革新", "Prerequisites": [ "speed_and_acceleration", "math:hindu_arabic_numerals" ], "Cost": 2000, "Duration": 100, "Modifiers": [ { "Target": "BuildingSpeed", "Type": "Percent", "Value": -0.1 } ], "UnlocksUi": [], "EffectText": "所有建筑建造时间 -10%。" },
+        "statics_analysis": { "Id": "statics_analysis", "Name": "静力学分析", "Prerequisites": [ "center_of_gravity", "math:algebra" ], "Cost": 2000, "Duration": 90, "Modifiers": [ { "Target": "HP", "Type": "Percent", "Value": 0.2 } ], "UnlocksUi": [], "EffectText": "建筑 HP +20%。" },
+        "rainbow_formation": { "Id": "rainbow_formation", "Name": "彩虹成因", "Prerequisites": [ "refraction_observation", "alhazen_optics" ], "Cost": 1800, "Duration": 80, "Modifiers": [], "UnlocksUi": [], "EffectText": "农田产出 +10%。" },
+        "early_combustion_oxidation": { "Id": "early_combustion_oxidation", "Name": "燃烧与氧化萌芽", "Prerequisites": [ "four_elements_combustion", "math:arabic_geometry" ], "Cost": 1500, "Duration": 70, "Modifiers": [], "UnlocksUi": [], "EffectText": "矿物产出 +10%。" },
+        "latent_heat": { "Id": "latent_heat", "Name": "潜热概念雏形", "Prerequisites": [ "early_combustion_oxidation" ], "Cost": 1200, "Duration": 60, "Modifiers": [ { "Target": "FoodConsumption", "Type": "Percent", "Value": -0.1 } ], "UnlocksUi": [], "EffectText": "食物消耗 -10%。" },
+        "vibration_and_waves": { "Id": "vibration_and_waves", "Name": "振动与波", "Prerequisites": [ "acoustics", "math:infinity_and_limits" ], "Cost": 2000, "Duration": 90, "Modifiers": [], "UnlocksUi": [], "EffectText": "相邻同类型建筑产出 +5%。" },
+        "static_electricity": { "Id": "static_electricity", "Name": "静电观察", "Prerequisites": [ "atomism" ], "Cost": 1500, "Duration": 70, "Modifiers": [ { "Target": "IdeaGrowth", "Type": "Percent", "Value": 0.05 } ], "UnlocksUi": [], "EffectText": "Idea 产出 +5%。" },
+        "magnetism": { "Id": "magnetism", "Name": "磁石研究", "Prerequisites": [ "atomism" ], "Cost": 1500, "Duration": 70, "Modifiers": [ { "Target": "VisionRadius", "Type": "Absolute", "Value": 1 } ], "UnlocksUi": [], "EffectText": "视野半径 +1。" },
+        "perspective_and_vision": { "Id": "perspective_and_vision", "Name": "透视学与视觉", "Prerequisites": [ "alhazen_optics", "math:perspective_geometry" ], "Cost": 2000, "Duration": 90, "Modifiers": [ { "Target": "BuildingSpeed", "Type": "Percent", "Value": -0.1 } ], "UnlocksUi": [], "EffectText": "建筑建造时间 -10%。" },
+        "impetus_and_angular_momentum": { "Id": "impetus_and_angular_momentum", "Name": "冲力与角动量", "Prerequisites": [ "impetus_theory", "speed_and_acceleration" ], "Cost": 4000, "Duration": 180, "Modifiers": [ { "Target": "UnitAttack", "Type": "Percent", "Value": 0.2 } ], "UnlocksUi": [], "EffectText": "单位攻击力 +20%。" }
+      }
+    },
+    "chemistry": {
+      "Concurrency": 1,
+      "Techs": {
+        "taming_of_fire": { "Id": "taming_of_fire", "Name": "火的驯服", "Prerequisites": [], "Cost": 50, "Duration": 10, "Modifiers": [ { "Target": "PopulationGrowth", "Type": "Percent", "Value": 0.1 } ], "UnlocksUi": [], "EffectText": "人口增长速度 +10%。" },
+        "pottery": { "Id": "pottery", "Name": "制陶术", "Prerequisites": [ "taming_of_fire" ], "Cost": 80, "Duration": 15, "Modifiers": [ { "Target": "FoodLimit", "Type": "Percent", "Value": 0.1 } ], "UnlocksUi": [], "EffectText": "食物存储上限 +10%。" },
+        "fermentation": { "Id": "fermentation", "Name": "酿造发酵", "Prerequisites": [ "pottery" ], "Cost": 120, "Duration": 20, "Modifiers": [ { "Target": "IdeaGrowth", "Type": "Percent", "Value": 0.05 } ], "UnlocksUi": [], "EffectText": "Idea 产出 +5%。" },
+        "natural_dyes": { "Id": "natural_dyes", "Name": "天然染料", "Prerequisites": [ "pottery" ], "Cost": 100, "Duration": 18, "Modifiers": [ { "Target": "IdeaGrowth", "Type": "Percent", "Value": 0.05 } ], "UnlocksUi": [], "EffectText": "Idea 产出 +5%。" },
+        "early_metallurgy": { "Id": "early_metallurgy", "Name": "冶金萌芽", "Prerequisites": [ "taming_of_fire" ], "Cost": 100, "Duration": 20, "Modifiers": [], "UnlocksUi": [], "EffectText": "矿物产出 +10%。" },
+        "potash_alkali": { "Id": "potash_alkali", "Name": "草木灰制碱", "Prerequisites": [ "taming_of_fire" ], "Cost": 60, "Duration": 12, "Modifiers": [], "UnlocksUi": [], "EffectText": "食物产出 +5%。" },
+        "alloying": { "Id": "alloying", "Name": "合金尝试", "Prerequisites": [ "early_metallurgy" ], "Cost": 150, "Duration": 25, "Modifiers": [ { "Target": "UnitAttack", "Type": "Percent", "Value": 0.1 } ], "UnlocksUi": [], "EffectText": "单位攻击力 +10%。" },
+        "early_glassmaking": { "Id": "early_glassmaking", "Name": "玻璃初制", "Prerequisites": [ "potash_alkali", "math:measurement" ], "Cost": 200, "Duration": 30, "Modifiers": [ { "Target": "IdeaGrowth", "Type": "Percent", "Value": 0.05 } ], "UnlocksUi": [], "EffectText": "Idea 产出 +5%。" },
+        "four_elements": { "Id": "four_elements", "Name": "四元素说", "Prerequisites": [ "taming_of_fire", "math:counting" ], "Cost": 300, "Duration": 40, "Modifiers": [ { "Target": "IdeaGrowth", "Type": "Percent", "Value": 0.05 } ], "UnlocksUi": [], "EffectText": "Idea 产出 +5%。" },
+        "metal_refining": { "Id": "metal_refining", "Name": "金属精炼", "Prerequisites": [ "alloying" ], "Cost": 250, "Duration": 35, "Modifiers": [], "UnlocksUi": [], "EffectText": "矿物产出 +10%。" },
+        "mineral_classification": { "Id": "mineral_classification", "Name": "矿物分类", "Prerequisites": [ "early_metallurgy", "math:basic_geometry" ], "Cost": 220, "Duration": 30, "Modifiers": [], "UnlocksUi": [], "EffectText": "矿物产出 +10%。" },
+        "acid_base_concepts": { "Id": "acid_base_concepts", "Name": "酸碱概念", "Prerequisites": [ "potash_alkali", "fermentation" ], "Cost": 200, "Duration": 25, "Modifiers": [], "UnlocksUi": [], "EffectText": "农田产出 +10%。" },
+        "atomism": { "Id": "atomism", "Name": "原子论", "Prerequisites": [ "four_elements", "math:elementary_algebra" ], "Cost": 400, "Duration": 50, "Modifiers": [ { "Target": "IdeaGrowth", "Type": "Percent", "Value": 0.1 } ], "UnlocksUi": [], "EffectText": "Idea 产出 +10%。" },
+        "distillation": { "Id": "distillation", "Name": "蒸馏技术", "Prerequisites": [ "fermentation", "math:preliminary_survey" ], "Cost": 350, "Duration": 45, "Modifiers": [ { "Target": "IdeaGrowth", "Type": "Percent", "Value": 0.05 } ], "UnlocksUi": [], "EffectText": "Idea 产出 +5%。" },
+        "combustion_and_air": { "Id": "combustion_and_air", "Name": "燃烧与空气", "Prerequisites": [ "four_elements" ], "Cost": 250, "Duration": 30, "Modifiers": [], "UnlocksUi": [], "EffectText": "矿物产出 +5%。" },
+        "metal_displacement": { "Id": "metal_displacement", "Name": "金属置换", "Prerequisites": [ "metal_refining", "acid_base_concepts" ], "Cost": 300, "Duration": 40, "Modifiers": [], "UnlocksUi": [], "EffectText": "矿物产出 +15%。" },
+        "alchemy_rise": { "Id": "alchemy_rise", "Name": "炼金术兴起", "Prerequisites": [ "physics:atomism", "distillation" ], "Cost": 600, "Duration": 60, "Modifiers": [ { "Target": "IdeaGrowth", "Type": "Percent", "Value": 0.15 } ], "UnlocksUi": [], "EffectText": "Idea 产出 +15%。" },
+        "mineral_acids": { "Id": "mineral_acids", "Name": "矿物酸制备", "Prerequisites": [ "alchemy_rise" ], "Cost": 500, "Duration": 50, "Modifiers": [], "UnlocksUi": [], "EffectText": "矿物产出 +15%。" },
+        "alcohol_purification": { "Id": "alcohol_purification", "Name": "酒精提纯", "Prerequisites": [ "distillation", "math:numeral_system" ], "Cost": 450, "Duration": 45, "Modifiers": [ { "Target": "FoodConsumption", "Type": "Percent", "Value": -0.1 } ], "UnlocksUi": [], "EffectText": "食物消耗 -10%。" },
+        "pharmaceutical_chemistry": { "Id": "pharmaceutical_chemistry", "Name": "制药化学", "Prerequisites": [ "mineral_acids", "alcohol_purification" ], "Cost": 600, "Duration": 55, "Modifiers": [ { "Target": "PopulationGrowth", "Type": "Percent", "Value": 0.1 } ], "UnlocksUi": [], "EffectText": "人口增长速度 +10%。" },
+        "salts_research": { "Id": "salts_research", "Name": "盐类研究", "Prerequisites": [ "potash_alkali", "mineral_acids" ], "Cost": 400, "Duration": 40, "Modifiers": [ { "Target": "FoodLimit", "Type": "Percent", "Value": 0.1 } ], "UnlocksUi": [], "EffectText": "食物存储上限 +10%。" },
+        "saltpeter_and_gunpowder": { "Id": "saltpeter_and_gunpowder", "Name": "硝石与火药", "Prerequisites": [ "salts_research", "math:elementary_algebra" ], "Cost": 800, "Duration": 70, "Modifiers": [], "UnlocksUi": [], "EffectText": "矿物产出 +20%。" },
+        "metallurgy_innovation": { "Id": "metallurgy_innovation", "Name": "金属冶炼革新", "Prerequisites": [ "metal_displacement", "alchemy_rise" ], "Cost": 700, "Duration": 65, "Modifiers": [ { "Target": "BuildingSpeed", "Type": "Percent", "Value": -0.1 } ], "UnlocksUi": [], "EffectText": "建筑建造时间 -10%。" },
+        "gas_collection": { "Id": "gas_collection", "Name": "气体收集", "Prerequisites": [ "combustion_and_air", "math:conic_sections" ], "Cost": 500, "Duration": 50, "Modifiers": [ { "Target": "IdeaGrowth", "Type": "Percent", "Value": 0.1 } ], "UnlocksUi": [], "EffectText": "Idea 产出 +10%。" },
+        "compounds_and_mixtures": { "Id": "compounds_and_mixtures", "Name": "化合与混合", "Prerequisites": [ "alchemy_rise", "math:elements" ], "Cost": 600, "Duration": 55, "Modifiers": [], "UnlocksUi": [], "EffectText": "所有资源产出 +5%。" },
+        "calcination_and_roasting": { "Id": "calcination_and_roasting", "Name": "煅烧与焙烧", "Prerequisites": [ "combustion_and_air", "metallurgy_innovation" ], "Cost": 550, "Duration": 50, "Modifiers": [], "UnlocksUi": [], "EffectText": "矿物产出 +15%。" },
+        "acid_base_theory": { "Id": "acid_base_theory", "Name": "酸碱理论深化", "Prerequisites": [ "acid_base_concepts", "math:simple_sequences" ], "Cost": 700, "Duration": 60, "Modifiers": [], "UnlocksUi": [], "EffectText": "农田产出 +15%。" },
+        "alchemical_symbols": { "Id": "alchemical_symbols", "Name": "炼金术符号体系", "Prerequisites": [ "alchemy_rise" ], "Cost": 800, "Duration": 70, "Modifiers": [ { "Target": "IdeaGrowth", "Type": "Percent", "Value": 0.1 } ], "UnlocksUi": [], "EffectText": "Idea 产出 +10%。" }
       }
     }
   }

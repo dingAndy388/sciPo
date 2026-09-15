@@ -36,7 +36,7 @@ namespace SciencePotato.HeadlessChecks
 			Check.AssertEqual(1, core.Ai.Count, "AI 数量（用户定：先 1 个）");
 			Check.AssertEqual(360, core.Ai.NoMilitaryDays, "前期不造兵窗口（`D93`：1 游戏年 = 360 日）");
 			Check.AssertEqual(30, core.Ai.DecisionIntervalDays, "决策节拍（游戏日）");
-			Check.AssertEqual("science", core.Ai.SciencePreference, "科技流派偏好");
+			Check.AssertEqual("math", core.Ai.SciencePreference, "科技流派偏好");
 			Check.AssertEqual(0, core.ConfigReport.ForTable("AI").Count(i => i.Level == ConfigIssueLevel.Error), "真实 AI 配置的 error 数");
 		}
 

@@ -65,7 +65,7 @@ namespace SciencePotato.HeadlessChecks
 				h.Modifier.AddModifiers(MapId, h.OwnerId, "wp33-source",
 					new List<Modifier> { new Modifier { Target = "Idea", Type = "Add", Value = 5f } });
 				h.Fog.RevealArea(h.Site, 1);
-				h.Tech.Research(MapId, h.OwnerId, "science", "writing");
+				h.Tech.Research(MapId, h.OwnerId, "math", "counting");
 				h.Clock.AdvanceDays(5);
 
 				h.Save.SaveWorld(MapId, h.OwnerId);

@@ -89,9 +89,9 @@ namespace SciencePotato.HeadlessChecks
 			try
 			{
 				// 启蒙时代的前置是「science/mathematics 已研究」：先研究 writing → mathematics
-				harness.Tech.Research(harness.MapId, harness.OwnerId, "science", "writing");
+				harness.Tech.Research(harness.MapId, harness.OwnerId, "math", "counting");
 				harness.Clock.AdvanceDays(15);
-				harness.Tech.Research(harness.MapId, harness.OwnerId, "science", "mathematics");
+				harness.Tech.Research(harness.MapId, harness.OwnerId, "math", "counting");
 				harness.Clock.AdvanceDays(30);
 
 				harness.Clock.AdvanceDays(ThreeYearsInDays);
@@ -190,7 +190,7 @@ namespace SciencePotato.HeadlessChecks
 				gated.Clock.AdvanceDays(30);
 				Check.AssertEqual(0, gated.Events.GetTriggerCounts(gated.MapId, gated.OwnerId).Count, "科技前置未满足时不应触发");
 
-				gated.Tech.Research(gated.MapId, gated.OwnerId, "science", "writing");
+				gated.Tech.Research(gated.MapId, gated.OwnerId, "math", "counting");
 				gated.Clock.AdvanceDays(17);
 				Check.Assert(gated.Events.GetTriggerCounts(gated.MapId, gated.OwnerId).ContainsKey("scholarly"),
 					"科技前置满足后应能触发");
@@ -273,7 +273,7 @@ namespace SciencePotato.HeadlessChecks
 			=> $$"""
 			{ "Events": [ { "EventId": "{{eventId}}", "Name": "科技前置事件", "TriggerChancePerDay": {{perDay}}, "Duration": {{duration}},
 			  "Modifiers": [ { "Target": "IdeaGrowth", "Type": "Percent", "Value": 0.1 } ],
-			  "ResourcePrerequisites": {}, "TechPrerequisites": { "science": ["writing"] } } ] }
+			  "ResourcePrerequisites": {}, "TechPrerequisites": { "math": ["counting"] } } ] }
 			""";
 
 		/// <summary>用给定文本覆写真实配置中的某一张表，装配（不因 error 抛出）并取回校验报告。</summary>

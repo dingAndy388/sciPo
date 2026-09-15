@@ -245,7 +245,7 @@ namespace SciencePotato.HeadlessChecks
 			      "Name": "实验室",
 			      "ResourceCost": { "Food": 10 },
 			      "TerrainRequirements": ["plain"],
-			      "TechRequirements": { "no_such_tree": ["x"], "science": ["no_such_node"] },
+			      "TechRequirements": { "no_such_tree": ["x"], "math": ["no_such_node"] },
 			      "Modifiers": [],
 			      "Duration": 10,
 			      "Actions": [],
@@ -298,8 +298,8 @@ namespace SciencePotato.HeadlessChecks
 			Check.AssertEqual("营地", tables.Buildings.GetBuildingConfig("camp").Name, "camp 名称");
 			Check.AssertEqual(60f, tables.Units.GetUnitConfig("archer").HP, "archer HP");
 			Check.AssertEqual("buoyancy", tables.Terrains.GetById("water").UnlockTech, "water 的解锁科技");
-			Check.Assert(tables.TechTrees.GetTechNodeConfig("science", "mathematics") != null, "science/mathematics 节点应可检索");
-			Check.Assert(tables.TechTrees.GetTechNodeConfig("science", "counting") != null, "science/counting 节点应可检索（WP-2.1 新增）");
+			Check.Assert(tables.TechTrees.GetTechNodeConfig("math", "pythagorean_school") != null, "math/pythagorean_school 节点应可检索");
+			Check.Assert(tables.TechTrees.GetTechNodeConfig("math", "counting") != null, "science/counting 节点应可检索（WP-2.1 新增）");
 			Check.Assert(tables.TechTrees.GetTechNodeConfig("physics", "simple_machine_intuition") != null, "physics 树根节点应可检索（WP-2.1 新增）");
 			Check.AssertEqual(20, tables.Events.GetAllEvents().First(e => e.EventId == "plague").Duration, "plague 持续天数");
 		}

@@ -195,12 +195,12 @@ namespace SciencePotato.HeadlessChecks
 				h.Bus.Subscribe<ResearchCompletedEvent>(completed.Add);
 
 				h.Resources.AddResource("Idea", 500f, MapId, h.OwnerId);
-				h.Tech.Research(MapId, h.OwnerId, "science", "writing");
+				h.Tech.Research(MapId, h.OwnerId, "math", "counting");
 				h.Clock.AdvanceDays(15);
 
 				Check.AssertEqual(1, completed.Count, "研究完成应推送一次");
-				Check.AssertEqual("science", completed[0].TreeId, "树 Id");
-				Check.AssertEqual("writing", completed[0].NodeId, "节点 Id");
+				Check.AssertEqual("math", completed[0].TreeId, "树 Id");
+				Check.AssertEqual("counting", completed[0].NodeId, "节点 Id");
 				Check.AssertEqual(h.OwnerId, completed[0].OwnerId, "所有者");
 			}
 			finally { Cleanup(h.Dir); }
@@ -286,14 +286,18 @@ namespace SciencePotato.HeadlessChecks
 				return (Unit)Map.FindOccupantByUId(MapId, uid);
 			}
 
-			/// <summary>解锁科学树升级/事件前置：研究 writing → mathematics 等（顺序满足前置）。</summary>
+			/// <summary>解锁升级/事件前置：研究 数学树前置链（计数 → 算术 → 测量 → 基础几何，顺序满足前置）。</summary>
 			public void UnlockScience()
 			{
-				Resources.AddResource("Idea", 500f, MapId, OwnerId);
-				Tech.Research(MapId, OwnerId, "science", "writing");
+				Resources.AddResource("Idea", 20000f, MapId, OwnerId);
+				Tech.Research(MapId, OwnerId, "math", "counting");
 				Clock.AdvanceDays(15);
-				Tech.Research(MapId, OwnerId, "science", "mathematics");
-				Clock.AdvanceDays(30);
+				Tech.Research(MapId, OwnerId, "math", "arithmetic");
+				Clock.AdvanceDays(10);
+				Tech.Research(MapId, OwnerId, "math", "measurement");
+				Clock.AdvanceDays(10);
+				Tech.Research(MapId, OwnerId, "math", "basic_geometry");
+				Clock.AdvanceDays(10);
 			}
 		}
 
