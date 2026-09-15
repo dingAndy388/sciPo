@@ -177,7 +177,7 @@ namespace SciencePotato.Scripts.Core
 			// 6.6) 事件引擎（**只对人类玩家启动**，见 `SessionOrchestrator`）；事件表缺失时不装配
 			EventAppService events = tables.Events == null ? null : new EventAppService(
 				tables.Events, resources, tech, modifiers, timeService,
-				dependencies.Random ?? new SystemRandom(20260914), domainEvents, store);
+				dependencies.Random ?? new SystemRandom(20260914), domainEvents, store, clock);
 
 			// 6.7) 世界存档（存档点唯一入口）+ 会话级子系统编排（v0.6.0 / WP-4.18）
 			IClockRepository clockRepo = store == null ? null : new FileClockRepository(saveRoot + "clock_", store);

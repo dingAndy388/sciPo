@@ -1,4 +1,4 @@
-# Science Potato · 代码地图（活文档 · v0.7.7）
+# Science Potato · 代码地图（活文档 · v0.7.8）
 
 > **用途**（工作流 W5）：把"改 X 要同时改哪几处、入口在哪、对应用例叫什么"写在一页纸上，
 > 避免每个 WP 都重新 grep 同一批链路。**发现新链路就补进来**，过期条目立刻删（不堆叠）。
@@ -42,7 +42,7 @@
 | 资源 | `ResourcesAppService`（`GetOrCreatePool`/`AddResource`/`RefreshLimits`） | `ResourcesPool`、`ResourcesConsumption` | `ConfigTable`、`ContentBuilding` |
 | 修正器 | `ModifierAppService`（`GetValue`） | `ModifierManager`、`IModifierRepository` | `ConfigTable`、`BuildingProduction` |
 | 科技 | `TechTreesAppService`（`CanResearch`/`StartResearch`） | `TechTree`、`TechNode` | `TechPrerequisite`、`TechTreeConcurrency` |
-| 事件 | `EventAppService`（`StartEventsEngine`/`GetActiveEvents`） | `ActiveEvent` | `EventEngine` |
+| 事件 | `EventAppService`（`StartEventsEngine`/`GetActiveEvents`/`GetPendingDecisions`/`Resolve`/`ResolveAll`） | `ActiveEvent`、`PendingEventDecision`（触发即暂停） | `EventEngine`、`EventPause` |
 | 迷雾 | `FogAppService`（`RevealArea`/`GetVisibility`/`Load`） | `FogSaveData` | `SessionSetup` |
 | 月结 | `MonthlySettlementService`（`StartSettlement`/`Settle`） | `IUpkeepDemandSource`、`IPopulationSink`、`MonthlySettlementReport` | `MonthlySettlement`、`PopulationGrowth` |
 | 存档 | `WorldSaveService`（`SaveWorld`/`LoadWorld`） | `ISaveStore`、`SaveMapper`、`SaveRebuilder` | `WorldPersistence`、`SaveUnit` |

@@ -47,6 +47,14 @@ namespace SciencePotato.Scripts.Events.Application
 		/// <summary>累计触发次数：键同 <see cref="_active"/>（供 M0-2 ⑤ 与 M1 调试面板读取）。</summary>
 		private readonly Dictionary<string, int> _triggerCounts = new(StringComparer.Ordinal);
 
+		/// <summary>（v0.7.8 / WP-4.12）待玩家确认的事件（键 = `mapId|ownerId`；顺序即触发顺序）。</summary>
+		private readonly Dictionary<string, List<PendingEventDecision>> _pending = new(StringComparer.Ordinal);
+
+		/// <summary>（v0.7.8 / WP-4.12）自动暂停前的流速档位：确认后**还原**（不把玩家的档位吃掉）。</summary>
+		private TimeSpeedTier _speedBeforePause = TimeSpeedTier.Standard;
+
+		private readonly GameClock _clock;
+
 		/// <summary>已启动事件引擎的 `(mapId, ownerId)`（`EVT-03` 幂等）。</summary>
 		private readonly HashSet<string> _startedEngines = new(StringComparer.Ordinal);
 
@@ -56,6 +64,12 @@ namespace SciencePotato.Scripts.Events.Application
 		/// </summary>
 		public int RollCount { get; private set; }
 
+		/// <summary>（v0.7.8 / WP-4.12）因事件触发而**自动暂停**的次数（验收/冒烟证据）。</summary>
+		public int AutoPauseCount { get; private set; }
+
+		/// <summary>（v0.7.8 / WP-4.12）玩家确认完待决事件后**恢复时间**的次数。</summary>
+		public int AutoResumeCount { get; private set; }
+
 		public EventAppService(
 			IEventConfigRepository eventRepo,
 			ResourcesAppService resources,
@@ -64,7 +78,8 @@ namespace SciencePotato.Scripts.Events.Application
 			ITimeService time,
 			IRandom random,
 			IDomainEventBus eventBus = null,
-			ISaveStore store = null)
+			ISaveStore store = null,
+			GameClock clock = null)
 		{
 			_eventRepo = eventRepo;
 			_resources = resources;
@@ -74,6 +89,7 @@ namespace SciencePotato.Scripts.Events.Application
 			_random = random;
 			_events = eventBus;
 			_store = store;
+			_clock = clock;
 		}
 
 		/// <summary>
@@ -93,7 +109,78 @@ namespace SciencePotato.Scripts.Events.Application
 		}
 
 		/// <summary>
-		/// （v0.6.0 / WP-4.18）该 `(mapId, ownerId)` 的事件引擎是否已启动。
+		/// （v0.7.8 / WP-4.12）**该势力当前待玩家确认的事件**（可能是多条：暂停期间不会触发新事件，
+		/// 但读档/同一日多个事件都命中时会堆起来 ⇒ 必须**全部**确认才恢复）。
+		/// </summary>
+		public IReadOnlyList<PendingEventDecision> GetPendingDecisions(string mapId, int ownerId)
+			=> _pending.TryGetValue(EntryKey(mapId, ownerId, string.Empty), out List<PendingEventDecision> list)
+				? list
+				: (IReadOnlyList<PendingEventDecision>)Array.Empty<PendingEventDecision>();
+
+		/// <summary>待确认事件总数（跨势力；冒烟/UI 红点用）。</summary>
+		public int PendingCount => _pending.Values.Sum(list => list.Count);
+
+		/// <summary>
+		/// （v0.7.8 / WP-4.12）**玩家确认一条事件**：摘掉它；该势力再无待决事件时**恢复时间**
+		/// （还原到自动暂停前的流速档位）。
+		/// <returns>是否真的摘掉了一条（幂等：重复确认同一条返回 <c>false</c>）。</returns>
+		/// </summary>
+		public bool Resolve(string mapId, int ownerId, string eventId)
+		{
+			string ownerKey = EntryKey(mapId, ownerId, string.Empty);
+			if (!_pending.TryGetValue(ownerKey, out List<PendingEventDecision> list)) return false;
+
+			int removed = list.RemoveAll(item => item.EventId == eventId);
+			if (removed == 0) return false;
+
+			if (list.Count == 0)
+			{
+				_pending.Remove(ownerKey);
+				AutoResumeCount++;
+				if (_clock != null)
+				_clock.Speed = _speedBeforePause; // 还原玩家原来的档位（不是硬编码 Standard）
+			}
+			return true;
+		}
+
+		/// <summary>**一键确认该势力全部待决事件**（UI 的"知道了"按钮走它）。</summary>
+		public int ResolveAll(string mapId, int ownerId)
+		{
+			IReadOnlyList<PendingEventDecision> pending = GetPendingDecisions(mapId, ownerId);
+			int resolved = 0;
+			foreach (PendingEventDecision item in pending.ToList())
+				if (Resolve(mapId, ownerId, item.EventId)) resolved++;
+			return resolved;
+		}
+
+		/// <summary>入队 + 自动暂停（时间轴冻结在"事件触发的那一刻"）。</summary>
+		private void EnqueuePendingDecision(string mapId, int ownerId, IEventConfig evt)
+		{
+			string ownerKey = EntryKey(mapId, ownerId, string.Empty);
+			if (!_pending.TryGetValue(ownerKey, out List<PendingEventDecision> list))
+			{
+				list = new List<PendingEventDecision>();
+				_pending[ownerKey] = list;
+			}
+
+			list.Add(new PendingEventDecision
+			{
+				MapId = mapId,
+				OwnerId = ownerId,
+				EventId = evt.EventId,
+				Name = evt.Name,
+				Day = (int)(_clock?.CurrentDay ?? 0),
+				Duration = evt.Duration,
+			});
+
+			if (_clock == null || _clock.IsPaused) return; // 玩家自己已经暂停了 ⇒ 不动他的档位
+
+			_speedBeforePause = _clock.Speed;
+			_clock.Speed = TimeSpeedTier.Paused;
+			AutoPauseCount++;
+		}
+
+		/// <summary>(v0.6.0 / WP-4.18) 该 (mapId, ownerId) 的事件引擎是否已启动。</summary>
 		/// <para>为什么需要它：事件引擎**只给人类玩家**（AI 侧不启动），"有没有启动"是装配期的可断言事实 ——
 		/// 否则只能靠"等 30 天看 RollCount"这类间接证据。</para>
 		/// </summary>
@@ -236,6 +323,9 @@ namespace SciencePotato.Scripts.Events.Application
 
 				// 推送（v0.3 / WP-2.10 / `EVT-04`）：触发瞬间的推送（原本只能轮询 `GetActiveEvents`）
 				_events?.Publish(new GameEventTriggeredEvent(mapId, ownerId, evt.EventId, evt.Name, evt.Duration));
+
+			// （v0.7.8 / WP-4.12）**触发即暂停**：把事件挂进待决队列并冻结时间轴，等玩家确认再继续
+			EnqueuePendingDecision(mapId, ownerId, evt);
 			}
 
 			// 持续期推进放在**当日结算之后**：触发当日不计入，次日开始每天减 1，
