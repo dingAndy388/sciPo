@@ -1,5 +1,6 @@
 using Godot;
 using SciencePotato.Scripts.Common.Domain;
+using SciencePotato.Scripts.Core;
 using SciencePotato.Scripts.Map.Application;
 using SciencePotato.Scripts.Map.Domain;
 using SciencePotato.Scripts.Map.Presentation;
@@ -24,6 +25,12 @@ public partial class DevMapUi : CanvasLayer
 
 	/// <summary>缺省地图高度（行）。</summary>
 	public const int DefaultHeight = 143;
+
+	/// <summary>
+	/// 缺省地图 Id（用具名常量而不是字面量：面板里"文案必须走 i18n 键"的纪律检查只允许键，
+	/// 而这个 Id 会出现在存档文件名里，散落的字面量改起来容易漏）。
+	/// </summary>
+	public const string DefaultMapId = "world";
 
 	private Button _btn;
 	private SpinBox _seed;
@@ -51,7 +58,7 @@ public partial class DevMapUi : CanvasLayer
 		// 缺省值：规模取 73×143（正式尺度），Id 取 `world`（场景里的 5×5 只适合冒烟，不适合开发）
 		if (_width != null && _width.Value <= 5f) _width.Value = DefaultWidth;
 		if (_height != null && _height.Value <= 5f) _height.Value = DefaultHeight;
-		if (_id != null && string.IsNullOrWhiteSpace(_id.Text)) _id.Text = "world";
+		if (_id != null && string.IsNullOrWhiteSpace(_id.Text)) _id.Text = DefaultMapId;
 
 		_camera = _mapView?.GetNodeOrNull<Camera2D>("Camera2D");
 
@@ -62,13 +69,33 @@ public partial class DevMapUi : CanvasLayer
 			GD.PushError("[DevMapUi] 未取到 MapAppService（autoload `ServiceContainer` 未加载或启动失败）—— 生成按钮不可用");
 			if (_btn != null) _btn.Disabled = true;
 		}
+
+		ApplyLocaleText();
+	}
+
+	/// <summary>
+	/// （v0.6.5 / WP-5.10）把面板文案从 **i18n 键**取出来（面板里不再写死任何一种语言的文本）。
+	/// <para>缺键时 <c>T()</c> 返回 <c>⟦key⟧</c>，在编辑器/游戏里一眼看得见 —— 这正是"缺键可视"的目的。</para>
+	/// </summary>
+	private void ApplyLocaleText()
+	{
+		II18nService i18n = ServiceContainer.Instance?.Services?.I18n;
+		if (i18n == null) return; // 没有 i18n 就用场景里已有的文本（面板不至于变空）
+
+		if (_btn != null) _btn.Text = i18n.T("ui.generate");
+		if (_width != null) _width.Prefix = i18n.T("ui.width") + " ";
+		if (_height != null) _height.Prefix = i18n.T("ui.height") + " ";
+		if (_seed != null) _seed.Prefix = i18n.T("ui.seed") + " ";
+		if (_id != null) _id.PlaceholderText = i18n.T("ui.mapId");
+
+		GD.Print($"[DevMapUi] 语言={i18n.Locale}，可用={string.Join("/", i18n.AvailableLocales)}，缺键={i18n.MissingKeys.Count}");
 	}
 
 	private void OnGenerateBtnPressed()
 	{
 		if (_map == null) return;
 
-		string mapId = _id != null && !string.IsNullOrWhiteSpace(_id.Text) ? _id.Text : "world";
+		string mapId = _id != null && !string.IsNullOrWhiteSpace(_id.Text) ? _id.Text : DefaultMapId;
 		int width = _width != null ? Mathf.Max(1, (int)_width.Value) : DefaultWidth;
 		int height = _height != null ? Mathf.Max(1, (int)_height.Value) : DefaultHeight;
 		int seed = _seed != null ? (int)_seed.Value : 0;

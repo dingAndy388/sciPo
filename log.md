@@ -2588,7 +2588,7 @@ dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessC
 | **WP-4.18** | **会话 / 玩家表**（`PlayerContext` + `GameSession.Players` + `SessionOrchestrator` 逐 owner 启动） | ✅ 完成（v0.6.0） | M1 |
 | WP-4.19 | 胜负判定（每月判定 + 全灭；AI 与人类同一套） | ☐ 未开始 | M2 |
 
-### 批次 5 · 底座 / UI / 性能（11 WP · 完成 5 / 未开始 6）
+### 批次 5 · 底座 / UI / 性能（11 WP · 完成 6 / 未开始 5）
 
 | WP | 内容 | 状态 | M |
 | :--- | :--- | :--- | :--- |
@@ -2601,7 +2601,7 @@ dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessC
 | WP-5.7 | 意图契约（`PlayerIntent` + `IActionHandler`：UI 只表达意图，不再直接调应用服务） | ☐ 未开始 | M2 |
 | WP-5.8 | **73×143（10439 格）基线**：生成/渲染/存档/迷雾耗时与内存基线（行长口径一并在本 WP 定死） | ✅ 完成（v0.6.2） | M1 |
 | WP-5.9 | 开局布置（人类与 AI 的出生点：规则相同、距离随机且足够远 + 初始单位/资源） | ✅ 完成（v0.6.5） | M1 |
-| WP-5.10 | i18n 框架（中/英双语；字符串外置 + 缺键可视） | ☐ 未开始 | M1 |
+| WP-5.10 | i18n 框架（中/英双语；字符串外置 + 缺键可视） | ✅ 完成（v0.6.6） | M1 |
 | WP-5.11 | 会话入口（新开局 / 存档 / 读档 / 退出 + 自动存档点） | ☐ 未开始 | M2 |
 
 ### 批次 6 · AI 对手（6 WP · 全部未开始）
@@ -2644,7 +2644,7 @@ dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessC
 | **M0-1 · 无头骨架** ✅ | 批次 0 + 批次 1 | 时钟 1080 日恰好派发 1080 次；7 张表解析 + 引用校验通过；三档流速下"每 10/30 日"节拍不变 | — |
 | **M0-2 · 单玩家可玩** ✅ | 批次 2 | 跨树前置可研究；学院 6 个月 +1500 idea；人口按间隔增长；建造/升级/训练/事件链路各自断言 | — |
 | **M0-3 · 世界可存续** ✅ | 批次 3 | 存档 → 读档 → 360 日逐项等价；R1~R7 移动；同格交战+阵亡+掉落；敌方封锁格不可建造 | — |
-| **M1 · 看得见、点得动** | `WP-4.18` · `5.1` · `5.2` · `5.3` · `5.8` · `5.9` · `5.10` · `7.1` · `7.2a` | ① `dotnet build` 0 error；② 无头检查全绿（180 条）；③ **Godot 无头冒烟 14/14、退出码 0**：装配自检全 True、73×143 地图生成成功、逐 owner 子系统启动、推进 90 日月结发生、存档往返恢复任务、**实例化主场景 `map_view.tscn` 并渲染 10439 格**；④ 外观来自配置（换图不改代码） | **N1**：73×143 上能否看清/找到自己家；缩放与平移手感；面板按钮是否够用 |
+| **M1 · 看得见、点得动** ✅ | `WP-4.18` · `5.1` · `5.2` · `5.3` · `5.8` · `5.9` · `5.10` · `7.1` · `7.2a` | **✅ 已达成（v0.6.6）**：① `dotnet build` 0 error；② 无头检查全绿（**205 条**）；③ **Godot 无头冒烟 18/18、退出码 0**：装配自检全 True、外观配置链路比对、73×143 生成、**开局布置（出生点 + 开局单位）**、逐 owner 子系统启动、推进 90 日月结发生、存档往返恢复任务、**实例化主场景渲染 10439 格**；④ 外观与文案都来自配置（换图/换语言不改代码） | **N1**（待用户）：73×143 上能否看清/找到自家出生点；缩放与平移手感；面板按钮是否够用 |
 | **M2 · 除美术外全内容 + AI** | M1 之后、M3 之前的 **33 WP**（批次 4 的 18 + 批次 5 的 5 + 批次 6 的 6 + 批次 7 的 4） | ① 一局能**打到胜负**（含 AI）：人类或 AI 触发"每月判定"/"全灭"之一；② 93 科技 / 24 建筑 / 20 事件 / 15 单位**全在表**且启动校验 **0 error**；③ 事件触发即暂停、玩家决策后继续；④ AI 不作弊（迷雾外信息不进决策，测试判据）；⑤ 替换美术**不改代码**（`AssetManifest` 换文件即可） | **N3**：AI 像不像人（前期不暴兵、威胁驱动、不无限扩张） |
 | **M3 · 可发布** | `WP-7.6` + 批次 8（4） | ① 导出包能启动并通过冒烟；② 双语可切、无缺键；③ BGM 播放；④ 全表平衡校验通过 | **N4**：美术/音频/发布细节 |
 
@@ -2675,8 +2675,10 @@ dotnet run --project 'Tests\SciencePotato.HeadlessChecks\SciencePotato.HeadlessC
 
 ## 19.6 进度总览与复现命令
 
-**进度**：批次 0~3 ✅（29 WP）· 批次 4 **1/19** · 批次 5 **5/11** · 批次 6 **0/6** · 批次 7 **2/7** · 批次 8 **0/4** → **已完成 37 / 剩余 39**（到 M2 还差 **M1 的 1 个 + M2 的 33 个**，M3 另 5 个）。
-最近一次更新：**v0.6.5**（`WP-5.9` 开局布置：出生点（间距 ≥ 20、人类先挑）/ 开局单位（人类与 AI **同数量、不收费**）/ 人类开局视野；`StartMap` 内部调用布置（生成地图即开局）；顺带修掉 Newtonsoft 集合 append 与图外邻格查表两处崩溃；检查 **199/199**、冒烟 **18/18、退出码 0**）。
+**进度**：批次 0~3 ✅（29 WP）· 批次 4 **1/19** · 批次 5 **6/11** · 批次 6 **0/6** · 批次 7 **2/7** · 批次 8 **0/4** → **已完成 38 / 剩余 38**（**M1 的 9 个 WP 全部完成** ✅；M2 的 33 个 + M3 的 5 个待做）。
+最近一次更新：**v0.6.6**（`WP-5.10` i18n 框架：`Config/Strings.{zh,en}.json` + `I18nService`（键解析 / 回退默认语言 / **缺键 ⟦key⟧ 可见**）+ 中英键集一致性断言 + "面板文案只允许走键"的纪律检查；检查 **205/205**、冒烟 **18/18、退出码 0**）。
+> **M1 达成**（`v0.6.1`~`v0.6.6`）：装配通电 · 会话/玩家表 · 脚手架修复 · 外观数据驱动 · 73×143 基线 · 开局布置 · i18n · 资源口径收敛 · 农田/矿场/仓库。
+> **交 N1**（视觉与操作手感）：73×143 上能否看清/找到自家出生点、缩放与平移是否顺手、面板按钮是否够用 —— 这是 M1 唯一需要人看的部分。
 > *勘误（v0.6.3）：v0.6.1/v0.6.2 两行曾把批次 5 记成 5/11、6/11（实为 3/11、4/11）并把总进度记成 36/40、37/39；正确为 33/43、34/42、35/41。*
 
 ```powershell
@@ -2724,6 +2726,7 @@ $exe = 'E:\Godot_v4.6-stable_mono_win64\Godot_v4.6-stable_mono_win64.exe'
 | `D87` | 2026-09-15 | **存储上限是"派生值 + 事件驱动重算"**：`ResourcesAppService.RefreshLimits(mapId, ownerId)` 按 `配置 BaseLimit + 修正器 {资源名}Limit / ResourceLimit` **重算**（幂等，新增 `ResourcesPool.SetLimit`），并订阅 `BuildingCompletedEvent`/`BuildingUpgradedEvent` → **仓库落成即生效**（不等月结）；上限下调时把库存夹回上限内 | 用 `AddLimit` 累加的话，拆仓库不回落、读档几次会翻倍；而"等下一次月结才涨上限"玩家会以为没生效。派生值口径让上限永远等于"配置 + 当前修正器"，与产出公式同源 | `ResourcesPool.SetLimit`、`ResourcesAppService.RefreshLimits` + 总线订阅、`ModifierTargetRegistry` 派生 `{资源名}Limit`、`Config/Buildings.json` 仓库三级、用例 `ContentBuildingChecks.WarehouseRaisesLimit` |
 | `D88` | 2026-09-15 | **开局布置口径（`WP-5.9`）**：① **出生点规则对所有人相同** —— 可通行地形、无占据物、两两间距 ≥ `Start.MinSpawnDistance`（默认 20），人类先挑、AI 依次挑（`ownerId` 决定性索引 → 同 seed 同玩家表必然同一布局）；② **开局单位不收费、人类与 AI 同数量**（`UnitsAppService.PlaceInitialUnit` 专用入口，**不**复用 `CreateUnit` 的成本校验）；③ 布置**幂等**；④ 由 `SessionOrchestrator.StartMap` 内部调用（"生成地图 → 布置 → 启动子系统"是一条不可省略的链）；⑤ 参数放 `Config/Generator.json` 的 `Start` 段（不为 4 个字段开第 8 张表） | "不作弊"是第一承诺：AI 的出生点若更差、单位若更少，那条承诺就是空话。"开局单位复用生产入口"会让"初始储备不够 ⇒ 谁都没单位"这种荒谬结果成为可能；而把布置放在编排器内部调用，是为了让"忘了布置"在结构上不可能发生 | `Scripts/Core/SessionSetupService.cs`、`UnitsAppService.PlaceInitialUnit`、`SessionOrchestrator.AttachSetup`、`Config/Generator.json`、`ConfigTableGuide` v1.10、用例 `SessionSetupChecks`（5 条） |
 | `D89` | 2026-09-15 | **两条"配置/地图边界"陷阱写进口径**：① **JSON 集合字段不得预置默认值**（Newtonsoft 默认对已存在的集合做 **append**，`StartSetupDto.InitialUnits` 预置 `{"worker"}` 再读 `["worker"]` 会得到两条 → 开局白送一个单位）；② **`GetNeighbor()` 会给出图外坐标**，任何按格坐标查表前必须先 `Map.TryGetCell`（否则 `KeyNotFoundException`，出生点选位就踩到了） | 两条都是"看起来正常、只在特定数据/边界下炸"的类型：① 多一个单位很难被发现（数值错觉）；② 建在大图边上时才会崩。都已加用例锁住（`SessionSetupChecks.ConfigDefaultsMatch` / `SpotsRespectDistanceAndTerrain`） | `Scripts/Map/Domain/GeneratorConfigDto.cs`、`Scripts/Core/SessionSetupService.cs`、`ConfigTableGuide` v1.10 的"集合字段"注意 |
+| `D90` | 2026-09-15 | **i18n 口径（`WP-5.10`）**：① 文案外置 `Config/Strings.{locale}.json`（`Strings` 对象：键 → 文本），代码里**只出现键**；② 解析顺序 = 当前语言 → 默认语言（`zh`）→ **缺键返回 `⟦key⟧` 并记账**（缺键必须看得见）；③ 语言未装载时 `SetLocale` 返回 false 而不抛异常；④ 语言列表/默认语言/启动语言由 `CoreDependencies` 决定（`ServiceContainer` 后续可接 `--lang=`）；⑤ 两条断言锁纪律：**中英键集完全一致**（防静默漏译）、**面板文案赋值必须走 `i18n.T(...)`**（只查赋字符串字面量的 `.Text/.Prefix/.PlaceholderText/...` 行） | `R4`：字符串一旦散进 UI 代码，回头抽取等于重写 UI —— 所以框架排在正式 UI（`WP-5.4`）**之前**。"缺键可视"是给开发与玩家共同的护栏；"键集一致"是双语项目最常见的静默缺陷，能自动查就必须自动查 | `Config/Strings.{zh,en}.json`、`I18nService`、`DevMapUi`（首个消费者）、`ConfigFixtures.TextResources`、用例 `I18nChecks`（6 条）、`Document/I18n.md` |
 
-> **下一步**（按 §19.2 状态推进，M1 剩余 4 个）：`WP-5.8` 73×143 基线 → `WP-7.1` 资源重映射 → `WP-7.2a` 农田/矿场/仓库 → `WP-5.9` 开局布置 → `WP-5.10` i18n → 交 **N1**（视觉与操作手感）复看。
+> **下一步**：**M1 已达成 → 交 N1（视觉与操作手感复看）**；随后进 M2（批次 4 的 18 个 + 批次 5 的 5 个 + 批次 6 全 6 个 + 批次 7 的 4 个），建议顺序：`WP-4.19` 胜负判定 → `WP-4.12` 事件暂停决策 → `WP-4.8` 建筑 HP/夺取 → 批次 6（AI）→ `WP-5.4` 正式表现层 → `WP-5.11` 会话入口 → 内容补齐（`WP-7.2b`/`7.3`/`7.4`/`7.5`）。
 

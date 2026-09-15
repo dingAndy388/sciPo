@@ -1,0 +1,24 @@
+{
+  "Culture": "zh",
+  "Strings": {
+    "ui.generate": "生成地图",
+    "ui.seed": "种子",
+    "ui.mapId": "地图 Id",
+    "ui.width": "宽",
+    "ui.height": "高",
+    "ui.hint": "滚轮缩放 · WASD 平移 · 左键拖动",
+
+    "res.Idea": "灵感",
+    "res.Food": "食物",
+    "res.BasicMinerals": "基础石材",
+
+    "terrain.plain": "平原",
+    "terrain.desert": "沙漠",
+    "terrain.forest": "森林",
+    "terrain.mountain": "山地",
+    "terrain.water": "水域",
+
+    "smoke.assembly": "装配自检",
+    "smoke.spawn": "出生点"
+  }
+}

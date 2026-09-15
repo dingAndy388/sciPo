@@ -108,10 +108,16 @@ namespace SciencePotato.Scripts.Core
 		public SessionOrchestrator Orchestrator { get; init; }
 
 		/// <summary>
-		/// （v0.6.4 / WP-5.9）**开局布置**：出生点（间距约束）/ 开局单位（人类与 AI 同待遇）/ 开局资源 / 人类开局视野。
-		/// <para>由 <see cref="SessionOrchestrator.StartMap"/> 内部调用，因此"生成地图 → 布局"不会再被漏掉。</para>
+		/// （v0.6.5 / WP-5.10）**多语言（i18n）**：UI 文案的键 → 文本解析器（缺键可见、可回退到默认语言）。
+		/// <para>表现层今后**只允许**写键（如 <c>i18n.T("ui.generate")</c>），不允许写死文案（`R4`）。</para>
 		/// </summary>
 		public SessionSetupService Setup { get; init; }
+
+		/// <summary>
+		/// （v0.6.5 / WP-5.10）**多语言（i18n）**：UI 文案的键 → 文本解析器（缺键可见、可回退到默认语言）。
+		/// <para>表现层今后**只允许**写键（如 <c>i18n.T("ui.generate")</c>），不允许写死文案（`R4`）。</para>
+		/// </summary>
+		public II18nService I18n { get; init; }
 	}
 }
 

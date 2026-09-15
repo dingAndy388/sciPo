@@ -1,0 +1,24 @@
+{
+  "Culture": "en",
+  "Strings": {
+    "ui.generate": "Generate",
+    "ui.seed": "Seed",
+    "ui.mapId": "Map id",
+    "ui.width": "Width",
+    "ui.height": "Height",
+    "ui.hint": "Wheel to zoom · WASD to pan · drag with left button",
+
+    "res.Idea": "Idea",
+    "res.Food": "Food",
+    "res.BasicMinerals": "Basic minerals",
+
+    "terrain.plain": "Plains",
+    "terrain.desert": "Desert",
+    "terrain.forest": "Forest",
+    "terrain.mountain": "Mountains",
+    "terrain.water": "Water",
+
+    "smoke.assembly": "Wiring check",
+    "smoke.spawn": "Spawn"
+  }
+}

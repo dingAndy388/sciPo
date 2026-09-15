@@ -19,19 +19,28 @@ namespace SciencePotato.HeadlessChecks
 		/// <summary>7 张配置表（与 <c>Config/{name}.json</c> 一一对应）。</summary>
 		public static readonly string[] TableNames = { "Terrains", "Resources", "Buildings", "Units", "TechTrees", "Events", "Generator" };
 
+		/// <summary>
+		/// （v0.6.5 / WP-5.10）**非配置表的文本资源**（不参与 `ConfigTables` 装配，但要能被 `IConfigSource` 读到）：
+		/// 目前只有多语言文案 <c>Config/Strings.{locale}.json</c>。
+		/// </summary>
+		public static readonly string[] TextResources = { "Strings.zh", "Strings.en" };
+
 		public static string TablePath(string tableName) => Path.Combine(Check.FindRepoRoot(), "Config", tableName + ".json");
 
-		/// <summary>读取全部真实配置表。</summary>
+		/// <summary>读取全部真实配置表（含多语言文案）。</summary>
 		public static InMemoryConfigSource RealConfigSource()
 		{
 			var source = new InMemoryConfigSource();
-			foreach (string name in TableNames)
-			{
-				string path = TablePath(name);
-				if (!File.Exists(path)) continue;
-				source.Inject(name, File.ReadAllText(path));
-			}
+			foreach (string name in TableNames) InjectFile(source, name);
+			foreach (string name in TextResources) InjectFile(source, name);
 			return source;
+		}
+
+		private static void InjectFile(InMemoryConfigSource source, string name)
+		{
+			string path = TablePath(name);
+			if (!File.Exists(path)) return;
+			source.Inject(name, File.ReadAllText(path));
 		}
 
 		/// <summary>真实配置 + 用给定文本覆写某一张表（用于制造"这张表写错了"的场景）。</summary>

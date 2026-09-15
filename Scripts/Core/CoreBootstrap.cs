@@ -72,6 +72,11 @@ namespace SciencePotato.Scripts.Core
 			//      放在组合根创建，是为了避免"每个服务各 new 一个总线"导致订阅方收不到消息（静默失联）。
 			var domainEvents = new DomainEventBus();
 
+			// 3.8) 多语言（v0.6.5 / WP-5.10）：UI 文案外置成 Config/Strings.{locale}.json。
+			//      缺文件只记 warning（少一种语言不该让游戏开不了），缺键在 UI 上以 ⟦key⟧ 显形。
+			I18nService i18n = I18nService.Load(dependencies.ConfigSource, dependencies.Locales, dependencies.DefaultLocale);
+			if (!string.IsNullOrWhiteSpace(dependencies.Locale)) i18n.SetLocale(dependencies.Locale);
+
 			// 4) 会话状态（Map 常驻内存）：地图仓库由宿主工厂按**整表**构造（v0.3 / WP-3.2：读档要重建建筑/单位）
 			var rebuilder = new SaveRebuilder(new BuildingFactory(tables.Buildings), new UnitFactory(tables.Units));
 			var mapRepository = dependencies.MapRepositoryFactory(tables);
@@ -187,6 +192,7 @@ namespace SciencePotato.Scripts.Core
 				WorldSave = worldSave,
 				Orchestrator = orchestrator,
 				Setup = setup,
+				I18n = i18n,
 			};
 		}
 

@@ -72,7 +72,19 @@ namespace SciencePotato.Scripts.Core
 		public string SaveRoot { get; init; } = "user://save/";
 
 		/// <summary>
-		/// （v0.6.0 / WP-4.18）**玩家表**：开局时参与本局的势力（人类 + AI）。
+		/// （v0.6.5 / WP-5.10）**已装载的语言列表**（`Config/Strings.{locale}.json`）。
+		/// 缺省 = <c>["zh", "en"]</c>；缺文件的语言会被跳过（不阻断启动）。
+		/// </summary>
+		public IEnumerable<string> Locales { get; init; } = new[] { "zh", "en" };
+
+		/// <summary>（v0.6.5 / WP-5.10）默认语言（回退终点；缺省 <c>zh</c>）。</summary>
+		public string DefaultLocale { get; init; } = "zh";
+
+		/// <summary>（v0.6.5 / WP-5.10）启动语言（缺省 = 默认语言）。</summary>
+		public string Locale { get; init; }
+
+		/// <summary>
+		/// （v0.6.5 / WP-5.10）**玩家表**：开局时参与本局的势力（人类 + AI）。
 		/// <para><c>null</c> / 空 = 单人类玩家（owner=1，v0.5 及以前的隐式口径，保证既有用例语义不变）。</para>
 		/// <para>AI 势力的具体数量与难度由 `WP-6.1` 的 AI 配置决定，本项只负责\"谁在这一局里\"。</para>
 		/// </summary>
