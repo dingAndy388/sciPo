@@ -64,6 +64,9 @@ namespace SciencePotato.Scripts.Construction.Domain
 		/// <summary>（v0.8.5 / `WP-4.5`）**产出浮动幅度**（0.2 = ±20%；0 = 不浮动）。设计稿：农田 lv.I ±20% / lv.II ±15% / lv.III ±10%；上下限可被 `OutputVarianceUpper`/`OutputVarianceLower` 改写（观星台）。</summary>
 		float OutputVariance { get; }
 
+		/// <summary>（v0.8.7 / `WP-4.2`）**效果半径（格）**：0 = 只作用自身；>0 = 该建筑的 Modifiers 同时作用于半径内的**其他生产建筑**（骨笛工坊 1 格、观星台 3 格）。</summary>
+		int ModifierRange { get; }
+
 		/// <summary>
 		/// （v0.3 / WP-3.10）**建筑维护费**：资源名 → 每月数量（空表 = 该建筑不维护）。
 		/// <para>与单位维护同构（<c>IUnitConfig.Maintenance</c>）：需求由**状态持有方**（这里是 Construction，

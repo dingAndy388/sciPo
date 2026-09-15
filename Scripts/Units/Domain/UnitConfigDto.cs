@@ -34,6 +34,10 @@ namespace SciencePotato.Scripts.Units.Domain
 		public float SpawnChance { get; set; }
 
 		/// <summary>（v0.3 / WP-3.8）击败掉落（仅敌方单位；消费方 = `WP-3.7`）。</summary>
+		public List<string> Tags { get; set; } = new List<string>();
+		public List<Modifier> Abilities { get; set; } = new List<Modifier>();
+		public List<string> GarrisonHosts { get; set; } = new List<string>();
+		public List<Modifier> GarrisonModifiers { get; set; } = new List<Modifier>();
 		public Dictionary<string, float> DropReward { get; set; }
 	}
 }

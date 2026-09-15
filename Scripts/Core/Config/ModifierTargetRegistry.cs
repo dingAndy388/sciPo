@@ -35,6 +35,9 @@ namespace SciencePotato.Scripts.Core.Config
 			// （v0.8.1 / `WP-7.3`）科技效果新增：升级造价折扣 / 食物消耗（93 节点里有若干条用它们）
 			"BuildingUpgradeCost", "FoodConsumption",
 			"OutputVarianceUpper", "OutputVarianceLower",
+			// （v0.8.7 / WP-4.3 + WP-4.2）条件化修正（单位能力按目标标签查）+ 相邻同类加成（振动与波）
+			"DamageVsMelee", "DamageVsRanged", "DamageVsBeast", "DamageVsBuilding", "DamageTaken",
+			"AdjacentSameTypeBonus",
 		};
 
 		private readonly HashSet<string> _targets = new();

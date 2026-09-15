@@ -236,19 +236,61 @@ namespace SciencePotato.Scripts.Units.Application
 		/// 时返回衰减后的裸伤害。`Absolute` 型修正由 `ModifierManager` 在衰减**之后**加上（装备加伤不参与衰减）。</para>
 		/// </summary>
 		public float ComputeDamage(string mapId, Unit attacker, OccupantType targetType)
+			=> ComputeDamage(mapId, attacker, targetType, null);
+
+		/// <summary>
+		/// （v0.8.7 / `WP-4.3`）**带目标配置**的重载：额外结算**条件化修正**（单位"特殊能力"）——
+		/// 按**目标标签**查攻击方的 `DamageVs{标签}`（长矛兵"对近战 +20%"），建筑目标查 `DamageVsBuilding`
+		/// （弩炮"对建筑 +50%"）。受击方的 `DamageTaken` 在**落地处**结算（它属于防御方）。
+		/// <para>为什么能力走"按配置现算"而不是注册进修正器仓储：单位会死、会走开，注册制要管生命周期；
+		/// 能力是模板常量 ⇒ 现算天然正确（`D112`）。</para>
+		/// </summary>
+		public float ComputeDamage(string mapId, Unit attacker, OccupantType targetType, IUnitConfig targetConfig)
 		{
 			if (attacker == null) return 0f;
 
 			float damage = attacker.AttackDamage * CombatRules.TargetFactor(targetType);
-			if (_modifiers == null) return damage;
 
-			int ownerId = attacker.GetInfo().OwnerId;
-			damage = _modifiers.GetValue(mapId, ownerId, CombatRules.BonusTargetOf(attacker), damage);
+			if (_modifiers != null)
+			{
+				int ownerId = attacker.GetInfo().OwnerId;
+				damage = _modifiers.GetValue(mapId, ownerId, CombatRules.BonusTargetOf(attacker), damage);
+
+				if (targetType == OccupantType.Building)
+					damage = _modifiers.GetValue(mapId, ownerId, CombatRules.BuildingBonusTarget, damage);
+			}
 
 			if (targetType == OccupantType.Building)
-				damage = _modifiers.GetValue(mapId, ownerId, CombatRules.BuildingBonusTarget, damage);
+				damage = ApplyAbility(attacker, "DamageVsBuilding", damage);
+
+			foreach (string tag in targetConfig?.Tags ?? new List<string>())
+				damage = ApplyAbility(attacker, "DamageVs" + tag, damage);
 
 			return damage;
+		}
+
+		/// <summary>
+		/// （v0.8.7 / `WP-4.3`）把 <paramref name="unit"/> 的某条能力（按目标名匹配）作用到伤害上。
+		/// <para>同式结算：`(damage + ΣAbsolute) × (1 + ΣPercent)`；没有该能力 ⇒ 原值返回。</para>
+		/// </summary>
+		public float ApplyAbility(Unit unit, string target, float damage)
+		{
+			if (unit == null || string.IsNullOrWhiteSpace(target)) return damage;
+
+			IUnitConfig config = _configs?.GetUnitConfig(unit.GetInfo().Id);
+			if (config?.Abilities == null || config.Abilities.Count == 0) return damage;
+
+			float absolute = 0f;
+			float percent = 0f;
+			foreach (Modifier ability in config.Abilities)
+			{
+				if (!string.Equals(ability.Target, target, StringComparison.OrdinalIgnoreCase)) continue;
+				if (string.Equals(ability.Type, "Percent", StringComparison.OrdinalIgnoreCase)) percent += ability.Value;
+				else absolute += ability.Value;
+			}
+
+			if (absolute == 0f && percent == 0f) return damage;
+			return Math.Max(0f, (damage + absolute) * (1f + percent));
 		}
 
 		// ────────────────────────── 读档接线 ──────────────────────────
@@ -493,10 +535,13 @@ namespace SciencePotato.Scripts.Units.Application
 			}
 
 			OccupantType targetType = target.GetInfo().Type;
-			float damage = ComputeDamage(mapId, attacker, targetType);
+			// （v0.8.7 / WP-4.3）带上目标配置 ⇒ 结算攻击方的条件化加成（按目标标签）
+			float damage = ComputeDamage(mapId, attacker, targetType, _configs?.GetUnitConfig(target.GetInfo().Id));
 
 			if (target is Unit unitTarget)
 			{
+				// （v0.8.7 / WP-4.3）受击方的 `DamageTaken`（重装卫士"受到伤害 -25%"）在落地处结算
+				damage = ApplyAbility(unitTarget, "DamageTaken", damage);
 				unitTarget.HP -= damage;
 				AttacksResolved++;
 				TotalDamage += damage;

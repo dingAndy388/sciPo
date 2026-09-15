@@ -58,5 +58,8 @@ namespace SciencePotato.Scripts.Construction.Domain
 		/// <summary>（v0.8.5 / WP-4.5）产出浮动幅度（0.2 = ±20%；0 = 不浮动）。</summary>
 		public float OutputVariance { get; set; }
 
+		/// <summary>（v0.8.7 / WP-4.2）效果半径（0 = 只作用自身；>0 = 作用于半径内其他生产建筑）。</summary>
+		public int ModifierRange { get; set; }
+
 	}
 }

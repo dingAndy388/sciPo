@@ -173,7 +173,8 @@ namespace SciencePotato.Scripts.Core
 				store,
 				populationSink: mapService,                        // 减员经地图按地块扣人（`MapAppService : IPopulationSink`）
 				buildingRepo: tables.Buildings,                  // WP-4.5：产出浮动读建筑 OutputVariance
-				occupantQuery: mapService,                       // WP-4.5：按建筑算浮动（IOccupantQuery）
+				occupantQuery: mapService,                       // WP-4.5/4.2：按建筑算浮动与范围覆盖（IOccupantQuery）
+				unitConfigs: tables.Units,                      // WP-4.6：驻扎加成读单位表
 				random: dependencies.Random ?? new SystemRandom(20260914));
 
 			// 6.6) 事件引擎（**只对人类玩家启动**，见 `SessionOrchestrator`）；事件表缺失时不装配

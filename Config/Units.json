@@ -2,6 +2,7 @@
   "Units": {
     "worker": {
       "UnitId": "worker",
+    "Tags": [ "worker" ],
       "ResourceCost": { "Food": 20 },
       "TerrainRequirements": [ "plain" ],
       "TechRequirements": {},
@@ -18,6 +19,7 @@
     },
     "swordsman": {
       "UnitId": "swordsman",
+    "Tags": [ "melee" ],
       "ResourceCost": { "Food": 50, "BasicMinerals": 20 },
       "TerrainRequirements": [ "plain" ],
       "TechRequirements": {},
@@ -34,6 +36,7 @@
     },
     "archer": {
       "UnitId": "archer",
+    "Tags": [ "ranged" ],
       "ResourceCost": { "Food": 60, "BasicMinerals": 30 },
       "TerrainRequirements": [ "plain" ],
       "TechRequirements": {},
@@ -50,6 +53,7 @@
     },
     "explorer": {
       "UnitId": "explorer",
+    "Tags": [ "scout" ],
       "ResourceCost": { "Food": 80, "BasicMinerals": 30 },
       "TerrainRequirements": [ "plain" ],
       "TechRequirements": {},
@@ -66,6 +70,8 @@
     },
     "spearman": {
       "UnitId": "spearman",
+    "Tags": [ "melee" ],
+    "Abilities": [ { "Target": "DamageVsMelee", "Type": "Percent", "Value": 0.2 } ],
       "ResourceCost": { "Food": 150, "BasicMinerals": 80 },
       "TerrainRequirements": [ "plain" ],
       "TechRequirements": {},
@@ -82,6 +88,8 @@
     },
     "heavy_guard": {
       "UnitId": "heavy_guard",
+    "Tags": [ "melee", "armored" ],
+    "Abilities": [ { "Target": "DamageTaken", "Type": "Percent", "Value": -0.25 } ],
       "ResourceCost": { "Food": 250, "BasicMinerals": 200 },
       "TerrainRequirements": [ "plain" ],
       "TechRequirements": {},
@@ -98,6 +106,7 @@
     },
     "engineer": {
       "UnitId": "engineer",
+    "Tags": [ "worker" ],
       "ResourceCost": { "Food": 120, "BasicMinerals": 80 },
       "TerrainRequirements": [ "plain" ],
       "TechRequirements": {},
@@ -114,6 +123,8 @@
     },
     "ballista": {
       "UnitId": "ballista",
+    "Tags": [ "ranged", "siege" ],
+    "Abilities": [ { "Target": "DamageVsBuilding", "Type": "Percent", "Value": 0.5 } ],
       "ResourceCost": { "BasicMinerals": 300, "Idea": 150 },
       "TerrainRequirements": [ "plain" ],
       "TechRequirements": {},
@@ -130,6 +141,9 @@
     },
     "scholar": {
       "UnitId": "scholar",
+    "Tags": [ "civilian" ],
+    "GarrisonHosts": [ "school", "school_ii", "school_iii" ],
+    "GarrisonModifiers": [ { "Target": "IdeaGrowth", "Type": "Percent", "Value": 0.1 } ],
       "ResourceCost": { "Food": 100, "Idea": 50 },
       "TerrainRequirements": [ "plain" ],
       "TechRequirements": {},
@@ -146,6 +160,9 @@
     },
     "chemist": {
       "UnitId": "chemist",
+    "Tags": [ "civilian" ],
+    "GarrisonHosts": [ "mine", "mine_ii", "mine_iii" ],
+    "GarrisonModifiers": [ { "Target": "MineralGrowth", "Type": "Percent", "Value": 0.1 } ],
       "ResourceCost": { "Food": 120, "Idea": 80 },
       "TerrainRequirements": [ "plain" ],
       "TechRequirements": {},
@@ -162,6 +179,7 @@
     },
     "wolf": {
       "UnitId": "wolf",
+    "Tags": [ "beast" ],
       "ResourceCost": {},
       "TerrainRequirements": [ "plain" ],
       "TechRequirements": {},
@@ -182,6 +200,7 @@
     },
     "boar": {
       "UnitId": "boar",
+    "Tags": [ "beast" ],
       "ResourceCost": {},
       "TerrainRequirements": [ "plain" ],
       "TechRequirements": {},
@@ -202,6 +221,7 @@
     },
     "eagle": {
       "UnitId": "eagle",
+    "Tags": [ "beast" ],
       "ResourceCost": {},
       "TerrainRequirements": [ "plain" ],
       "TechRequirements": {},
@@ -222,6 +242,7 @@
     },
     "ibex": {
       "UnitId": "ibex",
+    "Tags": [ "beast" ],
       "ResourceCost": {},
       "TerrainRequirements": [ "plain" ],
       "TechRequirements": {},
@@ -242,6 +263,7 @@
     },
     "crocodile": {
       "UnitId": "crocodile",
+    "Tags": [ "beast" ],
       "ResourceCost": {},
       "TerrainRequirements": [ "plain" ],
       "TechRequirements": {},

@@ -52,6 +52,18 @@ namespace SciencePotato.Scripts.Units.Domain
 		float SpawnChance { get; }
 
 		/// <summary>（v0.3 / WP-3.8）**击败掉落**（仅敌方单位）：资源名 → 数量，直接进资源池（消费方 = `WP-3.7`）。</summary>
+				/// <summary>（v0.8.7 / WP-4.3）**单位标签**：条件化修正（"对近战 +20%""对建筑 +50%"）的判定依据（melee/ranged/beast/siege/civilian）。纯数据，代码不写死兵种名。</summary>
+		List<string> Tags { get; }
+
+		/// <summary>（v0.8.7 / WP-4.3）**条件化修正**（单位特殊能力的机器可读形式）：`DamageVs{目标标签}` / `DamageVsBuilding` / `DamageTaken`（负数 = 减伤）。**按配置现算**，不注册进仓储（单位死了/走开天然失效）。</summary>
+		List<Modifier> Abilities { get; }
+
+		/// <summary>（v0.8.7 / WP-4.6）**驻扎宿主**：这些建筑 Id 之一在一格内时 `GarrisonModifiers` 生效（学者驻扎学院 Idea+10%、化学家驻扎矿场矿物+10%）。空表 = 不驻扎；宿主消失/单位走开自动失效。</summary>
+		List<string> GarrisonHosts { get; }
+
+		/// <summary>（v0.8.7 / WP-4.6）驻扎时生效的修正（作用于所属玩家的产出）。</summary>
+		List<Modifier> GarrisonModifiers { get; }
+
 		Dictionary<string, float> DropReward { get; }
 	}
 }

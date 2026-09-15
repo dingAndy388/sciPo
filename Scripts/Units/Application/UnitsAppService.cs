@@ -333,6 +333,42 @@ namespace SciencePotato.Scripts.Units.Application
 		/// （v0.3 / WP-2.4 / WP-2.6）单位动作入口。返回**是否成功执行**（`CON-01`：调用方需要知道成败，
 		/// 而不是只能看结果反推）—— 建造/升级返回"是否开工"，移动/攻击返回"是否接受指令"。
 		/// </summary>
+		/// <summary>
+		/// （v0.8.7 / `WP-4.7`）**单位合并**：把 <paramref name="consumedUid"/> 并进 <paramref name="survivorUid"/>。
+		/// <list type="bullet">
+		/// <item>只允许**同一模板**（同一个 `UnitId`）——设计稿"同模板"口径；</item>
+		/// <item>必须**同格**（同格才谈得上"合并成一支"）；</item>
+		/// <item>HP 相加，**上限 = 模板 MaxHP**（多出来的血量直接丢掉，不是溢出到别处）；</item>
+		/// <item>被并方**不算阵亡**（不推 `UnitDiedEvent` ⇒ 不掉落、不进胜负判定为"损失"过一次性的死）；
+		/// 只做"从图上移除 + 注销它的移动循环"。</item>
+		/// </list>
+		/// </summary>
+		/// <returns>是否真的合并了（任一前置不满足 → <c>false</c>，且不留副作用）。</returns>
+		public bool MergeUnits(string mapId, string survivorUid, string consumedUid)
+		{
+			if (string.IsNullOrWhiteSpace(survivorUid) || string.IsNullOrWhiteSpace(consumedUid)) return false;
+			if (survivorUid == consumedUid) return false;
+
+			var survivor = _map.FindOccupantByUId(mapId, survivorUid) as Unit;
+			var consumed = _map.FindOccupantByUId(mapId, consumedUid) as Unit;
+			if (survivor == null || consumed == null) return false;
+			if (survivor.GetInfo().Id != consumed.GetInfo().Id) return false;          // 同模板
+			// 地图不允许两个单位共格（`PlaceOccupant` 拒绝同格），所以"合并"的触发条件是**相邻或同格**（距离 ≤ 1）；
+			// 合并后幸存者留在自己那一格（被并方从图上消失）。
+			if (survivor.Position.DistenceTo(consumed.Position) > 1) return false;         // 同格或相邻
+			if (survivor.HP <= 0f || consumed.HP <= 0f) return false;                   // 已阵亡的不合并
+
+			survivor.HP = Math.Min(survivor.MaxHP, survivor.HP + consumed.HP);
+
+			_map.RemoveOccupantByPosition(mapId, consumed.Position, consumed);
+			_time.UnregisterByUId(consumedUid);                                        // 注销被并方的移动循环
+			MergeCount++;
+			return true;
+		}
+
+		/// <summary>（v0.8.7 / `WP-4.7`）累计合并次数（验收/调试）。</summary>
+		public int MergeCount { get; private set; }
+
 		public bool ExcuteAction(string mapId, string uid, HexCubePosition targetPosition, string targetParam, string action)
 		{
 			var occupant = _map.GetOccupantByUId(mapId, uid);

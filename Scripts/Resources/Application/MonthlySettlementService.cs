@@ -1,6 +1,7 @@
 using SciencePotato.Scripts.Common.Application;
 using SciencePotato.Scripts.Common.Domain;
 using SciencePotato.Scripts.Construction.Domain;
+using SciencePotato.Scripts.Units.Domain;
 using SciencePotato.Scripts.Common.Infrastructure;
 using SciencePotato.Scripts.Core.Time;
 using SciencePotato.Scripts.Resources.Domain;
@@ -59,6 +60,9 @@ namespace SciencePotato.Scripts.Resources.Application
 		private readonly IBuildingConfigRepository _buildingRepo;
 		private readonly IOccupantQuery _occupantQuery;
 
+		/// <summary>（v0.8.7 / `WP-4.6`）单位表（读 `GarrisonHosts`/`GarrisonModifiers`）；可空 = 不算驻扎。</summary>
+		private readonly IUnitsRepository _unitConfigs;
+
 		/// <summary>（v0.3 / WP-3.10）减员抖动的随机源（可注入以求受控；缺省 = 系统随机）。</summary>
 		private readonly IRandom _random;
 
@@ -105,6 +109,7 @@ namespace SciencePotato.Scripts.Resources.Application
 			IPopulationSink populationSink = null,
 			IBuildingConfigRepository buildingRepo = null,
 			IOccupantQuery occupantQuery = null,
+			IUnitsRepository unitConfigs = null,
 			IRandom random = null)
 		{
 			_resources = resources;
@@ -116,6 +121,7 @@ namespace SciencePotato.Scripts.Resources.Application
 			_populationSink = populationSink;
 			_buildingRepo = buildingRepo;
 			_occupantQuery = occupantQuery;
+			_unitConfigs = unitConfigs;
 			_random = random ?? new SystemRandom(Environment.TickCount);
 		}
 
@@ -212,6 +218,111 @@ namespace SciencePotato.Scripts.Resources.Application
 		}
 
 		/// <summary>
+		/// （v0.8.7 / `WP-4.2`）**范围效果的产出加成**：遍历自家 `ModifierRange > 0` 的已完工源建筑，
+		/// 统计它**覆盖到几个生产建筑**（`Modifiers` 里含该目标名的建筑），每个被覆盖者贡献一次源建筑的加成。
+		/// <para>口径（`D112`）：`absolute = Σ_源 (ΣAbsolute_源 × 覆盖数)`、`percent = Σ_源 (ΣPercent_源 × 覆盖数)`
+		/// —— "骨笛工坊覆盖 2 块农田" = 两块农田各 +15%（合计 +30%）；owner 级近似（按建筑拆分产出归 `WP-4.13`）。</para>
+		/// </summary>
+		private void RangedProductionBonus(string mapId, int ownerId, IEnumerable<string> targets, ref float absolute, ref float percent)
+		{
+			if (_buildingRepo == null || _occupantQuery == null || targets == null) return;
+
+			List<IMapOccupant> own = _occupantQuery.GetOccupants(mapId)
+				.Where(o => o != null && o.GetInfo().OwnerId == ownerId
+							&& o.GetInfo().Type == OccupantType.Building && o.IsReady)
+				.ToList();
+
+			foreach (IMapOccupant source in own)
+			{
+				IBuildingConfig sourceConfig = _buildingRepo.GetBuildingConfig(source.GetInfo().Id);
+				if (sourceConfig == null || sourceConfig.ModifierRange <= 0 || sourceConfig.Modifiers == null) continue;
+
+				float abs = 0f;
+				float per = 0f;
+				foreach (Modifier modifier in sourceConfig.Modifiers)
+				{
+					if (!targets.Contains(modifier.Target, StringComparer.OrdinalIgnoreCase)) continue;
+					if (string.Equals(modifier.Type, "Percent", StringComparison.OrdinalIgnoreCase)) per += modifier.Value;
+					else abs += modifier.Value;
+				}
+				if (abs == 0f && per == 0f) continue;
+
+				int covered = 0;
+				foreach (IMapOccupant target in own)
+				{
+					if (ReferenceEquals(target, source)) continue;   // 只作用于**其他**建筑
+					if (source.GetInfo().Position.DistenceTo(target.GetInfo().Position) > sourceConfig.ModifierRange) continue;
+
+					IBuildingConfig targetConfig = _buildingRepo.GetBuildingConfig(target.GetInfo().Id);
+					if (targetConfig?.Modifiers == null) continue;
+					if (!targetConfig.Modifiers.Any(m => targets.Contains(m.Target, StringComparer.OrdinalIgnoreCase))) continue;
+					covered++;
+				}
+				if (covered == 0) continue;
+
+				absolute += abs * covered;
+				percent += per * covered;
+			}
+		}
+
+		/// <summary>（v0.8.7 / `WP-4.2`）**相邻同类计数**：有几个自家已完工建筑存在"同 Id 的邻居"。</summary>
+		private int AdjacentSameTypeCount(string mapId, int ownerId)
+		{
+			if (_occupantQuery == null) return 0;
+
+			List<IMapOccupant> own = _occupantQuery.GetOccupants(mapId)
+				.Where(o => o != null && o.GetInfo().OwnerId == ownerId
+							&& o.GetInfo().Type == OccupantType.Building && o.IsReady)
+				.ToList();
+
+			int count = 0;
+			foreach (IMapOccupant building in own)
+			{
+				bool hasTwin = own.Any(other => !ReferenceEquals(other, building)
+					&& other.GetInfo().Id == building.GetInfo().Id
+					&& other.GetInfo().Position.DistenceTo(building.GetInfo().Position) <= 1);
+				if (hasTwin) count++;
+			}
+			return count;
+		}
+
+		/// <summary>
+		/// （v0.8.7 / `WP-4.6`）**驻扎加成**：单位在宿主建筑（`GarrisonHosts` 之一）一格内时，把它的
+		/// `GarrisonModifiers` 并进产出（`(value + ΣAbsolute) × (1 + ΣPercent)`）。
+		/// <para>宿主消失 / 单位走开 ⇒ 下一拍自动不加（无状态、无清理）。</para>
+		/// </summary>
+		private float ApplyGarrison(string mapId, int ownerId, IEnumerable<string> targets, float value)
+		{
+			if (_unitConfigs == null || _occupantQuery == null || targets == null) return value;
+
+			List<IMapOccupant> occupants = _occupantQuery.GetOccupants(mapId).Where(o => o != null).ToList();
+
+			foreach (IMapOccupant unit in occupants.Where(o => o.GetInfo().OwnerId == ownerId && o.GetInfo().Type == OccupantType.Unit))
+			{
+				IUnitConfig config = _unitConfigs.GetUnitConfig(unit.GetInfo().Id);
+				if (config?.GarrisonHosts == null || config.GarrisonHosts.Count == 0) continue;
+				if (config.GarrisonModifiers == null || config.GarrisonModifiers.Count == 0) continue;
+
+				bool hosted = occupants.Any(b =>
+					b.GetInfo().OwnerId == ownerId && b.GetInfo().Type == OccupantType.Building && b.IsReady
+					&& config.GarrisonHosts.Contains(b.GetInfo().Id)
+					&& b.GetInfo().Position.DistenceTo(unit.GetInfo().Position) <= 1);
+				if (!hosted) continue;
+
+				float abs = 0f;
+				float per = 0f;
+				foreach (Modifier modifier in config.GarrisonModifiers)
+				{
+					if (!targets.Contains(modifier.Target, StringComparer.OrdinalIgnoreCase)) continue;
+					if (string.Equals(modifier.Type, "Percent", StringComparison.OrdinalIgnoreCase)) per += modifier.Value;
+					else abs += modifier.Value;
+				}
+				value = (value + abs) * (1f + per);
+			}
+			return value;
+		}
+
+		/// <summary>
 		/// （v0.8.5 / `WP-4.5`）**产出浮动**：`value × (1 + roll)`，`roll ∈ [-lower, +upper]`。
 		/// <para>幅度 = 自家已完成建筑里**最大**的 `OutputVariance`（聚落级口径）；`OutputVarianceUpper` / `OutputVarianceLower`
 		/// 一旦有修正器就**改写**该侧边界（观星台"上限 +5% / 下限 -1%"，范围效果归 `WP-4.2`）。</para>
@@ -266,6 +377,22 @@ namespace SciencePotato.Scripts.Resources.Application
 				float summarized = _modifier != null
 					? _modifier.GetValue(mapId, ownerId, resource.DependentModifiers, baseGrowth)
 					: baseGrowth;
+				// （v0.8.7 / WP-4.2）范围效果：生产建筑被范围内源建筑覆盖 ⇒ 每覆盖一次加一份
+				float rangedAbsolute = 0f;
+				float rangedPercent = 0f;
+				RangedProductionBonus(mapId, ownerId, resource.DependentModifiers, ref rangedAbsolute, ref rangedPercent);
+				summarized = (summarized + rangedAbsolute) * (1f + rangedPercent);
+
+				// （v0.8.7 / WP-4.2）振动与波类"相邻同类"加成：每个"有同类邻居"的建筑各算一次
+				int adjacentSameType = AdjacentSameTypeCount(mapId, ownerId);
+				if (adjacentSameType > 0 && _modifier != null && _modifier.HasTarget(mapId, ownerId, "AdjacentSameTypeBonus"))
+					// 相邻同类是"倍率"语义：base 传 1（传 0 会被乘成 0 —— 修正器公式是 (base+Σabs)×(1+Σper)）；
+					// 有任一"成对"建筑 ⇒ 整体乘一次（owner 级近似，`D112`）。
+					summarized *= _modifier.GetValue(mapId, ownerId, "AdjacentSameTypeBonus", 1f);
+
+				// （v0.8.7 / WP-4.6）驻扎：单位在宿主建筑一格内 ⇒ 其驻扎修正并入产出
+				summarized = ApplyGarrison(mapId, ownerId, resource.DependentModifiers, summarized);
+
 				// （v0.8.5 / WP-4.5）产出浮动：幅度取自家建筑的最大 OutputVariance，上下限可被修正器改写
 				production[resource.Name] = ApplyOutputVariance(mapId, ownerId, summarized);
 			}
