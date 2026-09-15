@@ -96,6 +96,32 @@ namespace SciencePotato.Scripts.Core.Config
 			// 权重是相对值，但 5 类地形按指南给出的就是"占比"，和为 1 才符合预期分布
 			if (Math.Abs(weightSum - 1f) > 0.01f)
 				report.Warn("Terrains", null, $"Weight 总和={weightSum:0.###}，不等于 1（Voronoi 生成器按权重比例分配，非 1 只影响可读性）");
+
+			ValidateTerrainAppearance(tables, report);
+		}
+
+		/// <summary>
+		/// （v0.6.0 / WP-5.3）**外观字段校验**：颜色格式与格步长。
+		/// <para>为什么把颜色当校验项而不是等渲染时再说：配置里写错一个字符（<c>#7BA05</c>）在运行时只会表现为
+		/// "这个地形颜色不对"，很难回想到是表写错了；启动期一条 warning 就定位了。</para>
+		/// <para>分级：颜色**非法** = warning（有兜底派生色，不影响能玩）；格步长 **&lt;= 0 且显式写了** = error
+		/// （真的会算不出格位）；步长缺省（未写）= 正常，用内置值。</para>
+		/// </summary>
+		private static void ValidateTerrainAppearance(ConfigTables tables, ConfigReport report)
+		{
+			foreach (ITerrainData terrain in tables.AllTerrains())
+			{
+				if (terrain == null) continue;
+
+				if (NotEmpty(terrain.Color) && !RgbColor.TryParse(terrain.Color, out _, out string error))
+					report.Warn("Terrains", terrain.Id, $"Color=\"{terrain.Color}\" 不是合法颜色（{error}）：将按 Id 派生占位色");
+
+				if (NotEmpty(terrain.Sprite) && terrain.Sprite.Contains('/'))
+					report.Warn("Terrains", terrain.Id, $"Sprite=\"{terrain.Sprite}\" 不应包含目录（目录由表根 TerrainSpriteDir 决定）");
+			}
+
+			if (tables.Terrains is IMapAppearanceConfig appearance && (appearance.CellXStep <= 0f || appearance.CellYStep <= 0f))
+				report.Error("Terrains", null, $"CellXStep/CellYStep 必须大于 0（实际 {appearance.CellXStep}/{appearance.CellYStep}）");
 		}
 
 		// ────────────────────────── Resources ──────────────────────────

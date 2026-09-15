@@ -76,16 +76,29 @@ namespace SciencePotato.Scripts.Events.Application
 			_store = store;
 		}
 
-		public void StartEventsEngine(string mapId, int ownerId)
+		/// <summary>
+		/// 启动事件引擎（幂等：同一 `(mapId, ownerId)` 只注册一个日节拍任务）。
+		/// </summary>
+		/// <returns>（v0.6.0 / WP-4.18）本次是否**新**启动了引擎（已启动 → <c>false</c>；供启动明细与断言使用）。</returns>
+		public bool StartEventsEngine(string mapId, int ownerId)
 		{
 			// 口径（v0.3 / WP-1.5）：每日掷一次骰（原为每秒），必须逐日派发 ——
 			// 否则第三档（6 日/真实秒）一帧跨多日时会漏掷（`A3`）。
-			if (!_startedEngines.Add(EngineKey(mapId, ownerId))) return; // `EVT-03`：重复调用不再叠加引擎
+			if (!_startedEngines.Add(EngineKey(mapId, ownerId))) return false; // `EVT-03`：重复调用不再叠加引擎
 
 			var task = new IntervalTask(0, TimeConstants.EventRollDays, $"evt_{mapId}_{ownerId}", "EventTick", "none", mapId, ownerId);
 			task.OnCompleted += () => TickEvents(mapId, ownerId);
 			_time.Register(task);
+			return true;
 		}
+
+		/// <summary>
+		/// （v0.6.0 / WP-4.18）该 `(mapId, ownerId)` 的事件引擎是否已启动。
+		/// <para>为什么需要它：事件引擎**只给人类玩家**（AI 侧不启动），"有没有启动"是装配期的可断言事实 ——
+		/// 否则只能靠"等 30 天看 RollCount"这类间接证据。</para>
+		/// </summary>
+		public bool IsEngineStarted(string mapId, int ownerId)
+			=> _startedEngines.Contains(EngineKey(mapId, ownerId));
 
 		/// <summary>（v0.3 / WP-2.8）当前生效中的事件（`EVT-04`/`G7`：UI 可据此显示倒计时）。</summary>
 		public IReadOnlyList<ActiveEvent> GetActiveEvents(string mapId, int ownerId)

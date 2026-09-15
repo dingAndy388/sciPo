@@ -1,9 +1,12 @@
 {
+  "CellXStep": 366,
+  "CellYStep": 317.25,
+  "TerrainSpriteDir": "res://Texture/Terrain/",
   "Terrains": [
-    { "Id": "plain",    "Name": "平原", "Weight": 0.50, "MoveCost": 5,  "Passable": true,  "UnlockTech": "" },
-    { "Id": "desert",   "Name": "沙漠", "Weight": 0.10, "MoveCost": 8,  "Passable": true,  "UnlockTech": "" },
-    { "Id": "forest",   "Name": "森林", "Weight": 0.20, "MoveCost": 10, "Passable": true,  "UnlockTech": "" },
-    { "Id": "mountain", "Name": "山地", "Weight": 0.05, "MoveCost": 25, "Passable": true,  "UnlockTech": "" },
-    { "Id": "water",    "Name": "水域", "Weight": 0.15, "MoveCost": 50, "Passable": false, "UnlockTech": "buoyancy" }
+    { "Id": "plain",    "Name": "平原", "Weight": 0.50, "MoveCost": 5,  "Passable": true,  "UnlockTech": "",         "Sprite": "", "Color": "#7BA05B" },
+    { "Id": "desert",   "Name": "沙漠", "Weight": 0.10, "MoveCost": 8,  "Passable": true,  "UnlockTech": "",         "Sprite": "", "Color": "#D8C48A" },
+    { "Id": "forest",   "Name": "森林", "Weight": 0.20, "MoveCost": 10, "Passable": true,  "UnlockTech": "",         "Sprite": "", "Color": "#3F6B3A" },
+    { "Id": "mountain", "Name": "山地", "Weight": 0.05, "MoveCost": 25, "Passable": true,  "UnlockTech": "",         "Sprite": "", "Color": "#8A8578" },
+    { "Id": "water",    "Name": "水域", "Weight": 0.15, "MoveCost": 50, "Passable": false, "UnlockTech": "buoyancy", "Sprite": "", "Color": "#3A6EA5" }
   ]
 }

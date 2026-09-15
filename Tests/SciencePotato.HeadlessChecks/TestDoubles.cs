@@ -161,6 +161,8 @@ namespace SciencePotato.HeadlessChecks
 			public float MoveCost { get; set; } = 1f;
 			public bool Passable { get; set; } = true;
 			public string UnlockTech { get; set; } = null;
+			public string Sprite { get; set; } = null;
+			public string Color { get; set; } = null;
 		}
 	}
 

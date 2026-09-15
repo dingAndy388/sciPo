@@ -1,6 +1,7 @@
 using SciencePotato.Scripts.Common.Domain;
 using SciencePotato.Scripts.Map.Domain;
 using System;
+using System.Collections.Generic;
 
 namespace SciencePotato.Scripts.Core
 {
@@ -60,6 +61,22 @@ namespace SciencePotato.Scripts.Core
 		/// 两个实例写同一个文件会互相覆盖（各自持有不同的内存文档）。</para>
 		/// </summary>
 		public ISaveStore SaveStore { get; init; }
+
+		/// <summary>
+		/// （v0.6.0 / WP-5.1）各仓储的**存档分区前缀**（Godot 生产：`user://save/`；无头：内存路径）。
+		/// <para>注入 <see cref="SaveStore"/> 时它只是**分区键前缀**（如 <c>user://save/tasks_</c> → 分区 <c>user://save/tasks_:{mapId}</c>）；
+		/// 没有存档单元时它退化成真实文件路径前缀（既有测试的\"一图一文件\"语义）。</para>
+		/// <para>为什么必须由宿主给出：Godot 侧要落在 <c>user://</c>，无头/测试要落在内存或临时目录 ——
+		/// 核心代码里出现任何具体路径都是 `DEP-07` 的复发。</para>
+		/// </summary>
+		public string SaveRoot { get; init; } = "user://save/";
+
+		/// <summary>
+		/// （v0.6.0 / WP-4.18）**玩家表**：开局时参与本局的势力（人类 + AI）。
+		/// <para><c>null</c> / 空 = 单人类玩家（owner=1，v0.5 及以前的隐式口径，保证既有用例语义不变）。</para>
+		/// <para>AI 势力的具体数量与难度由 `WP-6.1` 的 AI 配置决定，本项只负责\"谁在这一局里\"。</para>
+		/// </summary>
+		public IEnumerable<PlayerContext> Players { get; init; }
 	}
 }
 

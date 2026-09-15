@@ -12,5 +12,14 @@ namespace SciencePotato.Scripts.Map.Domain
 
 		/// <summary>（v0.3 / WP-0.4）解锁该地形通行所需的科技节点 Id；空字符串表示无需解锁。</summary>
 		string UnlockTech { get; set; }
+
+		/// <summary>
+		/// （v0.6.0 / WP-5.3）贴图名（不含目录与扩展名）；空 = 用 <see cref="Id"/>。
+		/// <para>给美术留出"文件名与地形 Id 不一致"的余地，同时让"换图"不需要改代码。</para>
+		/// </summary>
+		string Sprite { get; set; }
+
+		/// <summary>（v0.6.0 / WP-5.3）占位色（`#RRGGBB` 或 `#RRGGBBAA`）；缺贴图时用它画纯色格。</summary>
+		string Color { get; set; }
 	}
 }

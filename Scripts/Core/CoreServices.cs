@@ -1,9 +1,16 @@
 using SciencePotato.Scripts.Common.Application;
 using SciencePotato.Scripts.Common.Domain;
+using SciencePotato.Scripts.Construction.Application;
 using SciencePotato.Scripts.Core.Config;
+using SciencePotato.Scripts.Core.Save;
 using SciencePotato.Scripts.Core.Time;
+using SciencePotato.Scripts.Events.Application;
+using SciencePotato.Scripts.Fog.Application;
 using SciencePotato.Scripts.Map.Application;
 using SciencePotato.Scripts.Map.Domain;
+using SciencePotato.Scripts.Resources.Application;
+using SciencePotato.Scripts.TechTree.Application;
+using SciencePotato.Scripts.Units.Application;
 
 namespace SciencePotato.Scripts.Core
 {
@@ -34,6 +41,12 @@ namespace SciencePotato.Scripts.Core
 		/// <summary>启动期配置校验报告（真实配置要求 0 error）。</summary>
 		public ConfigReport ConfigReport { get; init; }
 
+		/// <summary>
+		/// （v0.6.0 / WP-5.3）**地图外观参数**：表现层算格位/贴图路径的唯一来源
+		/// （`CellXStep`/`CellYStep`/`TerrainSpriteDir`，全部来自地形表 → 换美术不改代码，`R5`）。
+		/// </summary>
+		public IMapAppearanceConfig Appearance { get; init; }
+
 		public IMapGenerator MapGenerator { get; init; }
 
 		public MapAppService Map { get; init; }
@@ -52,6 +65,47 @@ namespace SciencePotato.Scripts.Core
 		/// 在此之前本项由宿主透传，供无头验收与后续装配使用（见 §18.5.3）。</para>
 		/// </summary>
 		public ISaveStore SaveStore { get; init; }
+
+		// ───────────── v0.6.0 / WP-5.1：应用服务到齐 ─────────────
+
+		/// <summary>任务仓储（统一存档模式的周期/一次性任务快照分区；无存档单元时为 null）。</summary>
+		public ITaskRepository Tasks { get; init; }
+
+		/// <summary>资源池 + 资源成长（`M0-2` ② 的落点）。</summary>
+		public ResourcesAppService Resources { get; init; }
+
+		/// <summary>修正器（建筑/科技/事件对数值的加成；`MOD-*` 的落点）。</summary>
+		public ModifierAppService Modifiers { get; init; }
+
+		/// <summary>科技树（93 节点目标的承载服务）。</summary>
+		public TechTreesAppService Tech { get; init; }
+
+		/// <summary>
+		/// 战争迷雾。
+		/// <para>⚠️ 当前是**单 owner 实例**（服务人类阵营）：按 owner 拆分属 `WP-4.10`（`FOG-01` 收口）。</para>
+		/// </summary>
+		public FogAppService Fog { get; init; }
+
+		/// <summary>建造 / 升级 / 拆除（`CON-*` 的落点）。</summary>
+		public ConstructionAppService Construction { get; init; }
+
+		/// <summary>单位训练 / 移动 / 战斗 / 掉落（`UNIT-*` 的落点）。</summary>
+		public UnitsAppService Units { get; init; }
+
+		/// <summary>随机事件引擎（**只对人类玩家**启动；`EVT-*` / `G8` 的落点）。</summary>
+		public EventAppService Events { get; init; }
+
+		/// <summary>月度经济结算（`WP-3.9`/`WP-3.10`：产出、维护费、赤字减员）。</summary>
+		public MonthlySettlementService Settlement { get; init; }
+
+		/// <summary>世界存档/读档协调者（存档点唯一入口）。</summary>
+		public WorldSaveService WorldSave { get; init; }
+
+		/// <summary>
+		/// （v0.6.0 / WP-4.18）**会话级子系统编排器**：按玩家表逐 owner 启动资源池 / 月结 / 事件引擎。
+		/// <para>开局、生成地图、读档后的"把一局跑起来"都走它 —— 表现层与 AI 只需要拿玩家表遍历。</para>
+		/// </summary>
+		public SessionOrchestrator Orchestrator { get; init; }
 	}
 }
 

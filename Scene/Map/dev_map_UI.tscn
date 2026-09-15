@@ -30,13 +30,13 @@ virtual_keyboard_type = 2
 [node name="HeightInput" type="SpinBox" parent="BoxContainer" unique_id=524597935]
 layout_mode = 2
 max_value = 2147483647.0
-value = 5.0
+value = 143.0
 prefix = "h:"
 
 [node name="WidthInput" type="SpinBox" parent="BoxContainer" unique_id=1473016107]
 layout_mode = 2
 max_value = 2147483647.0
-value = 5.0
+value = 73.0
 prefix = "w:"
 
 [connection signal="pressed" from="BoxContainer/GenerateBtn" to="." method="OnGenerateBtnPressed"]

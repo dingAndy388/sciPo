@@ -1,6 +1,6 @@
 ================================================================================
   Science Potato - 配置填表指南 (Config Table Guide)
-  版本: 1.6 | 最后更新: 2026-09-15
+  版本: 1.7 | 最后更新: 2026-09-15
   v1.1 变更（v0.3 / WP-1.5）：全部时长字段的单位由「秒」重标定为「游戏日」；
   新增「时间口径」约定与附录C 的单位自检规则。
   v1.2 变更（v0.3 / WP-2.1）：`Prerequisites` 支持**跨树前置**（`"tree:node"` 或结构体），
@@ -19,6 +19,9 @@
   （此前只存在于 `WP-3.8` 的实现与 DTO 里），并明确 `DropReward` 的消费口径：
   只给「玩家击杀敌方」、进**击杀者**资源池、**不破仓储上限**（满仓部分不到账，
   但可从 `UnitLootService.LastGranted` 查到实际入池量）。
+  v1.7 变更（v0.6.0 / WP-5.3）：**外观数据驱动**（附录A 新增表根外观段与每行
+  `Sprite`/`Color`）—— 格子步长、贴图目录、每地形贴图名与占位色全部进表；
+  **换美术只改这张表 + 放文件，不改代码**（缺贴图时按 `Color` 画纯色格并只警告一次）。
 
 ================================================================================
 
@@ -653,23 +656,34 @@
 
   地形配置已改为 JSON（v0.3 / WP-0.4）：权威来源是 Config/Terrains.json，
   请勿再新增 .tres。Config/Terrains/*.tres 仅作为编辑器可视化/历史遗留保留，运行时不读取。
-  字段见 Config/Terrains.json：Id / Name / Weight / MoveCost / Passable / UnlockTech
-  （Passable 取代了旧口径「MoveCost=0 即不可通行」）。
+  字段见 Config/Terrains.json：表根 CellXStep / CellYStep / TerrainSpriteDir +
+  每行 Id / Name / Weight / MoveCost / Passable / UnlockTech / Sprite / Color
+  （Passable 取代了旧口径「MoveCost=0 即不可通行」；外观字段见 v1.7 变更）。
 
   [字段说明]
 
   字段名             类型     说明
   ────────────────  ────────  ─────────────────────────────────
+  CellXStep         float    表根。列步长（相邻 q 的横向像素），缺省 = 366
+  CellYStep         float    表根。行步长（相邻 r 的纵向像素），缺省 = 317.25
+  TerrainSpriteDir  string   表根。地形贴图目录（含结尾斜杠），缺省 = res://Texture/Terrain/
   Id                string    地形ID, 供建筑/单位 TerrainRequirements 引用
   Name              string    显示名
   Weight            float     生成权重(占比, 5 类之和 = 1)
   MoveCost          float     移动消耗MP（设计量级 5/8/10/25/50），与时间口径无关
   Passable          bool      是否可通行（水域 false，达到解锁科技前不可进入）
   UnlockTech        string    使该地形可通行的科技节点ID（无需解锁则填 ""）
+  Sprite            string    贴图名(不含目录与 .png)；空 = 用 Id（v0.6.0 / WP-5.3）
+  Color             string    占位色 #RRGGBB(A)；缺贴图时用它画纯色格，非法则按 Id 派生（v0.6.0 / WP-5.3）
+
+  [换美术的唯一做法]（v0.6.0 / WP-5.3）
+  1. 把图按 {Sprite|Id}.png 放进 TerrainSpriteDir（默认 res://Texture/Terrain/）
+  2. 需要改目录/尺寸/颜色时只改本表；**不要改代码**（代码里已无尺寸与路径常量）
+  3. 缺图不会崩：按 Color 画占位色块，控制台每种地形只警告一次
 
   [修改方法]
   1. 直接编辑 Config/Terrains.json（权威来源，运行时会读）
-  2. 每个条目必须写全 6 个字段；改完启动一次，附录C 的校验会检查 Weight/MoveCost
+  2. 每个条目必须写全字段；改完启动一次，附录C 的校验会检查 Weight/MoveCost/Color
   3. Config/Terrains/*.tres 与 Config/Terrains/test*.tres 只是历史遗留，不要依赖
 
   [当前地形表]

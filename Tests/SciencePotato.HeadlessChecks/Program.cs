@@ -33,6 +33,8 @@ namespace SciencePotato.HeadlessChecks
 			CombatChecks.RunAll();
 			LootChecks.RunAll();
 			MonthlySettlementChecks.RunAll();
+			WiringChecks.RunAll();
+			AppearanceChecks.RunAll();
 
 
 			return Check.Summary();

@@ -13,5 +13,11 @@ namespace SciencePotato.Scripts.Map.Domain
 
 		/// <summary>解锁通行所需的科技节点 Id（如水域 = buoyancy）；空表示无需解锁。</summary>
 		public string UnlockTech { get; set; }
+
+		/// <summary>（v0.6.0 / WP-5.3）贴图名（不含目录/扩展名）；空 = 用 `Id`。</summary>
+		public string Sprite { get; set; }
+
+		/// <summary>（v0.6.0 / WP-5.3）占位色：`#RRGGBB` / `#RRGGBBAA`；缺贴图时画纯色格。</summary>
+		public string Color { get; set; }
 	}
 }

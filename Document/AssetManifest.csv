@@ -1,0 +1,39 @@
+Category,Id,ConfigSource,FilePath,SizePx,Anchor,Status,Owner,Notes
+Terrain,plain,Config/Terrains.json,res://Texture/Terrain/plain.png,352x406,Center,placeholder,待定,地形贴图文件名 = 地形Id
+Terrain,desert,Config/Terrains.json,res://Texture/Terrain/desert.png,352x406,Center,placeholder,待定,
+Terrain,forest,Config/Terrains.json,res://Texture/Terrain/forest.png,352x406,Center,placeholder,待定,
+Terrain,mountain,Config/Terrains.json,res://Texture/Terrain/mountain.png,352x406,Center,placeholder,待定,
+Terrain,water,Config/Terrains.json,res://Texture/Terrain/water.png,352x406,Center,placeholder,待定,
+Building,camp,Config/Buildings.json,res://Texture/Building/camp.png,256x256,Center,placeholder,待定,营地 lv.I
+Building,camp_ii,Config/Buildings.json,res://Texture/Building/camp_ii.png,256x256,Center,placeholder,待定,营地 lv.II
+Building,camp_iii,Config/Buildings.json,res://Texture/Building/camp_iii.png,256x256,Center,placeholder,待定,营地 lv.III
+Building,workshop,Config/Buildings.json,res://Texture/Building/workshop.png,256x256,Center,placeholder,待定,工坊 lv.I
+Building,workshop_ii,Config/Buildings.json,res://Texture/Building/workshop_ii.png,256x256,Center,placeholder,待定,工坊 lv.II
+Building,workshop_iii,Config/Buildings.json,res://Texture/Building/workshop_iii.png,256x256,Center,placeholder,待定,工坊 lv.III
+Building,school,Config/Buildings.json,res://Texture/Building/school.png,256x256,Center,placeholder,待定,学院 lv.I
+Building,school_ii,Config/Buildings.json,res://Texture/Building/school_ii.png,256x256,Center,placeholder,待定,学院 lv.II
+Building,school_iii,Config/Buildings.json,res://Texture/Building/school_iii.png,256x256,Center,placeholder,待定,学院 lv.III
+Building,military_camp,Config/Buildings.json,res://Texture/Building/military_camp.png,256x256,Center,placeholder,待定,军营 lv.I
+Building,military_camp_ii,Config/Buildings.json,res://Texture/Building/military_camp_ii.png,256x256,Center,placeholder,待定,军营 lv.II
+Building,military_camp_iii,Config/Buildings.json,res://Texture/Building/military_camp_iii.png,256x256,Center,placeholder,待定,军营 lv.III
+Building,(+12 more),design/buildings.md,res://Texture/Building/{Id}.png,256x256,Center,missing,待定,24 条全表归 WP-7.2a/7.2b（农田/矿场/仓库等）
+Unit,worker,Config/Units.json,res://Texture/Unit/worker.png,128x128,Center,placeholder,待定,工人
+Unit,swordsman,Config/Units.json,res://Texture/Unit/swordsman.png,128x128,Center,placeholder,待定,剑士
+Unit,archer,Config/Units.json,res://Texture/Unit/archer.png,128x128,Center,placeholder,待定,弓箭手
+Unit,wolf,Config/Units.json,res://Texture/Unit/wolf.png,128x128,Center,placeholder,待定,敌方
+Unit,boar,Config/Units.json,res://Texture/Unit/boar.png,128x128,Center,placeholder,待定,敌方
+Unit,eagle,Config/Units.json,res://Texture/Unit/eagle.png,128x128,Center,placeholder,待定,敌方
+Unit,ibex,Config/Units.json,res://Texture/Unit/ibex.png,128x128,Center,placeholder,待定,敌方
+Unit,crocodile,Config/Units.json,res://Texture/Unit/crocodile.png,128x128,Center,placeholder,待定,敌方
+Unit,(+7 more),design/unit.md,res://Texture/Unit/{Id}.png,128x128,Center,missing,待定,15 个全表归 WP-7.5（只读/探索/工程/攻城/学者/化学家等）
+Resource,Gold,Config/Resources.json,res://Texture/Resource/Gold.png,64x64,Center,placeholder,待定,原型 Id；WP-7.1 重映射为 Food
+Resource,Wood,Config/Resources.json,res://Texture/Resource/Wood.png,64x64,Center,placeholder,待定,原型 Id；WP-7.1 重映射为 BasicMinerals
+Resource,Idea,Config/Resources.json,res://Texture/Resource/Idea.png,64x64,Center,placeholder,待定,与 design/resources.md 同名
+Event,gold_rush,Config/Events.json,res://Texture/Event/gold_rush.png,512x288,Center,placeholder,待定,淘金热
+Event,plague,Config/Events.json,res://Texture/Event/plague.png,512x288,Center,placeholder,待定,瘟疫
+Event,enlightenment,Config/Events.json,res://Texture/Event/enlightenment.png,512x288,Center,placeholder,待定,启蒙时代
+Event,(+17 more),design/events.md,res://Texture/Event/{EventId}.png,512x288,Center,missing,待定,20 条全表归 WP-7.4
+TechIcon,(+93),[Icon needed],res://Texture/Tech/{TreeId}/{NodeId}.png,96x96,Center,missing,待定,科技图标归 WP-7.3 + WP-5.4 研究面板
+UI,panel_bg,WP-5.4（待定）,res://Texture/UI/panel_bg.png,九宫格,Center,missing,待定,正式 HUD 归 WP-5.4
+Audio,BGM_main,WP-8.4（待定）,res://Audio/BGM/main.ogg,,,missing,用户提供,WP-8.4 需要 BGM 文件（见 log.md 19.5 U5）
+Audio,SFX_train,WP-8.4（待定）,res://Audio/SFX/train.ogg,,,missing,待定,训练/建造完成音效

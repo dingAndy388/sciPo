@@ -5,39 +5,108 @@ using System;
 
 public partial class MapCellView : Node2D
 {
+	/// <summary>已经警告过的贴图路径（缺贴图时**每种只提示一次**：10439 格的图上逐格刷警告会把日志打爆）。</summary>
+	private static readonly System.Collections.Generic.HashSet<string> WarnedMissingTextures = new();
+
+	/// <summary>缺贴图时用的 1×1 白纹理（静态缓存：10439 格共用一个纹理，不要逐格创建）。</summary>
+	private static Texture2D _placeholderTexture;
+
 	private Sprite2D _sprite;
 
 	public ITerrainData Terrain { get; private set; }
 	public HexCubePosition CellPosition { get; set; }
 
+	/// <summary>列步长（相邻 q 的横向像素）—— 来自配置表（`WP-5.3`），不在代码里写死。</summary>
+	public float CellXStep { get; private set; } = TerrainAppearance.DefaultCellXStep;
 
-	// Temporary fixed constant
-	public const float height = 366;
-	public const float width = 423;
+	/// <summary>行步长（相邻 r 的纵向像素）。</summary>
+	public float CellYStep { get; private set; } = TerrainAppearance.DefaultCellYStep;
 
-	private readonly string textureDir = "res://Texture/Terrain/";
+	/// <summary>地形贴图目录（配置表给出）。</summary>
+	private string _spriteDir = TerrainAppearance.DefaultSpriteDir;
 
 	// Called when the node enters the scene tree for the first time.
 	public override void _Ready()
 	{
 	}
 
+	/// <summary>
+	/// （v0.6.0 / WP-5.3）**注入外观参数**（由 <c>MapView</c> 从配置表读出后统一调用）。
+	/// <para>必须在 <see cref="SetPosition"/> / <see cref="SetTerrain"/> 之前调用。</para>
+	/// </summary>
+	public void Configure(IMapAppearanceConfig appearance)
+	{
+		IMapAppearanceConfig config = appearance ?? TerrainAppearance.Defaults;
+
+		CellXStep = config.CellXStep > 0f ? config.CellXStep : TerrainAppearance.DefaultCellXStep;
+		CellYStep = config.CellYStep > 0f ? config.CellYStep : TerrainAppearance.DefaultCellYStep;
+		_spriteDir = string.IsNullOrWhiteSpace(config.TerrainSpriteDir) ? TerrainAppearance.DefaultSpriteDir : config.TerrainSpriteDir;
+	}
+
 	public void SetTerrain(ITerrainData terrain)
 	{
-		_sprite = GetNode<Sprite2D>("Sprite2D");
-
+		_sprite = GetNodeOrNull<Sprite2D>("Sprite2D");
 		this.Terrain = terrain;
+		if (terrain == null || _sprite == null) return;
 
-		// Chnage Sprite Texture
-		Texture2D texture = GD.Load<Texture2D>($"{textureDir}{terrain.Id}.png");
-		_sprite.Texture = texture;
+		// 贴图：优先配置里的 `Sprite`，否则按地形 Id 拼路径（口径见 `TerrainAppearance`）
+		string path = TerrainAppearance.ResolveSpritePath(_spriteDir, terrain);
+		Texture2D texture = !string.IsNullOrWhiteSpace(path) && ResourceLoader.Exists(path)
+			? GD.Load<Texture2D>(path)
+			: null;
+
+		// 颜色：优先配置的 `Color`，否则按 Id 派生（缺美术时地图仍"看得出地形差别"）
+		RgbColor color = TerrainAppearance.ResolveColor(terrain);
+		_sprite.Modulate = new Color(color.R / 255f, color.G / 255f, color.B / 255f, color.A / 255f);
+
+		if (texture != null)
+		{
+			_sprite.Texture = texture;
+			_sprite.Scale = Vector2.One;
+			return;
+		}
+
+		// 缺贴图 → 用纯色占位（不抛异常、不留旧图）：
+		// 尺寸取"列步长 × 行步长的 4/3"（= 原型期六边形图幅），保证占位块与真实美术占位一致
+		_sprite.Texture = PlaceholderTexture;
+		_sprite.Scale = new Vector2(CellXStep * 0.98f, CellYStep * 4f / 3f);
+
+		if (WarnedMissingTextures.Add(path ?? terrain.Id))
+			GD.PushWarning($"[MapCellView] 缺少地形贴图 {path}：用占位色 {color.ToHex()} 渲染（正式美术按 `Document/AssetManifest.csv` 放入即可，不需要改代码）");
+	}
+
+	/// <summary>缺贴图时的 1×1 白纹理（配合 `Modulate` 得到纯色块）。</summary>
+	private static Texture2D PlaceholderTexture
+	{
+		get
+		{
+			if (_placeholderTexture != null && GodotObject.IsInstanceValid(_placeholderTexture)) return _placeholderTexture;
+
+			Image image = Image.CreateEmpty(1, 1, false, Image.Format.Rgba8);
+			image.Fill(Colors.White);
+			_placeholderTexture = ImageTexture.CreateFromImage(image);
+			return _placeholderTexture;
+		}
+	}
+
+	/// <summary>
+	/// （v0.6.0 / WP-5.3）**六边形格位 → 世界坐标**的唯一换算（步长来自配置表）。
+	/// <para>公式：<c>x = X/2·r − X·⌈r/2⌉ + X·q</c>、<c>y = Y·r</c>（`X` = 列步长、`Y` = 行步长）；
+	/// 与原型期 <c>height=366 / width=423</c> 的排布逐像素等价（`Y·r = 423·3/4·r`）。</para>
+	/// </summary>
+	public Vector2 LayoutPosition(HexCubePosition position)
+	{
+		int q = position.ToCoordinate().Item1;
+		int r = position.ToCoordinate().Item2;
+
+		return new Vector2(
+			CellXStep / 2f * r - CellXStep * (float)Math.Ceiling(r * 0.5d) + CellXStep * q,
+			CellYStep * r);
 	}
 
 	public void SetPosition()
 	{
 		// Set to the right Position with correct seperation
-		int q = CellPosition.ToCoordinate().Item1;
-		int r = CellPosition.ToCoordinate().Item2;
-		base.Position = new Vector2(height / 2 * r - height * (float)Math.Ceiling((float)r * 0.5d) + height * q, r * width * 3 / 4);
+		base.Position = LayoutPosition(CellPosition);
 	}
 }

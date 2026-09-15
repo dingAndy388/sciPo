@@ -43,6 +43,13 @@ namespace SciencePotato.Scripts.Core
 		/// <summary>已成功装载的表数量（0..7），用于启动日志与自检。</summary>
 		public int LoadedCount => Names.Count(IsLoaded);
 
+		/// <summary>
+		/// （v0.6.0 / WP-5.3）**地图外观参数**（格子步长 / 贴图目录）：来自地形表的根字段，
+		/// 表现层据此算出格位与贴图路径 —— 换美术只改这张表。表缺失时返回内置兜底值（不返回 null）。
+		/// </summary>
+		public IMapAppearanceConfig Appearance
+			=> Terrains as IMapAppearanceConfig ?? TerrainAppearance.Defaults;
+
 		public bool IsLoaded(string tableName)
 		{
 			return tableName switch
