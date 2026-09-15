@@ -13,6 +13,9 @@ public partial class MapCellView : Node2D
 
 	private Sprite2D _sprite;
 
+	/// <summary>缺贴图时画的六边形（懒建）。</summary>
+	private Polygon2D _placeholder;
+
 	public ITerrainData Terrain { get; private set; }
 	public HexCubePosition CellPosition { get; set; }
 
@@ -61,18 +64,43 @@ public partial class MapCellView : Node2D
 
 		if (texture != null)
 		{
+			if (_placeholder != null) _placeholder.Visible = false;
 			_sprite.Texture = texture;
 			_sprite.Scale = Vector2.One;
 			return;
 		}
 
-		// 缺贴图 → 用纯色占位（不抛异常、不留旧图）：
-		// 尺寸取"列步长 × 行步长的 4/3"（= 原型期六边形图幅），保证占位块与真实美术占位一致
+		// 缺贴图 → 用**真六边形**占位（v0.6.7 / P0）：矩形占位读不出网格，N1 一眼就看出"不像六边形"
 		_sprite.Texture = PlaceholderTexture;
-		_sprite.Scale = new Vector2(CellXStep * 0.98f, CellYStep * 4f / 3f);
+		_sprite.Scale = Vector2.One;                  // 六边形自己按尺寸画，不靠缩放 1×1 纹理
+		PlaceholderPolygon.Visible = true;
+		PlaceholderPolygon.Color = new Color(color.R / 255f, color.G / 255f, color.B / 255f, color.A / 255f);
+		PlaceholderPolygon.Polygon = HexPolygon();
 
 		if (WarnedMissingTextures.Add(path ?? terrain.Id))
-			GD.PushWarning($"[MapCellView] 缺少地形贴图 {path}：用占位色 {color.ToHex()} 渲染（正式美术按 `Document/AssetManifest.csv` 放入即可，不需要改代码）");
+			GD.PushWarning($"[MapCellView] 缺少地形贴图 {path}：用占位六边形 {color.ToHex()} 渲染（正式美术按 `Document/AssetManifest.csv` 放入即可，不需要改代码）");
+	}
+
+	/// <summary>缺贴图时的六边形占位节点（懒建；与 Sprite2D 同格共存，有图时隐藏）。</summary>
+	private Polygon2D PlaceholderPolygon
+	{
+		get
+		{
+			if (_placeholder != null && GodotObject.IsInstanceValid(_placeholder)) return _placeholder;
+
+			_placeholder = new Polygon2D { Name = "PlaceholderHex" };
+			AddChild(_placeholder);
+			return _placeholder;
+		}
+	}
+
+	/// <summary>按当前步长算出的 6 个顶点（Godot 坐标）。</summary>
+	private Vector2[] HexPolygon()
+	{
+		(float X, float Y)[] outline = TerrainAppearance.HexOutline(CellXStep, CellYStep);
+		var points = new Vector2[outline.Length];
+		for (int i = 0; i < outline.Length; i++) points[i] = new Vector2(outline[i].X, outline[i].Y);
+		return points;
 	}
 
 	/// <summary>缺贴图时的 1×1 白纹理（配合 `Modulate` 得到纯色块）。</summary>

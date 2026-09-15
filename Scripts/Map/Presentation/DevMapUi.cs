@@ -18,13 +18,14 @@ using SciencePotato.Scripts.Map.Presentation;
 public partial class DevMapUi : CanvasLayer
 {
 	/// <summary>
-	/// 缺省地图宽度（列）。**73×143 = 10439 格**（正式尺度）。
-	/// <para>⚠️ 行列方向（哪个是"宽"）以 `WP-5.8` 的"73×143 基线"为准，当前按字面 `宽×高` 传给生成器。</para>
+	/// 缺省地图宽度（列）。**143×73 = 10439 格**（正式尺度，横幅：更贴合 16:9 显示器）。
+	/// <para>v0.6.7 定为横幅（`D92`）：两种方向的耗时/内存/存档体积实测几乎一致，
+	/// 竖幅在 16:9 屏上要来回滚，横幅少滚一半。改方向只需改这两个常量。</para>
 	/// </summary>
-	public const int DefaultWidth = 73;
+	public const int DefaultWidth = 143;
 
 	/// <summary>缺省地图高度（行）。</summary>
-	public const int DefaultHeight = 143;
+	public const int DefaultHeight = 73;
 
 	/// <summary>
 	/// 缺省地图 Id（用具名常量而不是字面量：面板里"文案必须走 i18n 键"的纪律检查只允许键，

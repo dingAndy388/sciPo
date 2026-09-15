@@ -17,16 +17,19 @@
 ## 2. 复现命令（可直接粘贴）
 
 ```powershell
-# ① 构建
+# ① 一条命令跑完三层（推荐；W1 加速器：4 路并行分片 + 结论一行，日志 %TEMP%\sp-verify.txt）
+powershell -ExecutionPolicy Bypass -File Tools/verify.ps1              # 快档（冒烟 24×24，约 8 s）
+powershell -ExecutionPolicy Bypass -File Tools/verify.ps1 -FullSmoke   # 全档（冒烟 143×73，约 17 s）
+powershell -ExecutionPolicy Bypass -File Tools/verify.ps1 -Groups MonthlySettlement -SkipSmoke   # 单组
+powershell -ExecutionPolicy Bypass -File Tools/verify.ps1 -Serial      # 排查闪烁时串行
+
+# ② 手工三段（脚本坏了时用；注意别把 build 与冒烟塞进同一条命令——会超时且可能用到旧程序集）
 dotnet build 'Science Potato.csproj'
-
-# ② 无头检查（**205 条**；退出码 0 = 全通过；也支持 `exe <组名子串>` 只跑几组）
-dotnet run --project Tests\SciencePotato.HeadlessChecks
-
-# ③ Godot 无头冒烟（`--smoke` = 独立存档 user://save/smoke.json，且每次运行先删旧档）
+& .\Tests\SciencePotato.HeadlessChecks\bin\Debug\net8.0\SciencePotato.HeadlessChecks.exe   # 206 条；退出码 0 = 全通过
 $exe = 'E:\Godot_v4.6-stable_mono_win64\Godot_v4.6-stable_mono_win64.exe'
 & $exe --headless --path 'e:\Godot\science-potato' res://Scene/Dev/smoke_report.tscn `
-       --quit-after 3000 --log-file "$env:TEMP\sp_smoke.log" -- --smoke
+       --quit-after 3000 --log-file "$env:TEMP\sp_smoke.log" -- --smoke --size=143x73
+```
 
 # ③b 换规模 / 换种子（`WP-5.8`；用于性能基线与大地图自查）
 & $exe --headless --path 'e:\Godot\science-potato' res://Scene/Dev/smoke_report.tscn --quit-after 6000 -- --smoke --size=73x143 --seed=20260914

@@ -41,7 +41,8 @@ namespace SciencePotato.HeadlessChecks
 			Check.Run("WP-7.2a 矿场：1 座 lv.I = 100 basic minerals/月（设计稿）", MineProducesPerMonth);
 			Check.Run("WP-7.2a 仓库：落成即抬高基础石材上限（基值 + 500，幂等）", WarehouseRaisesLimit);
 			Check.Run("WP-7.2a 造价口径：农田/矿场/仓库的消耗与耗时 = 设计稿", DesignCostsAndDurations);
-			Check.Run("WP-7.2a 已知张力：初始 200 石材 < 最便宜建筑 600（数值待设计裁量）", StartingStockTensionIsPinned);
+			Check.Run("WP-7.2a 已知张力：初始 800 石材 ≥ 最便宜产出建筑 600（开局不再死锁）", StartingStockAllowsAProducer);
+			Check.Run("P0 占位六边形：6 顶点 / 宽高比 = 配置 / 与行步长自洽", PlaceholderHexagonGeometry);
 			Check.Run("WP-7.2a 多点地块：\"平原或山地\"是**任一匹配**（列表不是 AND，旧口径永远建不了）", MultiTerrainIsAnyNotAll);
 		}
 
@@ -161,30 +162,59 @@ namespace SciencePotato.HeadlessChecks
 		}
 
 		/// <summary>
-		/// **把设计稿的已知张力钉在断言里**（不评判对错，只保证"数字变了会有人知道"）：
-		/// 初始基础石材 200（`resources.md`）＜ 最便宜的**产出**建筑 600（`buildings.md` 农田/矿场）
-		/// ⇒ 按字面数值开局**无法建造任何产出来源**，石材因此永不增长（经济死锁）。
-		/// <para>改哪一边（提初始储备 / 降造价）由用户裁量：`log.md` §19.5 `U8`。本断言只负责"数字一变就红"。</para>
+		/// **开局可建造性**（v0.6.7 / P0，用户裁定方案 a：初始石材提到 800）：
+		/// 初始基础石材必须 ≥ 最便宜的**产出**建筑（农田/矿场 600）⇒ 开局能建起第一个产出来源，经济不会死锁。
+		/// <para>这条断言把"设计数值"与"能开局"挂钩：谁把初始储备调回去，测试立刻红。</para>
 		/// </summary>
-		private static void StartingStockTensionIsPinned()
+		private static void StartingStockAllowsAProducer()
 		{
 			CoreServices core = ConfigFixtures.BuildRealCore();
 
 			float initialMinerals = core.Tables.AllResources().First(r => r.Name == "BasicMinerals").BaseValue;
-			float cheapest = core.Tables.AllBuildings()
-				.Select(b => b.ResourceCost.TryGetValue("BasicMinerals", out float v) ? v : float.MaxValue).Min();
-
 			float cheapestProducer = core.Tables.AllBuildings()
 				.Where(b => b.Modifiers != null && b.Modifiers.Any(m => m.Target == "MineralGrowth"))
 				.Select(b => b.ResourceCost.TryGetValue("BasicMinerals", out float v) ? v : float.MaxValue)
 				.Min();
 
-			Check.AssertEqual(200f, initialMinerals, "初始基础石材（设计稿初始储备）");
-			Check.AssertEqual(600f, cheapestProducer, "最便宜的产出建筑造价（设计稿矿场 lv.I）");
-			Check.Assert(cheapest < 600f, $"最便宜的建筑（原型遗留造价 {cheapest}）应低于产出建筑 —— 否则连住房都造不了");
-			Check.Assert(initialMinerals < cheapestProducer,
-				$"已知张力：初始 {initialMinerals} < 最便宜产出建筑 {cheapestProducer} ⇒ 开局造不起矿场/农田，石材无产出（死锁）。" +
-				"若哪天不再成立（提初始储备或降造价），请同步 §19.5 U8");
+			Check.AssertEqual(800f, initialMinerals, "初始基础石材（设计稿 200 → 用户裁定 800，`D91`）");
+			Check.AssertEqual(600f, cheapestProducer, "最便宜的产出建筑造价（设计稿矿场/农田 lv.I）");
+			Check.Assert(initialMinerals >= cheapestProducer,
+				$"开局必须造得起第一个产出来源：初始 {initialMinerals} ≥ 最便宜产出建筑 {cheapestProducer}");
+		}
+
+		/// <summary>
+		/// （v0.6.7 / P0）**占位六边形的几何**：6 个顶点、宽 = 列步长、高 = 行步长×4/3、左右对称，
+		/// 且与 `LayoutPosition` 的排布自洽（相邻行走访的重叠量 = 六边形高的 1/4）。
+		/// <para>为什么值得断言：占位块是美术到位前唯一的"网格可见性"来源（`N1` 提出来的），
+		/// 尺寸算错会让格子之间出现缝隙或重叠 —— 这种错一眼看不出，但会在换真美术时变成对齐问题。</para>
+		/// </summary>
+		private static void PlaceholderHexagonGeometry()
+		{
+			IMapAppearanceConfig appearance = ConfigFixtures.BuildRealCore().Appearance;
+			(float X, float Y)[] hex = TerrainAppearance.HexOutline(appearance.CellXStep, appearance.CellYStep);
+
+			Check.AssertEqual(6, hex.Length, "六边形应有 6 个顶点");
+
+			float width = hex.Max(p => p.X) - hex.Min(p => p.X);
+			float height = hex.Max(p => p.Y) - hex.Min(p => p.Y);
+
+			Check.AssertEqual(appearance.CellXStep, width, "宽 = 列步长（相邻列无缝）");
+			Check.AssertEqual(TerrainAppearance.HexHeight(appearance.CellYStep), height, "高 = 行步长 × 4/3");
+
+			// 左右对称（x 的极值互为相反数）：不对称会在错位排布下露出锯齿
+			Check.AssertEqual(-hex.Min(p => p.X), hex.Max(p => p.X), "关于格心左右对称");
+
+			// 上下对称（y 的极值互为相反数）
+			Check.AssertEqual(-hex.Min(p => p.Y), hex.Max(p => p.Y), "关于格心上下对称");
+
+			// 与排布自洽：六边形高 = 1.3333 × 行步长 ⇒ 相邻行的重叠 = 高的 1/4（六边形堆叠的标准比例）
+			float overlap = height - appearance.CellYStep;
+			Check.AssertEqual(height / 4f, overlap, "相邻行重叠量 = 六边形高的 1/4");
+
+			// 配置缺失时的兜底也要是合法六边形
+			(float X, float Y)[] fallback = TerrainAppearance.HexOutline(0f, 0f);
+			Check.AssertEqual(6, fallback.Length, "兜底（步长 0）也应有 6 个顶点");
+			Check.AssertEqual(TerrainAppearance.DefaultCellXStep, fallback.Max(p => p.X) - fallback.Min(p => p.X), "兜底宽 = 缺省列步长");
 		}
 
 		// ────────────── 夹具 ──────────────

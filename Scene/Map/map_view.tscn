@@ -12,8 +12,6 @@ CellScene = ExtResource("2_yuwws")
 [node name="Camera2D" type="Camera2D" parent="." unique_id=593339101]
 zoom = Vector2(0.5, 0.5)
 script = ExtResource("3_camctl")
-MinZoom = 0.05
-MaxZoom = 4.0
 
 [node name="MapCells" type="Node2D" parent="." unique_id=2055667108]
 

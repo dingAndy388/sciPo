@@ -1,6 +1,6 @@
-================================================================================
+﻿================================================================================
   Science Potato - 配置填表指南 (Config Table Guide)
-  版本: 1.10 | 最后更新: 2026-09-15
+  版本: 1.11 | 最后更新: 2026-09-15
   v1.1 变更（v0.3 / WP-1.5）：全部时长字段的单位由「秒」重标定为「游戏日」；
   新增「时间口径」约定与附录C 的单位自检规则。
   v1.2 变更（v0.3 / WP-2.1）：`Prerequisites` 支持**跨树前置**（`"tree:node"` 或结构体），
@@ -27,6 +27,8 @@
   500 / 300 / 200、存储上限 10000 / 2000 / 1500、产出目标名 `IdeaGrowth` /
   `FoodGrowth` / `MineralGrowth`、人口口粮 `Settlement.DemandResource = Food`；
   基础产出（`BaseGrowth`）统一为 0，产出改由建筑/科技/事件的 Modifier 提供。
+  v1.10 变更（v0.6.5~v0.6.6）：Generator 表新增 `Start` 段（开局布置）；附录D 记 Generator 表口径。
+  v1.11 变更（v0.6.7 / D91）：初始基础石材 200 → 800（开局可建造性）；附录A 补“地块列表 = 任一匹配”。
   v1.9 变更（v0.6.4 / WP-7.2a）：**生产/存储建筑落地**（农田 lv.I~III、矿场 lv.I~III、
   仓库 lv.I~III 共 9 条，数值取设计稿的建造消耗/建造时间/产出/上限列）+ 两条口径：
   ① **可建地块是"任一匹配"**（列表 = OR，不是 AND；空列表 = 不限）；
@@ -119,7 +121,9 @@
   BaseGrowth        float     是    每次结算的基础数值。最终结算量 =
                                     ModifierManager(DependentModifiers, BaseGrowth)
                                     填 0 表示"基础产出为 0，全靠建筑/科技/事件的 Modifier"
-  BaseValue         float     是    初始储备（新游戏开局时；设计稿：Idea 500 / Food 300 / BasicMinerals 200）
+  BaseValue         float     是    初始储备（新游戏开局时）。设计稿给的是 Idea 500 / Food 300 / BasicMinerals 200，
+                                    但 **BasicMinerals 取 800**（v0.6.7 / D91，用户裁定）：最便宜的产出来源
+                                    农田/矿场造价 600，初始 200 会让开局造不起任何产出来源（石材永不增长）
   BaseLimit         float     是    存储上限（设计稿：Idea 10000 / Food 2000 / BasicMinerals 1500，
                                     可由仓库建筑用 AddLimit 提升）
   DependentModifiers [string]  否   修饰器目标名列表（设计稿：IdeaGrowth / FoodGrowth / MineralGrowth）

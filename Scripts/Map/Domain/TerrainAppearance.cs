@@ -62,6 +62,38 @@ namespace SciencePotato.Scripts.Map.Domain
 			return new RgbColor(r, g, b, 255);
 		}
 
+		/// <summary>
+		/// （v0.6.7 / P0）**六边形轮廓**：返回以格心为原点的 6 个顶点（x 右、y 下，Godot 屏幕坐标），
+		/// 供"缺美术时的占位块"画成真六边形 —— 矩形占位读不出网格（`N1` 的观察）。
+		/// <para>几何：列步长 <paramref name="xStep"/>、行步长 <paramref name="yStep"/>（= 六边形高的 3/4）⇒
+		/// 六边形高 = <c>yStep·4/3</c>，宽 = <c>xStep</c>；顶点按 30° 起、每 60° 一个
+		/// （平顶朝上、左右各一尖角，与 `LayoutPosition` 的"列错位"排布配合天然无缝）。</para>
+		/// <para>抽成纯函数是为了**无头可验**：顶点数、宽高比、不越界都能断言，不必起引擎。</para>
+		/// </summary>
+		public static (float X, float Y)[] HexOutline(float xStep, float yStep)
+		{
+			float width = xStep > 0f ? xStep : DefaultCellXStep;
+			float height = (yStep > 0f ? yStep : DefaultCellYStep) * 4f / 3f;
+
+			float halfW = width / 2f;
+			float halfH = height / 2f;
+			float quarterH = height / 4f;
+
+			// 与 Godot 的 y 向下一致：上排两点 → 左右两尖 → 下排两点
+			return new[]
+			{
+				(-halfW / 2f, -halfH),
+				(halfW / 2f, -halfH),
+				(halfW, 0f),
+				(halfW / 2f, halfH),
+				(-halfW / 2f, halfH),
+				(-halfW, 0f),
+			};
+		}
+
+		/// <summary>六边形的高（= 行步长 × 4/3）；占位块与真实美术的图幅都用它。</summary>
+		public static float HexHeight(float yStep) => (yStep > 0f ? yStep : DefaultCellYStep) * 4f / 3f;
+
 		/// <summary>稳定哈希（FNV-1a 32 位）：跨进程、跨平台一致，不依赖 `string.GetHashCode()` 的随机化。</summary>
 		public static uint Hash(string text)
 		{

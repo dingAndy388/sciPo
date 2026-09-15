@@ -23,7 +23,7 @@
       "Description": "基础石材，用于建造建筑与建筑升级",
       "GrowInterval": 30,
       "BaseGrowth": 0.0,
-      "BaseValue": 200,
+      "BaseValue": 800,
       "BaseLimit": 1500,
       "DependentModifiers": ["MineralGrowth"]
     }

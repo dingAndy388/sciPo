@@ -1,0 +1,19 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://ck777yh5376fj"
+
+[deps]
+
+files=["res://Document/AssetManifest.Id.translation", "res://Document/AssetManifest.ConfigSource.translation", "res://Document/AssetManifest.FilePath.translation", "res://Document/AssetManifest.SizePx.translation", "res://Document/AssetManifest.Anchor.translation", "res://Document/AssetManifest.Status.translation", "res://Document/AssetManifest.Owner.translation", "res://Document/AssetManifest.Notes.translation"]
+
+source_file="res://Document/AssetManifest.csv"
+dest_files=["res://Document/AssetManifest.Id.translation", "res://Document/AssetManifest.ConfigSource.translation", "res://Document/AssetManifest.FilePath.translation", "res://Document/AssetManifest.SizePx.translation", "res://Document/AssetManifest.Anchor.translation", "res://Document/AssetManifest.Status.translation", "res://Document/AssetManifest.Owner.translation", "res://Document/AssetManifest.Notes.translation"]
+
+[params]
+
+compress=1
+delimiter=0
+unescape_keys=false
+unescape_translations=true

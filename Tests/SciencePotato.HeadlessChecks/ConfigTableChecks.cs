@@ -48,7 +48,7 @@ namespace SciencePotato.HeadlessChecks
 			{
 				("Idea", 500f, 10000f, "IdeaGrowth"),
 				("Food", 300f, 2000f, "FoodGrowth"),
-				("BasicMinerals", 200f, 1500f, "MineralGrowth"),
+				("BasicMinerals", 800f, 1500f, "MineralGrowth"),
 			};
 
 			List<IResourceConfig> resources = core.Tables.AllResources().ToList();
@@ -58,7 +58,7 @@ namespace SciencePotato.HeadlessChecks
 			{
 				IResourceConfig resource = resources.FirstOrDefault(r => r.Name == name);
 				Check.Assert(resource != null, $"设计稿的资源「{name}」应在表里");
-				Check.AssertEqual(initial, resource.BaseValue, $"{name} 初始储备（`resources.md`）");
+				Check.AssertEqual(initial, resource.BaseValue, $"{name} 初始储备（设计稿 200 → 用户裁定 800，`D91`）");
 				Check.AssertEqual(limit, resource.BaseLimit, $"{name} 存储上限（`resources.md`）");
 				Check.Assert(resource.DependentModifiers != null && resource.DependentModifiers.Contains(growth),
 					$"{name} 的产出修正器目标应为 {growth}");
