@@ -13,6 +13,11 @@ $out = Join-Path $root 'Config\TechTrees.json'
 # 节点 Id 口径（D109 修订）：**英文 slug**，中文名进节点的 Name 字段。
 # 依据 = design/research_tree.md 的 93 行逐条转写；跨树同名（物理/化学各有一个"原子论"）树内唯一即可，
 # 引用时写 `physics:atomism` / `chemistry:atomism` 无歧义。
+# `UnlocksUi`（WP-4.14）：设计稿"解锁资源面板 / 开启研究功能 / 解锁资源收获面板"落在哪条节点上。
+$unlocksUi = @{
+  '计数' = @('resource_panel', 'research')
+  '算术' = @('harvest_panel')
+}
 $slug = @{
   '计数' = 'counting'; '算术' = 'arithmetic'; '度量' = 'measurement'; '基础几何' = 'basic_geometry'
   '记数系统' = 'numeral_system'; '初等代数' = 'elementary_algebra'; '简单数列' = 'simple_sequences'
@@ -151,7 +156,8 @@ for ($t = 0; $t -lt $treeIds.Count; $t++) {
     $modJson = if ($n.Modifiers.Count -eq 0) { '[]' } else { '[ ' + (($n.Modifiers | ForEach-Object { "{ `"Target`": `"$($_.Target)`", `"Type`": `"$($_.Type)`", `"Value`": $($_.Value) }" }) -join ', ') + ' ]' }
     $effect = ($n.EffectText -replace '\\', '') -replace '"', '\"'
     $tail = if ($i -lt $list.Count - 1) { ',' } else { '' }
-    [void]$sb.AppendLine("        `"$($n.Id)`": { `"Id`": `"$($n.Id)`", `"Name`": `"$($n.Name)`", `"Prerequisites`": $preJson, `"Cost`": $($n.Cost), `"Duration`": $($n.Duration), `"Modifiers`": $modJson, `"EffectText`": `"$effect`" }$tail")
+    $uiJson = if ($unlocksUi.ContainsKey($n.Name)) { '[ ' + (($unlocksUi[$n.Name] | ForEach-Object { '"' + $_ + '"' }) -join ', ') + ' ]' } else { '[]' }
+    [void]$sb.AppendLine("        `"$($n.Id)`": { `"Id`": `"$($n.Id)`", `"Name`": `"$($n.Name)`", `"Prerequisites`": $preJson, `"Cost`": $($n.Cost), `"Duration`": $($n.Duration), `"Modifiers`": $modJson, `"UnlocksUi`": $uiJson, `"EffectText`": `"$effect`" }$tail")
   }
   [void]$sb.AppendLine('      }')
   $treeTail = if ($t -lt $treeIds.Count - 1) { ',' } else { '' }
