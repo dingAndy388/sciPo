@@ -1,3 +1,5 @@
+using SciencePotato.Scripts.AI.Domain;
+using SciencePotato.Scripts.AI.Infrastructure;
 using SciencePotato.Scripts.Common.Application;
 using SciencePotato.Scripts.Common.Domain;
 using SciencePotato.Scripts.Common.Infrastructure;
@@ -89,6 +91,10 @@ namespace SciencePotato.Scripts.Core
 			I18nService i18n = I18nService.Load(dependencies.ConfigSource, dependencies.Locales, dependencies.DefaultLocale);
 			if (!string.IsNullOrWhiteSpace(dependencies.Locale)) i18n.SetLocale(dependencies.Locale);
 
+			// 3.9) AI 配置（v0.7.1 / WP-6.1）：策略参数（几个 AI / 前期不造兵窗口 / 分配比例 / 威胁阈值）。
+			//      与多语言同一处理方式：由 IConfigSource 直接读 + 单独校验，不并进 7 张配置表
+			IAiConfig aiConfig = AiConfigLoader.Load(dependencies.ConfigSource, tables, report);
+
 			// 4) 会话状态（Map 常驻内存）：地图仓库由宿主工厂按**整表**构造（v0.3 / WP-3.2：读档要重建建筑/单位）
 			var rebuilder = new SaveRebuilder(new BuildingFactory(tables.Buildings), new UnitFactory(tables.Units));
 			var mapRepository = dependencies.MapRepositoryFactory(tables);
@@ -96,7 +102,9 @@ namespace SciencePotato.Scripts.Core
 			var maps = new MapSession(mapRepository);
 
 			// 4.5) 玩家表（v0.6.0 / WP-4.18）：缺省 = 单人类玩家；注入多玩家时按 ownerId 升序确定遍历顺序
-			var session = new GameSession(maps, clock, dependencies.SessionId, dependencies.Players);
+			// 4.2) 玩家表（v0.6.0 / WP-4.18；v0.7.1 / WP-6.1 起由 AI 配置驱动）：宿主显式给表就用它，
+			//      否则按"1 个人类 + `AI.Count` 个 AI"自建 —— 让"AI 几个"只有一个出处（`Config/AI.json`）。
+			var session = new GameSession(maps, clock, dependencies.SessionId, dependencies.Players ?? BuildPlayers(aiConfig));
 
 			// 5) 地图生成器：地形表 + 生成器表（可选的 .tres 覆写只服务于编辑器调参）
 			var mapGenerator = new VoronoiMapGenerator(
@@ -211,8 +219,22 @@ namespace SciencePotato.Scripts.Core
 				Orchestrator = orchestrator,
 				Setup = setup,
 				Victory = victory,
+				Ai = aiConfig,
 				I18n = i18n,
 			};
+		}
+
+		/// <summary>
+		/// （v0.7.1 / WP-6.1）按 AI 配置生成玩家表：**1 个人类（owner=1）+ `Count` 个 AI（owner=2..）**。
+		/// <para>出生点规则对所有人相同（`SessionSetupService`），AI 与人类的唯一差别是"谁下指令"（`D88`）。</para>
+		/// </summary>
+		private static List<PlayerContext> BuildPlayers(IAiConfig aiConfig)
+		{
+			var players = new List<PlayerContext> { PlayerContext.Human(PlayerContext.FirstOwnerId) };
+			int count = Math.Max(0, aiConfig?.Count ?? 0);
+
+			for (int i = 0; i < count; i++) players.Add(PlayerContext.Ai(PlayerContext.FirstOwnerId + 1 + i));
+			return players;
 		}
 
 		/// <summary>

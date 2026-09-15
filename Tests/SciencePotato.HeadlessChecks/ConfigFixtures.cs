@@ -23,7 +23,7 @@ namespace SciencePotato.HeadlessChecks
 		/// （v0.6.5 / WP-5.10）**非配置表的文本资源**（不参与 `ConfigTables` 装配，但要能被 `IConfigSource` 读到）：
 		/// 目前只有多语言文案 <c>Config/Strings.{locale}.json</c>。
 		/// </summary>
-		public static readonly string[] TextResources = { "Strings.zh", "Strings.en" };
+		public static readonly string[] TextResources = { "Strings.zh", "Strings.en", "AI" };
 
 		public static string TablePath(string tableName) => Path.Combine(Check.FindRepoRoot(), "Config", tableName + ".json");
 
@@ -82,6 +82,9 @@ namespace SciencePotato.HeadlessChecks
 					return repository;
 				},
 				SessionId = "test",
+				// （v0.7.1 / WP-6.1）**夹具显式给"单人类玩家"**：不给的话装配层会按 `Config/AI.json` 的 `Count`
+				// 自动补 AI（生产路径要的行为），而绝大多数用例只想有一个人类玩家、再按需 `AddPlayer`。
+				Players = new[] { PlayerContext.Human(PlayerContext.FirstOwnerId) },
 			});
 		}
 

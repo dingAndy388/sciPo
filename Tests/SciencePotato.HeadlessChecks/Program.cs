@@ -43,6 +43,7 @@ namespace SciencePotato.HeadlessChecks
 				("I18n", I18nChecks.RunAll),
 			("Victory", VictoryChecks.RunAll),
 			("BuildingHp", BuildingHpChecks.RunAll),
+			("AiConfig", AiConfigChecks.RunAll),
 			};
 
 			// `--list-groups`：只输出组名（不给脚本混进横幅），供 `Tools/verify.ps1` 分片

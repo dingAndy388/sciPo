@@ -95,6 +95,7 @@ public partial class ServiceContainer : Node
 			SessionId = "local",
 			SaveStore = SaveStore,
 			SaveRoot = "user://save/",
+			// 玩家表：`--ai=N` 显式覆盖；否则留空 ⇒ 由 `Config/AI.json` 的 `Count` 决定（v0.7.1 / WP-6.1）
 			Players = BuildPlayers(),
 		});
 
@@ -111,9 +112,10 @@ public partial class ServiceContainer : Node
 	/// </summary>
 	private static List<PlayerContext> BuildPlayers()
 	{
-		var players = new List<PlayerContext> { PlayerContext.Human(1) };
+		int aiCount = UserArgInt("--ai=", -1);
+		if (aiCount < 0) return null; // 未显式指定 ⇒ 交给 `Config/AI.json` 的 `Count`（`WP-6.1`）
 
-		int aiCount = UserArgInt("--ai=", 0);
+		var players = new List<PlayerContext> { PlayerContext.Human(1) };
 		for (int i = 0; i < aiCount; i++) players.Add(PlayerContext.Ai(2 + i));
 
 		return players;

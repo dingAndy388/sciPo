@@ -1,3 +1,4 @@
+using SciencePotato.Scripts.AI.Domain;
 using SciencePotato.Scripts.Common.Application;
 using SciencePotato.Scripts.Common.Domain;
 using SciencePotato.Scripts.Construction.Application;
@@ -118,6 +119,12 @@ namespace SciencePotato.Scripts.Core
 		/// <para>一局结束的判据 = 只剩一个势力存活（`OutcomeOf(mapId).IsOver`）。</para>
 		/// </summary>
 		public VictoryService Victory { get; init; }
+
+		/// <summary>
+		/// （v0.7.1 / WP-6.1）**AI 对手的策略参数**（`Config/AI.json`）：几个 AI、前期不造兵窗口、分配比例、威胁阈值。
+		/// <para>行为（决策循环/经济/军事）归 `WP-6.2`~`WP-6.4`；本项只提供参数与校验结论。</para>
+		/// </summary>
+		public IAiConfig Ai { get; init; }
 
 		/// <summary>
 		/// （v0.6.5 / WP-5.10）**多语言（i18n）**：UI 文案的键 → 文本解析器（缺键可见、可回退到默认语言）。

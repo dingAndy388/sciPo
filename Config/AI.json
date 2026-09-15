@@ -1,0 +1,21 @@
+{
+  "Defaults": {
+    "Count": 1,
+    "NoMilitaryDays": 360,
+    "DecisionIntervalDays": 30,
+    "SciencePreference": "science",
+    "ExploreRadius": 12,
+    "ReserveMonths": 1,
+    "ThreatThresholds": {
+      "Low": 1,
+      "Medium": 3,
+      "High": 6,
+      "Lethal": 10
+    },
+    "ResourceSplit": {
+      "Build": 0.5,
+      "Research": 0.3,
+      "Military": 0.2
+    }
+  }
+}

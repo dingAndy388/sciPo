@@ -289,7 +289,9 @@ namespace SciencePotato.HeadlessChecks
 				SessionId = "wire-session",
 				SaveStore = store,
 				SaveRoot = "mem://save/",
-				Players = players,
+				// （v0.7.1 / WP-6.1）夹具默认给"单人类玩家"：不传的话装配层会按 `Config/AI.json` 的 `Count` 补 AI，
+				// 而本组用例的断言是按"一个势力"写的（要 AI 的用例显式传 `players`）
+				Players = players ?? new[] { PlayerContext.Human(PlayerContext.FirstOwnerId) },
 				EnableEnemySpawn = enableEnemySpawn,
 			});
 
