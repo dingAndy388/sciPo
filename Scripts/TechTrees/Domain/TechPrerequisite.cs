@@ -6,7 +6,7 @@ namespace SciencePotato.Scripts.TechTree.Domain
 	/// <summary>
 	/// （v0.3 / WP-2.1）**带树维度的科技前置**：修复 `TECH-07`（跨树前置失效 → 物理树 35 节点永久不可解锁）。
 	/// <para>`TreeId` 为空 = 「引用它的节点所在的那棵树」，因此**旧表的 <c>"mathematics"</c> 写法不需要改写**；
-	/// 非空 = 跨树前置（推荐写法 <c>"science:counting"</c> 或结构体 <c>{ "TreeId": "science", "NodeId": "counting" }</c>）。</para>
+	/// 非空 = 跨树前置（推荐写法 <c>"math:counting"</c> 或结构体 <c>{ "TreeId": "science", "NodeId": "counting" }</c>）。</para>
 	/// <para>解析兼容层见 <see cref="TechPrerequisiteJsonConverter"/>；空/错填的 Id 由
 	/// <c>ConfigValidator</c> 判 error，而不是让整张表"解析失败"。</para>
 	/// </summary>

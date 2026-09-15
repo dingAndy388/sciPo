@@ -8,7 +8,7 @@ namespace SciencePotato.Scripts.TechTree.Domain
 	/// （v0.3 / WP-2.1）<see cref="TechPrerequisite"/> 的 JSON **兼容层**：同时接受三种写法
 	/// <list type="bullet">
 	/// <item><c>"mathematics"</c> —— 旧表写法，解释为「本树节点」（§13.z / D23 兼容层要求，旧表不破）</item>
-	/// <item><c>"science:counting"</c> —— 紧凑跨树写法（跨树前置的最小手写形态）</item>
+	/// <item><c>"math:counting"</c> —— 紧凑跨树写法（跨树前置的最小手写形态）</item>
 	/// <item><c>{ "TreeId": "science", "NodeId": "counting" }</c> —— 结构体写法（§15 字段规格）</item>
 	/// </list>
 	/// <para>非法形态**不在这里抛异常**：空串 / 数字 / 缺字段一律照原样带进领域对象，由
