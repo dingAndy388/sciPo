@@ -1,99 +1,91 @@
-# （v0.9.10 / WP-8.1）**美术资源校验器**：拿 `Document/AssetManifest.csv` 对盘上的文件逐条验收
+# （v0.9.11）**资源校验器（图 + 音）**：拿两份清单对盘上的文件逐条验收
 #
-# 作用：美术交付后跑一次，就知道"缺哪些、哪张尺寸不对、哪张没有透明通道、目录里有没有多余文件"。
-#   规格见 `Document/ArtSpec.md`；清单由 `Tools/gen_asset_manifest.ps1` 生成（勿手改 CSV）。
+#   Document/AssetManifest.csv  —— 图（由 Tools/gen_asset_manifest.ps1 生成）
+#   Document/SoundManifest.csv  —— 音（由 Tools/gen_sound_list.ps1 生成）
+#
+# 能自动查：存在性 / 图片尺寸 / 图片透明通道 / 音频扩展名 / 目录里的“多余文件”
+# 查不了（人工抽查）：音频响度与时长、图片风格 —— 见 Document/ArtSpec.md §11、Document/SoundSpec.md §4
 #
 # 用法：
-#   powershell -ExecutionPolicy Bypass -File Tools/check_assets.ps1              # 只报告
-#   powershell -ExecutionPolicy Bypass -File Tools/check_assets.ps1 -Promote     # 合格的图 → Status 改 delivered
-param(
-	[switch]$Promote
-)
+#   powershell -ExecutionPolicy Bypass -File Tools/check_assets.ps1
+#   powershell -ExecutionPolicy Bypass -File Tools/check_assets.ps1 -Promote   # 合格的 → Status=delivered
+param([switch]$Promote)
 
 $ErrorActionPreference = 'Stop'
-
 $root = Split-Path -Parent $PSScriptRoot
-$manifestPath = Join-Path $root 'Document\AssetManifest.csv'
-if (-not (Test-Path $manifestPath)) { throw "找不到清单：$manifestPath（先跑 Tools/gen_asset_manifest.ps1）" }
-
+$docDir = Join-Path $root 'Document'
 Add-Type -AssemblyName System.Drawing
 
-$rows = Import-Csv $manifestPath
 $problems = New-Object System.Collections.Generic.List[string]
-$present = 0
-$ok = 0
-$delivered = 0
 $expectedFiles = New-Object System.Collections.Generic.HashSet[string]
+$promoted = 0
 
-foreach ($row in $rows) {
+function Test-Row($row, [string]$manifestName) {
 	$relative = $row.FilePath -replace '^res://', ''
 	$full = Join-Path $root ($relative -replace '/', '\')
 	$expectedFiles.Add(($relative -replace '/', '\')) | Out-Null
 
 	if (-not (Test-Path $full)) {
-		$problems.Add(("[缺图] {0}（{1}，{2}）" -f $relative, $row.Category, $row.SizePx))
+		$problems.Add("[缺文件] $relative（$manifestName / $($row.Category) / $($row.Id)）")
 		$row.Status = 'missing'
-		continue
+		return $false
 	}
 
-	$present++
+	$extension = [System.IO.Path]::GetExtension($relative).ToLowerInvariant()
+	if ($extension -in @('.ogg', '.wav', '.mp3')) {
+		if ($relative -match 'SFX' -and $extension -ne '.wav') { $problems.Add("[格式] $relative 音效应为 .wav"); return $false }
+		if ($relative -match 'BGM' -and $extension -ne '.ogg') { $problems.Add("[格式] $relative 音乐应为 .ogg"); return $false }
+		$row.Status = 'delivered'
+		return $true
+	}
 
-	if ($row.SizePx -eq '—') { $ok++; continue } # 音频没有尺寸约束
+	if (-not ($extension -in @('.png', '.jpg', '.jpeg', '.webp'))) { return $true }
 
-	# 期望尺寸：'366x423' 或 '96x96(九宫格 24)' 两种写法都取前一段
 	$sizeText = ($row.SizePx -split '[（(]')[0].Trim()
-	if ($sizeText -notmatch '^(\d+)x(\d+)$') { $problems.Add(("[规格] {0} 的 SizePx 写法无法解析：{1}" -f $relative, $row.SizePx)); continue }
-	$wantW = [int]$matches[1]
-	$wantH = [int]$matches[2]
+	if ($sizeText -notmatch '^(\d+)x(\d+)$') { $problems.Add("[规格] $relative 的 SizePx 无法解析：$($row.SizePx)"); return $false }
+	$wantW = [int]$matches[1]; $wantH = [int]$matches[2]
 
-	# 只有图片才查尺寸/alpha
-	if ($relative -notmatch '\.(png|jpg|jpeg|webp)$') { $ok++; continue }
-
-	try {
-		$image = [System.Drawing.Image]::FromFile($full)
-	} catch {
-		$problems.Add(("[坏图] {0} 无法打开：{1}" -f $relative, $_.Exception.Message))
-		continue
-	}
-
+	try { $image = [System.Drawing.Image]::FromFile($full) } catch { $problems.Add("[坏图] $relative 无法打开：$($_.Exception.Message)"); return $false }
 	try {
 		if ($image.Width -ne $wantW -or $image.Height -ne $wantH) {
-			$problems.Add(("[尺寸] {0} 实际 {1}x{2}，规格要求 {3}x{4}" -f $relative, $image.Width, $image.Height, $wantW, $wantH))
-			continue
+			$problems.Add("[尺寸] $relative 实际 $($image.Width)x$($image.Height)，规格 $wantW`x$wantH")
+			return $false
 		}
-
-		$hasAlpha = $image.PixelFormat.ToString() -match 'Argb|PArgb|Alpha'
-		if (-not $hasAlpha) {
-			$problems.Add(("[无透明通道] {0} 的 PixelFormat={1}（需要 RGBA8）" -f $relative, $image.PixelFormat))
-			continue
+		if ($image.PixelFormat.ToString() -notmatch 'Argb|PArgb|Alpha') {
+			$problems.Add("[无透明通道] $relative 的 PixelFormat=$($image.PixelFormat)（需要 RGBA8）")
+			return $false
 		}
-
-		$ok++
 		$row.Status = 'delivered'
-		$delivered++
-	} finally {
-		$image.Dispose()
-	}
+		return $true
+	} finally { $image.Dispose() }
 }
 
-# 目录里的"多余文件"（清单没登记、但在资源目录里）—— 防"文件名写错导致悄悄不生效"
-$assetRoots = @('Texture', 'Audio') | ForEach-Object { Join-Path $root $_ }
-foreach ($assetRoot in $assetRoots) {
-	if (-not (Test-Path $assetRoot)) { continue }
-	Get-ChildItem -Path $assetRoot -Recurse -File | Where-Object { $_.Extension -in @('.png', '.jpg', '.jpeg', '.webp', '.ogg', '.wav', '.mp3', '.import') -and $_.Name -notlike '*.import' } | ForEach-Object {
+foreach ($name in @('AssetManifest.csv', 'SoundManifest.csv')) {
+	$manifestPath = Join-Path $docDir $name
+	if (-not (Test-Path $manifestPath)) { Write-Host "跳过（不存在）：Document/$name"; continue }
+
+	$rows = Import-Csv $manifestPath
+	$present = 0
+	$delivered = 0
+
+	foreach ($row in $rows) { if (Test-Row $row $name) { $present++ } }
+	foreach ($row in $rows) { if ($row.Status -eq 'delivered') { $delivered++ } }
+
+	if ($Promote) { $rows | Export-Csv -Path $manifestPath -NoTypeInformation -Encoding utf8; $promoted += $delivered }
+	Write-Host ("{0,-20} 共 {1,3} 条：已有 {2,3}，合格 {3,3}" -f $name, $rows.Count, $present, $delivered)
+}
+
+foreach ($assetRoot in @('Texture', 'Audio')) {
+	$full = Join-Path $root $assetRoot
+	if (-not (Test-Path $full)) { continue }
+	Get-ChildItem -Path $full -Recurse -File | Where-Object { $_.Name -notlike '*.import' } | ForEach-Object {
 		$rel = $_.FullName.Substring($root.Length + 1)
-		if (-not $expectedFiles.Contains($rel)) { $problems.Add(("[多余] $rel 不在清单里（文件名写错了？）")) }
+		if (-not $expectedFiles.Contains($rel)) { $problems.Add("[多余] $rel 不在任何清单里（文件名写错了？）") }
 	}
 }
 
-Write-Host ("清单 {0} 条：已有 {1} 个，合格 {2} 个，其中标记 delivered {3} 个" -f $rows.Count, $present, $ok, $delivered)
 Write-Host ("问题 {0} 条：" -f $problems.Count)
 $problems | Select-Object -First 40 | ForEach-Object { Write-Host "  $_" }
 if ($problems.Count -gt 40) { Write-Host ("  ...（还有 {0} 条）" -f ($problems.Count - 40)) }
-
-if ($Promote) {
-	$rows | Export-Csv -Path $manifestPath -NoTypeInformation -Encoding utf8
-	Write-Host "已回写 Status（delivered）到 Document/AssetManifest.csv"
-}
-
-if ($present -eq 0) { Write-Host '提示：目前一张图都没有 —— 缺图不会崩，表现层会自动回退占位（见 Document/ArtSpec.md 的"回退保证"）。' }
+if ($Promote) { Write-Host "已回写 Status=delivered（$promoted 条）" }
+if ($problems.Count -eq 0) { Write-Host '✅ 清单与盘上文件一致。' }

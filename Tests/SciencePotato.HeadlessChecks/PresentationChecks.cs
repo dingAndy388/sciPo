@@ -188,8 +188,7 @@ namespace SciencePotato.HeadlessChecks
 				"res://Texture/Event/gold_rush.png",
 				"res://Texture/Tech/math/counting.png",
 				"res://Texture/UI/panel_bg.png",
-				"res://Audio/BGM/main.ogg",
-			})
+				})
 			{
 				Check.Assert(manifest.Contains(expected), $"清单应包含 `{expected}`");
 			}
@@ -197,7 +196,7 @@ namespace SciencePotato.HeadlessChecks
 			int terrainRows = manifest.Split('\n')
 				.Count(line => line.Replace("\"", string.Empty).StartsWith("Terrain,", System.StringComparison.Ordinal));
 			Check.AssertEqual(5, terrainRows, "地形行数（历史 bug：清单曾把 8 个 .NET 数组属性当地形登记）");
-			Check.Assert(manifest.Split('\n').Length >= 190, "清单应至少 189 行数据 + 1 行表头");
+			Check.Assert(manifest.Split('\n').Length >= 189, "图清单应至少 188 行数据 + 1 行表头（音频已移出到 SoundManifest.csv）");
 		}
 
 		// ────────────────────────── 夹具 ──────────────────────────

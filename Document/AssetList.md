@@ -1,11 +1,10 @@
 # Science Potato · 美术资源清单（自动生成，勿手改）
 
 > 由 `Tools/gen_asset_manifest.ps1` 从四张配置表 + `Document/ArtSpec.md` 生成 —— **表的 id 就是文件名**，清单不会和表漂移。
-> 合计 **189** 个文件；当前缺 **189** 个。规格与验收见 Document/ArtSpec.md。
+> 合计 **188** 个文件；当前缺 **188** 个。规格与验收见 Document/ArtSpec.md。
 
 | 类别 | 数量 | 缺 | 典型尺寸 | 存放目录 |
 | :--- | ---: | ---: | :--- | :--- |
-| Audio | 1 | 1 | — | res://Audio/ |
 | Building | 24 | 24 | 256x256 | res://Texture/Building/ |
 | Event | 20 | 20 | 512x288 | res://Texture/Event/ |
 | Resource | 3 | 3 | 64x64 | res://Texture/Resource/ |
@@ -25,12 +24,6 @@
 | 05 科技图标 | 93 张（按树分目录） | 93 |
 | 06 UI 与结局 | 其余 UI 25 张 | 25 |
 | 07 BGM | 1 首（已有则跳过） | 1 |
-
-## Audio（1 个）
-
-| 文件名 | 尺寸 | 锚点 | 状态 | 说明 |
-| :--- | :--- | :--- | :--- | :--- |
-| `Audio/BGM/main.ogg` | — | — | missing | 主 BGM：ogg、44.1kHz 立体声、无缝循环、60~120s |
 
 ## Building（24 个）
 

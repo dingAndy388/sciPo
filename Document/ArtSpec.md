@@ -34,7 +34,7 @@
 | 单位 | `res://Texture/Unit/{单位Id}.png` | 与 `Config/Units.json` 的 `Id` 一致 | `WP-5.4` 的单位图层 |
 | 资源图标 | `res://Texture/Resource/{资源Id}.png` | 与 `Config/Resources.json` 的 `Name` 一致 | 资源面板（`WP-5.4`） |
 | 事件插图 | `res://Texture/Event/{事件Id}.png` | 与 `Config/Events.json` 的 `EventId` 一致 | 事件弹窗（`WP-4.12`/`WP-5.4`） |
-| 音频 | `res://Audio/{BGM|SFX}/{文件名}` | 文件名进清单，不参与逻辑 | `WP-8.4` |
+| 音频 | **见 `Document/SoundSpec.md`（音频规格）与 `Document/SoundList.md`（逐条清单）** | 音频单一套文档，与图分开 | `WP-8.4` |
 
 **命名纪律**：文件名 = 配置表的 Id，**不加前后缀、不做本地化**（中文名进 i18n 的字符串表，不进文件名）。
 
@@ -89,9 +89,9 @@
 | Event 事件插图 | 512 × 288 | Center | 20 | `res://Texture/Event/` |
 | TechIcon 科技图标 | 96 × 96 | Center | **93** | `res://Texture/Tech/{math\|physics\|chemistry}/` |
 | UI | 见 §8.1 | Center | 28（23 必需 + 5 可选） | `res://Texture/UI/` |
-| Audio BGM | `.ogg` 44.1kHz 立体声、无缝循环 60~120s | — | 1 | `res://Audio/BGM/` |
+| Audio BGM | **见 `Document/SoundSpec.md` / `SoundList.md`**（音频单独一套文档） | — | 1 | `res://Audio/BGM/` |
 
-> 音效（SFX）按 N4 决定**暂缓**，不入清单；需要时我会补一批 `res://Audio/SFX/{id}.ogg`。
+> **音效（SFX）已单列**：见 `Document/SoundSpec.md` + `Document/SoundList.md`（36 条音效 + 1 首 BGM，`wav` 一次性音效 / `ogg` 循环音乐）。
 
 ### 8.1 UI（`res://Texture/UI/`）
 

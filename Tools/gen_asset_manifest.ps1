@@ -138,7 +138,7 @@ foreach ($ui in $UI_SPEC) {
 	Add-Row 'UI' $ui[0] 'Document/ArtSpec.md' "Texture/UI/$($ui[0]).png" $ui[1] $ui[2] $ui[3] $ui[4]
 }
 
-foreach ($audio in $AUDIO_SPEC) {
+foreach ($audio in @()) { # 音频已移交 Tools/gen_sound_list.ps1（图/音分工，两份清单不重叠）
 	Add-Row 'Audio' $audio[0] 'Document/ArtSpec.md' $audio[1] $audio[2] '—' $audio[3] $audio[4]
 }
 

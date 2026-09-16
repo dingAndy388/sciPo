@@ -187,4 +187,3 @@
 "UI","cursor_default","Document/ArtSpec.md","res://Texture/UI/cursor_default.png","32x32","Center","missing","待定","待定","光标：默认（可选）【P2 可选】"
 "UI","cursor_build","Document/ArtSpec.md","res://Texture/UI/cursor_build.png","32x32","Center","missing","待定","待定","光标：建造（可选）【P2 可选】"
 "UI","cursor_attack","Document/ArtSpec.md","res://Texture/UI/cursor_attack.png","32x32","Center","missing","待定","待定","光标：攻击（可选）【P2 可选】"
-"Audio","BGM_main","Document/ArtSpec.md","res://Audio/BGM/main.ogg","—","—","missing","待定","待定","主 BGM：ogg、44.1kHz 立体声、无缝循环、60~120s"

@@ -22,6 +22,7 @@
 | 素材（文件） | 作者 / 来源 | 许可 | 备注 |
 | :--- | :--- | :--- | :--- |
 | `res://Audio/BGM/main.ogg` | 待登记 | 待登记 | N4 提供；请补平台/授权 |
+| 音效 36 条（es://Audio/SFX/*.wav） | 待登记 | 待登记 | 清单见 Document/SoundManifest.csv / SoundList.md；规格见 SoundSpec.md |
 
 ## 3. AI 生成素材的记录口径
 
